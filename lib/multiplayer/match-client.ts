@@ -24,6 +24,7 @@ import {
   buildRunnerEvent,
   matchFilter,
   parseEvent,
+  type ParsedEvent,
 } from "./events";
 import { applyEvent, beginPlaying, createMatchState } from "./match-state";
 import type { Subscription, Transport } from "./transport";
@@ -51,6 +52,18 @@ type SnapshotListener = (snapshot: MatchSnapshot) => void;
 const PRESENCE_HEARTBEAT_MS = 5000;
 /** Coalesce the "greet the newcomer" re-announce so a burst of joins → one. */
 const REANNOUNCE_DEBOUNCE_MS = 400;
+/**
+ * Wall-clock tolerance (ms) for the timestamps on inbound runner/finish frames.
+ * Stamps further in the future than this are dropped as implausible — covers
+ * honest clock skew while denying a hostile peer the two time-based exploits in
+ * the serverless model: a far-future runner `t` (which would pin their ghost as
+ * "newest" and freeze it, since the reducer is newest-wins) and a future/past
+ * `finishTime` (the winner is the *earliest* finishTime, so a stamp before the
+ * race even started would falsely win). Structural/range checks (speed bound,
+ * 0..1 fields) live in the Zod schemas; this is the clock-dependent half the
+ * pure reducer deliberately can't own.
+ */
+const STAMP_SKEW_TOLERANCE_MS = 5000;
 
 /** Runner fields the caller supplies; `pubkey` and `t` are stamped here. */
 export type RunnerInput = Omit<RunnerState, "pubkey" | "t">;
@@ -268,6 +281,7 @@ export class MatchClient {
   private handleEvent(raw: NostrEvent): void {
     const parsed = parseEvent(raw);
     if (!parsed) return;
+    if (!this.isPlausible(parsed)) return;
 
     // A newcomer announced in our match — greet them with a re-announce so they
     // learn our seat even if relays didn't replay our stored presence.
@@ -298,6 +312,38 @@ export class MatchClient {
     ) {
       void this.publishPresence().catch(() => {});
     }
+  }
+
+  /**
+   * Clock-dependent plausibility gate for inbound frames (anti-cheat). The Zod
+   * schemas already bound the structural fields (speed, 0..1 ranges); this
+   * rejects timestamps that are physically impossible given the local clock —
+   * tolerant of honest skew via `STAMP_SKEW_TOLERANCE_MS`.
+   *
+   * Note we deliberately do NOT require runner `progress` to be monotonic: a
+   * full poison bar sends the runner to the bathroom (back to the start line),
+   * a legitimate rewind — see docs/MULTIPLAYER.md.
+   */
+  private isPlausible(parsed: ParsedEvent): boolean {
+    const future = Date.now() + STAMP_SKEW_TOLERANCE_MS;
+    if (parsed.type === "runner") {
+      return parsed.data.t <= future;
+    }
+    if (parsed.type === "finish") {
+      if (parsed.data.finishTime > future) return false;
+      // A finish can't predate the race clock (the earliest finishTime wins, so
+      // a stamp before `startAt` would be an instant, illegitimate victory).
+      // Best-effort: if the start (control) event hasn't reached us yet,
+      // `startAt` is still null and this check is skipped — fitting the casual,
+      // no-authoritative-server scope (ARCHITECTURE §0).
+      if (
+        this.state.startAt !== null &&
+        parsed.data.finishTime < this.state.startAt
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Schedule the countdown→playing flip; flips now if `startAt` has passed. */

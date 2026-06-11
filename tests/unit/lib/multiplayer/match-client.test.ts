@@ -4,6 +4,7 @@ import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { makeNsecSigner } from "@/lib/nostr/signers";
 import { MatchClient, type RunnerInput } from "@/lib/multiplayer/match-client";
 import { MemoryHub, MemoryTransport } from "@/lib/multiplayer/memory-transport";
+import { buildFinishEvent, buildRunnerEvent } from "@/lib/multiplayer/events";
 
 /**
  * The core multiplayer contract: two clients sharing one (in-memory)
@@ -58,6 +59,9 @@ describe("MatchClient over a shared memory transport", () => {
     await host.start(0);
     expect(host.getSnapshot().status).toBe("playing");
     expect(guest.getSnapshot().status).toBe("playing");
+    // Finish stamps must be at/after the race clock — the plausibility guard
+    // drops a finishTime that predates `startAt` (instant-victory exploit).
+    const startAt = host.getSnapshot().startAt ?? 0;
 
     // Each broadcasts its own runner; both should see both runners.
     await host.broadcastRunner({ ...moving, lane: 0 }, { force: true });
@@ -72,8 +76,8 @@ describe("MatchClient over a shared memory transport", () => {
     }
 
     // Host finishes first (earlier finishTime) → wins regardless of order.
-    await guest.finish({ points: 510, finishTime: 200 });
-    await host.finish({ points: 520, finishTime: 100 });
+    await guest.finish({ points: 510, finishTime: startAt + 200 });
+    await host.finish({ points: 520, finishTime: startAt + 100 });
 
     for (const client of [host, guest]) {
       const snap = client.getSnapshot();
@@ -170,5 +174,86 @@ describe("MatchClient over a shared memory transport", () => {
 
     host.leave();
     guest.leave();
+  });
+});
+
+describe("MatchClient plausibility guard (anti-cheat)", () => {
+  it("drops a runner frame stamped implausibly far in the future", async () => {
+    const hub = new MemoryHub();
+    const victim = new MatchClient({
+      transport: new MemoryTransport(hub),
+      signer: makeSigner(),
+      matchId: "ac1",
+      trackId: "classic-v1",
+    });
+    const attacker = makeSigner();
+
+    // A hostile peer stamps `t` far ahead so its frame would forever win the
+    // reducer's newest-wins merge and freeze its ghost. The guard drops it.
+    const cheat = new MemoryTransport(hub);
+    await cheat.publish(
+      await attacker.sign(
+        buildRunnerEvent("ac1", {
+          ...moving,
+          pubkey: attacker.pubkey,
+          t: Date.now() + 60_000,
+        })
+      )
+    );
+
+    expect(victim.getSnapshot().runners[attacker.pubkey]).toBeUndefined();
+
+    // A legitimately-stamped frame from the same peer is still accepted.
+    await cheat.publish(
+      await attacker.sign(
+        buildRunnerEvent("ac1", {
+          ...moving,
+          pubkey: attacker.pubkey,
+          t: Date.now(),
+        })
+      )
+    );
+    expect(victim.getSnapshot().runners[attacker.pubkey]).toBeDefined();
+
+    victim.leave();
+  });
+
+  it("rejects a finish stamped before the race clock started", async () => {
+    const hub = new MemoryHub();
+    const hostSigner = makeSigner();
+    const cheaterSigner = makeSigner();
+    const roster = [
+      { pubkey: hostSigner.pubkey, lane: 0 },
+      { pubkey: cheaterSigner.pubkey, lane: 1 },
+    ];
+    const host = new MatchClient({
+      transport: new MemoryTransport(hub),
+      signer: hostSigner,
+      matchId: "ac2",
+      trackId: "classic-v1",
+      players: roster,
+      isHost: true,
+    });
+
+    await host.start(0);
+    const startAt = host.getSnapshot().startAt ?? 0;
+
+    // Cheater claims it crossed the line *before* the race even started — an
+    // instant, illegitimate victory under earliest-finishTime-wins. Dropped.
+    const cheat = new MemoryTransport(hub);
+    await cheat.publish(
+      await cheaterSigner.sign(
+        buildFinishEvent("ac2", {
+          pubkey: cheaterSigner.pubkey,
+          finishTime: startAt - 1000,
+          position: 1,
+          points: 999,
+        })
+      )
+    );
+    expect(host.getSnapshot().finishes[cheaterSigner.pubkey]).toBeUndefined();
+    expect(host.getSnapshot().status).toBe("playing");
+
+    host.leave();
   });
 });

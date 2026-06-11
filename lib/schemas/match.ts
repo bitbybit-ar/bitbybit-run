@@ -12,7 +12,7 @@
  */
 import { z } from "zod";
 import { NostrPubkeySchema } from "./primitives";
-import { LANES } from "@/lib/game/config";
+import { LANES, MAX_RUNNER_SPEED } from "@/lib/game/config";
 
 /** A runner's coarse state, mirrored from `RaceScene` (lib/game). */
 export const RunnerStatusSchema = z.enum(["running", "bathroom", "finished"]);
@@ -87,7 +87,10 @@ export const RunnerStateSchema = z.object({
   pubkey: NostrPubkeySchema,
   progress: UnitSchema, // 0..1 along the track
   lane: LaneSchema,
-  speed: z.number().nonnegative(),
+  // Bounded (not just nonnegative): a frame claiming a faster-than-possible
+  // speed is dropped here, before dead-reckoning could fling the ghost. See
+  // MAX_RUNNER_SPEED in lib/game/config.ts.
+  speed: z.number().min(0).max(MAX_RUNNER_SPEED),
   energy: UnitSchema,
   poison: UnitSchema,
   status: RunnerStatusSchema,
