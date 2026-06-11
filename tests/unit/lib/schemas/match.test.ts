@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { LANES } from "@/lib/game/config";
+import { LANES, MAX_RUNNER_SPEED } from "@/lib/game/config";
 import {
   MatchControlSchema,
   MatchDiscoverySchema,
@@ -65,6 +65,19 @@ describe("schemas/match RunnerStateSchema", () => {
   it("rejects an unknown status", () => {
     expect(
       RunnerStateSchema.safeParse({ ...validRunner, status: "napping" }).success
+    ).toBe(false);
+  });
+
+  it("rejects a faster-than-possible speed (anti-cheat bound)", () => {
+    expect(
+      RunnerStateSchema.safeParse({ ...validRunner, speed: MAX_RUNNER_SPEED })
+        .success
+    ).toBe(true);
+    expect(
+      RunnerStateSchema.safeParse({
+        ...validRunner,
+        speed: MAX_RUNNER_SPEED + 1,
+      }).success
     ).toBe(false);
   });
 });

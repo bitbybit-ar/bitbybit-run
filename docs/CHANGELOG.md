@@ -8,6 +8,23 @@ Dates use `YYYY-MM-DD`.
 
 ### Added
 
+- **Multiplayer realtime hardening (Nostr).** Optimizations to the serverless
+  realtime layer (see [ARCHITECTURE.md](ARCHITECTURE.md) §4):
+  - **Preferred relay** — `relay.obelisk.ar` (La Crypta) now leads `GAME_RELAYS`
+    as the low-latency relay for our players; the public relays stay as
+    redundancy/fallback. Since publishes resolve on the first relay to accept and
+    inbound events dedupe by id, the fastest relay sets perceived latency.
+  - **Anti-cheat plausibility checks** on untrusted inbound frames: `speed` is now
+    bounded by `MAX_RUNNER_SPEED` at the schema boundary (a faster-than-possible
+    frame can no longer fling a ghost via dead-reckoning), and the orchestrator
+    drops a runner `t` stamped far in the future or a `finishTime` that is in the
+    future or predates `startAt` (instant-victory exploit), tolerant of honest
+    clock skew. Bathroom-break progress rewinds stay allowed.
+
+  Note: ephemeral event kinds for high-frequency traffic (runner `21000`, control
+  `21001`, finish `21002`) and client-side dead-reckoning interpolation for remote
+  runners were **already** in place; this entry covers the relay + validation work.
+
 - **Favicon + social preview image.** Generated a favicon / apple-touch icon
   and per-locale Open Graph + Twitter preview images from the brand blocks +
   palette (`next/og`), wired via the icon / `opengraph-image` file conventions

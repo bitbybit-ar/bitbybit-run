@@ -41,6 +41,16 @@ export const SPEED = {
   boost: 480, // temporary burst from a 🚀 booster (no energy cost)
 };
 
+/**
+ * Hard upper bound on a runner's reported speed, used to validate inbound
+ * multiplayer frames (anti-cheat): no legitimate runner ever exceeds the boost
+ * speed, so a frame claiming more is rejected at the schema boundary before it
+ * can fling that ghost across the track via dead-reckoning extrapolation
+ * (`remote-runners.ts`). Generous margin over `SPEED.boost` so future balance
+ * tweaks don't trip it.
+ */
+export const MAX_RUNNER_SPEED = SPEED.boost * 1.5;
+
 /** Energy bar: spent to sprint, refilled by good food. Range 0..1. */
 export const ENERGY = {
   start: 0.5,

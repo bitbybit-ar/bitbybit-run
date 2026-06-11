@@ -149,8 +149,11 @@ Each player broadcasts **only their own runner**. Tiny payload, throttled.
 ```
 
 Subscribe: `{ "kinds":[21000], "#d":["<matchId>"], "since": now }`.
-Receivers **interpolate** remote runners for smoothness; latency only affects how
-fresh the _minimap_/ghosts look, never your own (local) runner.
+Receivers **interpolate** remote runners for smoothness (dead-reckoning +
+easing, `lib/game/remote-runners.ts`): between ~5 Hz samples a ghost is advanced
+by its last known `speed` (capped window) and the displayed value eases toward
+that target, so latency only affects how fresh the _minimap_/ghosts look, never
+your own (local) runner.
 
 ### 4.4 Finish / result — kind `21002` (ephemeral)
 
@@ -164,10 +167,35 @@ Each client announces its finish; the **earliest** `finishTime` is the winner.
 }
 ```
 
+### 4.5 Validating untrusted frames (anti-cheat)
+
+With no authoritative server, every inbound frame comes from an untrusted peer, so
+each client validates before merging (`lib/multiplayer`):
+
+- **Structural / range** — all four payloads pass through the Zod schemas
+  (`lib/schemas/match.ts`) in `parseEvent`; a malformed event is dropped. `speed`
+  is bounded by `MAX_RUNNER_SPEED` (1.5× the boost speed), so a frame claiming a
+  faster-than-possible speed can't fling its ghost across the track via
+  dead-reckoning extrapolation.
+- **Timestamp plausibility** — the orchestrator (`match-client.ts`) drops a runner
+  `t` stamped implausibly far in the future (it would pin that peer as forever
+  "newest" under newest-wins and freeze its ghost) and a `finishTime` that is in
+  the future or **predates `startAt`** (the earliest finishTime wins, so a past
+  stamp would be an instant illegitimate victory). Honest clock skew is tolerated
+  via `STAMP_SKEW_TOLERANCE_MS`.
+- **Not** monotonic progress: a full poison bar legitimately sends a runner to the
+  bathroom (back to the start line), so progress is allowed to rewind.
+
+The reducer (`match-state.ts`) stays pure/clock-free; the clock-dependent checks
+live in the orchestrator.
+
 ### Relays
 
-Start with a few fast public relays for redundancy, e.g.
-`relay.damus.io`, `nos.lol`, `relay.primal.net`. Publish to all, dedupe on read.
+A short list of fast, write-friendly relays (`lib/multiplayer/relays.ts`).
+`relay.obelisk.ar` (La Crypta) leads as the **preferred** low-latency relay for
+our players, with `relay.damus.io`, `nos.lol`, `relay.primal.net` as
+redundancy/fallback. Publishes resolve on the first relay to accept and inbound
+events dedupe by id, so the fastest relay to deliver sets perceived latency.
 **Throttle** broadcasts to ~5 Hz and keep payloads small to respect rate limits.
 
 ## 5. Persistence — Neon Postgres + Drizzle ORM
