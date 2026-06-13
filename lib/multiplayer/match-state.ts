@@ -11,8 +11,22 @@
  *   - the winner is the *earliest* finishTime, recomputed locally — we
  *     never trust a remote event's claimed `position` (see ARCHITECTURE §4.4)
  */
+import { POINTS } from "@/lib/game/config";
 import type { ParsedEvent } from "./events";
-import type { FinalStanding, MatchSnapshot } from "./types";
+import type { FinalStanding, MatchSnapshot, MatchStatus } from "./types";
+
+/** Lifecycle ordering — the match status only ever advances along this. */
+const STATUS_ORDER: Record<MatchStatus, number> = {
+  waiting: 0,
+  countdown: 1,
+  playing: 2,
+  finished: 3,
+};
+
+/** The later of two lifecycle statuses (never moves backward). */
+function maxStatus(a: MatchStatus, b: MatchStatus): MatchStatus {
+  return STATUS_ORDER[b] > STATUS_ORDER[a] ? b : a;
+}
 
 export interface CreateMatchInput {
   matchId: string;
@@ -37,28 +51,64 @@ export function createMatchState(input: CreateMatchInput): MatchSnapshot {
 }
 
 /**
- * Resolve current placements. Finishers rank by earliest `finishTime`;
- * everyone still running trails them, ordered by points. Always covers the
- * full roster so the results screen can show every seat.
+ * Resolve current placements. The race ends the instant the *first* runner
+ * crosses, so standings always cover the full roster (finishers + everyone
+ * caught mid-race).
+ *
+ * Two passes:
+ *   1. Arrival order — finishers by earliest `finishTime`, then the rest by how
+ *      far they got (`progress`). This decides each seat's *placement*.
+ *   2. Placement bonus — the spot you reach the line in is worth points
+ *      (`POINTS.placement` by arrival index), folded into each seat's total.
+ *
+ * Final order: the runner who crossed first wins (earliest `finishTime` ranks
+ * #1); everyone else is ordered by total points — which now includes the
+ * placement bonus, so where you arrived still counts toward the ranking.
  */
 export function resolveStandings(state: MatchSnapshot): FinalStanding[] {
-  const rows = state.players.map((player) => {
+  const ranked = state.players.map((player) => {
     const finish = state.finishes[player.pubkey];
     const runner = state.runners[player.pubkey];
     return {
       pubkey: player.pubkey,
       finishTime: finish ? finish.finishTime : null,
-      points: finish ? finish.points : (runner?.points ?? 0),
+      basePoints: finish ? finish.points : (runner?.points ?? 0),
+      progress: finish ? 1 : (runner?.progress ?? 0),
     };
   });
+
+  // Pass 1: arrival order (finishers first by time, then by track progress).
+  const arrivalOrder = [...ranked].sort((a, b) => {
+    if (a.finishTime !== null && b.finishTime !== null) {
+      return a.finishTime - b.finishTime;
+    }
+    if (a.finishTime !== null) return -1;
+    if (b.finishTime !== null) return 1;
+    if (b.progress !== a.progress) return b.progress - a.progress;
+    return b.basePoints - a.basePoints;
+  });
+
+  // Pass 2: award the placement bonus by arrival index (clamped to last tier).
+  const bonus = (index: number) =>
+    POINTS.placement[Math.min(index, POINTS.placement.length - 1)] ?? 0;
+  const totalPoints = new Map<string, number>();
+  arrivalOrder.forEach((row, index) => {
+    totalPoints.set(row.pubkey, row.basePoints + bonus(index));
+  });
+
+  const rows = ranked.map((row) => ({
+    pubkey: row.pubkey,
+    finishTime: row.finishTime,
+    points: totalPoints.get(row.pubkey) ?? row.basePoints,
+  }));
 
   rows.sort((a, b) => {
     if (a.finishTime !== null && b.finishTime !== null) {
       return a.finishTime - b.finishTime;
     }
-    if (a.finishTime !== null) return -1; // finishers ahead of non-finishers
+    if (a.finishTime !== null) return -1; // the winner who crossed ranks first
     if (b.finishTime !== null) return 1;
-    return b.points - a.points; // both unfinished → more points ranks higher
+    return b.points - a.points; // the rest by total points (incl. placement)
   });
 
   return rows.map((row, index) => ({ ...row, position: index + 1 }));
@@ -118,18 +168,37 @@ export function applyEvent(
 
       if (iWin) {
         if (rival) players = players.filter((p) => p.pubkey !== rival.pubkey);
-        players = [...players, { pubkey, lane, name, claimedAt: createdAt }];
+        players = [
+          ...players,
+          {
+            pubkey,
+            lane,
+            name,
+            claimedAt: createdAt,
+            sessionKey: event.data.sessionKey,
+          },
+        ];
       }
 
       players = players.sort((a, b) => a.lane - b.lane);
+
+      // Presence is replaceable (the relay retains the latest per author), so a
+      // peer's announced `status` is the source of truth for the lifecycle when
+      // we (re)join after the ephemeral control/finish events are long gone.
+      // Adopt it forward-only — this is what lets a reconnecting client learn
+      // the match already started (or finished) and stops it from restarting.
+      const nextStatus = maxStatus(state.status, event.data.status);
+
       // No-op echo (e.g. our own heartbeat coming back) → keep the same ref so
       // the orchestrator doesn't emit a needless snapshot.
-      if (sameRoster(players, state.players)) return state;
+      const rosterSame = sameRoster(players, state.players);
+      if (rosterSame && nextStatus === state.status) return state;
       return {
         ...state,
         host: state.host || event.data.host,
         trackId: event.data.trackId,
-        players,
+        players: rosterSame ? state.players : players,
+        status: nextStatus,
       };
     }
 
@@ -158,10 +227,12 @@ export function applyEvent(
       if (prev && prev.finishTime <= event.data.finishTime) return state;
       const next: MatchSnapshot = {
         ...state,
+        // The first runner across the line ends the race for everyone — the
+        // rest are ranked by where they'd reached (see resolveStandings).
+        status: "finished",
         finishes: { ...state.finishes, [event.data.pubkey]: event.data },
       };
       next.standings = resolveStandings(next);
-      if (isComplete(next)) next.status = "finished";
       return next;
     }
 

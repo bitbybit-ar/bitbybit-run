@@ -126,8 +126,12 @@ export interface LeaderboardRow {
 /**
  * Global leaderboard: wins (1st-place finishes) and total points per
  * player, joined to `users` for display. Ordered by wins, then points.
+ * Paginated via `limit`/`offset` (see `getLeaderboardCount` for total pages).
  */
-export async function getLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
+export async function getLeaderboard(
+  limit = 10,
+  offset = 0
+): Promise<LeaderboardRow[]> {
   const db = getDb();
   const wins = sql<number>`count(*) filter (where ${results.position} = 1)`;
   const points = sql<number>`coalesce(sum(${results.points}), 0)`;
@@ -146,7 +150,8 @@ export async function getLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
     .leftJoin(users, eq(users.pubkey, results.pubkey))
     .groupBy(results.pubkey, users.display_name, users.avatar_url)
     .orderBy(desc(wins), desc(points))
-    .limit(limit);
+    .limit(limit)
+    .offset(offset);
 
   // Postgres returns count/sum as strings over the HTTP driver; normalize.
   return rows.map((r) => ({
@@ -157,6 +162,17 @@ export async function getLeaderboard(limit = 50): Promise<LeaderboardRow[]> {
     display_name: r.display_name,
     avatar_url: r.avatar_url,
   }));
+}
+
+/** Total number of ranked players (distinct pubkeys) — drives pagination. */
+export async function getLeaderboardCount(): Promise<number> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      count: sql<number>`count(distinct ${results.pubkey})`,
+    })
+    .from(results);
+  return Number(row?.count ?? 0);
 }
 
 /** A single player's results across all matches. */

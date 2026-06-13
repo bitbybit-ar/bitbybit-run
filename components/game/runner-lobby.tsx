@@ -238,4 +238,30 @@ function LobbyNotFound({ onBack }: { onBack?: () => void }) {
   );
 }
 
+/** The match already left the lobby — a latecomer can't join an in-progress (or
+ *  finished) race. Reuses the not-found layout; only the copy differs. */
+export function LobbyAlreadyStarted({
+  onBack,
+  finished = false,
+}: {
+  onBack?: () => void;
+  finished?: boolean;
+}) {
+  const t = useTranslations("play");
+  return (
+    <div className={styles.notFound}>
+      <p className={styles.notFoundTitle}>
+        {finished
+          ? t("alreadyStarted.titleFinished")
+          : t("alreadyStarted.title")}
+      </p>
+      {onBack && (
+        <Button size="lg" onClick={onBack}>
+          {t("alreadyStarted.cta")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default RunnerLobby;

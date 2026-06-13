@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GameCanvas } from "./game-canvas";
 import { GameControls } from "./game-controls";
-import { RunnerLobby } from "./runner-lobby";
+import { RunnerLobby, LobbyAlreadyStarted } from "./runner-lobby";
 import { MatchBrowser } from "./match-browser";
 import { MatchResults } from "./match-results";
 import { MatchProvider, useMatchContext } from "./match-provider";
@@ -122,6 +122,7 @@ function LobbyAndRace({
 
   const snap = match.snapshot;
   const status = snap?.status ?? "waiting";
+  const selfPubkey = match.selfPubkey;
   if (status === "waiting") {
     return (
       <RunnerLobby
@@ -132,13 +133,28 @@ function LobbyAndRace({
     );
   }
 
+  // Past the lobby. If I never took a seat, I'm a latecomer arriving at a match
+  // that already started (or finished) — joining in-progress isn't allowed, and
+  // crucially this stops a returning player from re-creating/restarting it.
+  const amInRoster =
+    !!selfPubkey && !!snap?.players.some((p) => p.pubkey === selfPubkey);
+  if (!amInRoster) {
+    return (
+      <LobbyAlreadyStarted
+        onBack={onLeave}
+        finished={status === "finished"}
+      />
+    );
+  }
+
   // Only hand the scene a live net when there's company on the track —
   // otherwise a solo host would get MP behavior (lonely minimap, no restart).
   const multiplayer = (snap?.players.length ?? 0) > 1;
 
-  // Everyone finished → swap the canvas for the standings (multiplayer only).
-  if (status === "finished" && multiplayer && snap && match.selfPubkey) {
-    return <MatchResults snapshot={snap} selfPubkey={match.selfPubkey} />;
+  // The first runner across the line ends the race → everyone sees the
+  // standings (multiplayer only). A reconnecting player lands here too.
+  if (status === "finished" && multiplayer && snap && selfPubkey) {
+    return <MatchResults snapshot={snap} selfPubkey={selfPubkey} />;
   }
 
   return (
@@ -147,6 +163,7 @@ function LobbyAndRace({
         key={selectedId}
         character={getCharacter(selectedId)}
         raceNet={multiplayer ? (match.raceNet ?? undefined) : undefined}
+        matchId={match.matchId ?? undefined}
       />
       <GameControls />
     </div>

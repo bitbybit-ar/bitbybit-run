@@ -31,11 +31,15 @@ export function RankingTable({
   playerLabel,
   columns,
   rows,
+  rankOffset = 0,
 }: {
   rankLabel: string;
   playerLabel: string;
   columns: RankingColumn[];
   rows: RankingRow[];
+  /** Rank of the first row minus one — so paginated pages show global ranks
+   *  (page 2 → 11, 12, …) and podium colors stay on the true top three. */
+  rankOffset?: number;
 }) {
   return (
     <div className={styles.tableWrap}>
@@ -64,7 +68,7 @@ export function RankingTable({
         </thead>
         <tbody>
           {rows.map((row, i) => {
-            const rank = i + 1;
+            const rank = rankOffset + i + 1;
             const podium =
               rank === 1
                 ? styles.gold

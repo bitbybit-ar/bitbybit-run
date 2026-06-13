@@ -79,6 +79,10 @@ export const POINTS = {
   goodFood: 10,
   junkFood: -5,
   finishBonus: 500,
+  /** Bonus awarded by where you reach the line in a match (index 0 = 1st …),
+   *  folded into a player's total points so finishing position counts toward
+   *  the final ranking. Clamped to the last tier for any extra seats. */
+  placement: [300, 150, 75, 25],
 };
 
 /** How smoothly the runner slides between lanes (higher = snappier). */

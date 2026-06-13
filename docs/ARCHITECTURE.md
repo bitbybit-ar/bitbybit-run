@@ -79,27 +79,28 @@ styles/               SCSS token system (_theme, _colors, _typography, _spacing)
 proxy.ts              Next 16 middleware (next-intl locale routing)
 ```
 
-## 3. The static track model
+## 3. The deterministic, per-match track model
 
-The track (lane count, length, and every food item's position) is **static data
-shared by all clients** — defined once in a TypeScript module and imported by
-everyone.
+The track (lane count, length, and every food item's position) is **deterministic
+data derived from a seed** — built once per match from the `matchId` via
+`buildTrack(seed)` (`lib/game/track.ts`, seeded PRNG in `lib/game/rng.ts`).
 
 ```ts
-// shared/track.ts (illustrative)
-export const TRACK = {
-  id: "classic-v1",
-  lanes: 4,
-  length: 1000,                       // abstract units to the finish line
-  goodFood:  [{ lane: 2, at: 120 }, { lane: 5, at: 300 }, ...],  // hydration
-  junkFood:  [{ lane: 3, at: 200 }, { lane: 6, at: 260 }, ...],  // obstacles
-}
+// lib/game/track.ts (illustrative)
+export function buildTrack(seed: string | number): Track // seeded layout
+export const TRACK = buildTrack("classic-v1"); // single-player / demo default
 ```
 
-Because the world is identical and deterministic for everyone, **no food/world
-state is ever synchronized**. Each client only broadcasts its _own runner_.
-(If we later want randomized tracks, the host puts a `seed` in the start event
-and all clients generate the same track from it.)
+Every player in a match builds the **identical** track from the shared `matchId`
+(no syncing), while **different matches get different obstacle/food layouts**.
+The length stays constant (so remote dead-reckoning is unaffected); only the
+food/obstacle positions, lanes and types vary. Booster gauntlets stay dodgeable
+on every seed (the 🚀 lane plus a guaranteed junk-free escape lane).
+
+Because the world is identical and deterministic within a match, **no food/world
+state is ever synchronized** — each client only broadcasts its _own runner_. The
+seed is simply the `matchId`, which every client already shares (invite link +
+presence), so the layout needs no extra event.
 
 ## 4. Nostr event design
 
@@ -120,9 +121,17 @@ Published & updated in place by the **host**. Lets the lobby list open matches.
     ["max", "4"],
     ["name", "Analia's race"],
   ],
-  "content": "{ matchId, host, trackId, players:[{pubkey,lane,name}], createdAt }",
+  "content": "{ matchId, host, trackId, pubkey, lane, name, status, createdAt, sessionKey }",
 }
 ```
+
+There is **no server roster**: each peer announces its _own_ seat (replaceable
+per author), and every client aggregates the presences. `status` rides the
+presence (and is retained by relays), so a client that (re)joins after the
+ephemeral control/finish events are gone still learns the match already started
+or finished — which is what blocks late joins and stops a returning player from
+restarting it. `sessionKey` is this peer's ephemeral per-match signing key (see
+§4.3): announced once here, signed by the real identity, binding the two.
 
 Lobby subscribes: `{ "kinds":[30078], "#t":["bitbybit-run"], "#status?":["waiting"] }`.
 
@@ -153,7 +162,15 @@ Receivers **interpolate** remote runners for smoothness (dead-reckoning +
 easing, `lib/game/remote-runners.ts`): between ~5 Hz samples a ghost is advanced
 by its last known `speed` (capped window) and the displayed value eases toward
 that target, so latency only affects how fresh the _minimap_/ghosts look, never
-your own (local) runner.
+your own (local) runner. Rivals are drawn as their **actual animated character
+sprite** (by lane), not a dot.
+
+**Signing without per-frame prompts.** These ~5 Hz frames (and the finish, §4.4)
+are signed locally with an **ephemeral per-match key**, not the real identity —
+so a remote signer (Amber / NIP-46) is never prompted mid-race. The real identity
+signs the presence once (§4.1), announcing + binding that session key; the frame
+`content` still carries the **real** `pubkey`, so roster/standings/leaderboard are
+unchanged. See §4.5 for the binding check that keeps this from being spoofable.
 
 ### 4.4 Finish / result — kind `21002` (ephemeral)
 
@@ -166,6 +183,12 @@ Each client announces its finish; the **earliest** `finishTime` is the winner.
   "content": "{ pubkey, finishTime:<unixMs>, position, points }",
 }
 ```
+
+**The race ends the instant the first runner crosses** — that runner wins and
+every client swaps to the results screen at once (no waiting for stragglers).
+Non-finishers are ranked by total points, where the **arrival placement adds a
+points bonus** (`POINTS.placement`), so where you reached the line counts toward
+the ranking (`resolveStandings` in `match-state.ts`).
 
 ### 4.5 Validating untrusted frames (anti-cheat)
 
@@ -185,6 +208,11 @@ each client validates before merging (`lib/multiplayer`):
   via `STAMP_SKEW_TOLERANCE_MS`.
 - **Not** monotonic progress: a full poison bar legitimately sends a runner to the
   bathroom (back to the start line), so progress is allowed to rewind.
+- **Session-key binding** — runner/finish frames are signed by the sender's
+  ephemeral session key (§4.3), and their `content` claims a real `pubkey`. A
+  frame is accepted only if that pubkey announced this exact session key in its
+  presence (§4.1); otherwise it's a spoof and dropped. Frames arriving before the
+  presence has propagated are allowed (best-effort, fitting the no-server scope).
 
 The reducer (`match-state.ts`) stays pure/clock-free; the clock-dependent checks
 live in the orchestrator.
@@ -237,9 +265,10 @@ Free tier: Neon scale-to-zero, native Vercel integration.
 ## 8. Why this is robust despite public-relay latency
 
 - **Your own runner is local & authoritative** → always smooth, no input lag.
-- **Remote runners** are shown mainly on the **minimap** (low fidelity) and as
-  interpolated ghosts → a 100–300 ms delay is invisible.
-- **The world is static** → no food/obstacle sync to get out of step.
+- **Remote runners** are shown as interpolated character sprites + the **minimap**
+  (low fidelity) → a 100–300 ms delay is invisible.
+- **The world is deterministic per match** → no food/obstacle sync to get out of
+  step.
 - Net traffic per player is a tiny JSON at ~5 Hz → well within relay limits.
 
 ## 9. Free-tier budget
@@ -257,4 +286,5 @@ Free tier: Neon scale-to-zero, native Vercel integration.
 
 - Authoritative netcode (Colyseus or Cloudflare Durable Objects) for anti-cheat.
 - Automated Lightning payouts via NWC (NIP-47).
-- Randomized/seeded tracks, mobile touch controls, audio, richer art.
+- Mobile touch controls, audio, richer art. (Seeded per-match tracks, session-key
+  signing, and animated rivals are now implemented — see §3, §4.)

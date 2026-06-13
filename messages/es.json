@@ -31,7 +31,10 @@
     "wins": "Victorias",
     "points": "Puntos",
     "races": "Carreras",
-    "empty": "Todavía no hay carreras — sé el primero en liderar la tabla."
+    "empty": "Todavía no hay carreras — sé el primero en liderar la tabla.",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {page} de {total}"
   },
   "play": {
     "phase": "Carrera multijugador",
@@ -64,6 +67,11 @@
     },
     "notFound": {
       "title": "Esta carrera no existe o ya terminó",
+      "cta": "Ver carreras abiertas"
+    },
+    "alreadyStarted": {
+      "title": "Esta carrera ya empezó — no podés unirte ahora",
+      "titleFinished": "Esta carrera ya terminó",
       "cta": "Ver carreras abiertas"
     },
     "results": {

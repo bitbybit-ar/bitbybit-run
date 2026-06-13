@@ -1,13 +1,15 @@
 /**
- * Static track definition — shared, deterministic data.
+ * Track definition — deterministic, per-match data.
  *
- * Food sits at FIXED positions (like hydration stations in a real race), so
- * every client renders the exact same track with zero synchronization. In the
- * multiplayer phase, all players import this same module.
+ * Food sits at positions derived from a seed (the matchId), so every client in
+ * the same match builds the EXACT same track with zero synchronization, while
+ * different matches get different layouts. Single-player/demo (and anything
+ * importing the `TRACK` constant) uses the fixed `"classic-v1"` seed.
  */
 
 import { LANES } from "./config";
 import { GOOD_IDS, BAD_IDS, BOOST_IDS } from "./foods";
+import { seededRng } from "./rng";
 
 export type FoodItem = {
   id: string;
@@ -33,47 +35,64 @@ export type Track = {
 
 const LENGTH = 11000;
 
-/** Deterministically lay out food along the track (no randomness). */
+/** Number of hand-tuned booster gauntlets along the track. */
+const BOOST_ZONE_COUNT = 3;
+
+type Rng = () => number;
+
+/** Lay out food along the track. Each step drops ONE item (in an rng-chosen
+ *  lane, of an rng-chosen type) so only a single lane is ever occupied at a
+ *  given distance — never a wall. The `at` gets a small jitter so two matches
+ *  don't feel identical, while staying on its cadence. */
 function buildFood(
   prefix: string,
   startAt: number,
   step: number,
-  laneSeed: number,
-  typeIds: string[]
+  typeIds: string[],
+  rng: Rng
 ): FoodItem[] {
   const items: FoodItem[] = [];
   let i = 0;
   for (let at = startAt; at < LENGTH - 120; at += step) {
-    // Deterministic zig-zag across lanes, cycling through the food types.
-    const lane = (laneSeed + i * 3) % LANES;
-    const type = typeIds[(i + laneSeed) % typeIds.length];
-    items.push({ id: `${prefix}-${i}`, lane, at, type });
+    const lane = Math.floor(rng() * LANES) % LANES;
+    const type = typeIds[Math.floor(rng() * typeIds.length)];
+    // Jitter up to ±35% of the step, clamped clear of the start/finish.
+    const jitter = (rng() - 0.5) * step * 0.7;
+    const pos = Math.max(80, Math.min(LENGTH - 140, at + jitter));
+    items.push({ id: `${prefix}-${i}`, lane, at: pos, type });
     i++;
   }
   return items;
 }
 
 /**
- * Hand-placed "complicated zones": a 🚀 booster sitting in one lane, with junk
- * food filling some of the other lanes at the same distance. The zone is always
+ * Seeded "complicated zones": a 🚀 booster sitting in one lane, with junk food
+ * filling some of the other lanes at the same distance. The zone is always
  * dodgeable — there's the booster's own (clean) lane to grab the burst, plus a
  * guaranteed junk-free escape lane to coast through if you'd rather skip it. The
  * junk in between makes reaching the 🚀 a precise merge — risk/reward, not a wall.
+ * The zone's distance and booster lane vary per seed; the invariant (two safe
+ * lanes) is preserved.
  */
-const BOOST_ZONES: { at: number; lane: number }[] = [
-  { at: 3000, lane: 0 },
-  { at: 6500, lane: 3 },
-  { at: 9500, lane: 1 },
-];
-
-function buildBoostZones(): { boosters: FoodItem[]; gauntletJunk: FoodItem[] } {
+function buildBoostZones(rng: Rng): {
+  boosters: FoodItem[];
+  gauntletJunk: FoodItem[];
+} {
   const boosters: FoodItem[] = [];
   const gauntletJunk: FoodItem[] = [];
-  BOOST_ZONES.forEach((zone, z) => {
+  const span = LENGTH / (BOOST_ZONE_COUNT + 1);
+  for (let z = 0; z < BOOST_ZONE_COUNT; z++) {
+    // Spread the zones out, jittered within their slice so they never sit on a
+    // fixed grid (and clear of the finish line).
+    const at = Math.min(
+      LENGTH - 400,
+      Math.round(span * (z + 1) + (rng() - 0.5) * span * 0.5)
+    );
+    const lane = Math.floor(rng() * LANES) % LANES;
     boosters.push({
       id: `boost-${z}`,
-      lane: zone.lane,
-      at: zone.at,
+      lane,
+      at,
       type: BOOST_IDS[z % BOOST_IDS.length],
     });
     // The lane farthest from the booster is left as a guaranteed junk-free
@@ -81,39 +100,46 @@ function buildBoostZones(): { boosters: FoodItem[]; gauntletJunk: FoodItem[] } {
     // lane and the escape lane). Every remaining lane gets junk.
     let escape = 0;
     let best = -1;
-    for (let lane = 0; lane < LANES; lane++) {
-      const d = Math.abs(lane - zone.lane);
+    for (let l = 0; l < LANES; l++) {
+      const d = Math.abs(l - lane);
       if (d > best) {
         best = d;
-        escape = lane;
+        escape = l;
       }
     }
     let g = 0;
-    for (let lane = 0; lane < LANES; lane++) {
-      if (lane === zone.lane || lane === escape) continue;
+    for (let l = 0; l < LANES; l++) {
+      if (l === lane || l === escape) continue;
       gauntletJunk.push({
         id: `gauntlet-${z}-${g}`,
-        lane,
-        at: zone.at,
+        lane: l,
+        at,
         type: BAD_IDS[g % BAD_IDS.length],
       });
       g++;
     }
-  });
+  }
   return { boosters, gauntletJunk };
 }
 
-const { boosters: BOOSTERS, gauntletJunk: GAUNTLET_JUNK } = buildBoostZones();
+/** Build a full track from a seed. Same seed → same track everywhere; different
+ *  matches (matchId) get different obstacle/food layouts. */
+export function buildTrack(seed: string | number): Track {
+  const rng = seededRng(seed);
+  const { boosters, gauntletJunk } = buildBoostZones(rng);
+  return {
+    id: typeof seed === "string" ? seed : `seed-${seed}`,
+    lanes: LANES,
+    length: LENGTH,
+    // Foods placed a bit closer together so energy is easier to sustain.
+    goodFood: buildFood("good", 140, 150, GOOD_IDS, rng),
+    junkFood: [...buildFood("junk", 230, 210, BAD_IDS, rng), ...gauntletJunk],
+    boosters,
+  };
+}
 
-export const TRACK: Track = {
-  id: "classic-v1",
-  lanes: LANES,
-  length: LENGTH,
-  // Foods placed a bit closer together so energy is easier to sustain.
-  goodFood: buildFood("good", 140, 150, 2, GOOD_IDS),
-  junkFood: [...buildFood("junk", 230, 210, 5, BAD_IDS), ...GAUNTLET_JUNK],
-  boosters: BOOSTERS,
-};
+/** Default track for single-player/demo and any static `TRACK` importers. */
+export const TRACK: Track = buildTrack("classic-v1");
 
 /** Crowd signs lining the track, alternating sides. `text` cycles through the
  *  localized list of funny signs. */

@@ -25,6 +25,56 @@ A joiner whose invite link never yields any presence (a dead/expired link) sees
 a **"race not found"** message with a way back to the browser instead of waiting
 on an empty lobby.
 
+The invite link is `/play?m=<matchId>&h=<hostPubkey>` and lands the invitee
+straight in the **runner lobby** for that match. A logged-out invitee is routed
+through sign-in first; the `?m=&h=` is preserved in the `next` so after login
+they return to the lobby (not the generic races browser).
+
+### Joining, starting, and reconnecting
+
+- **A match starts once.** When the host starts (or it auto-starts at 4/4), the
+  lifecycle moves `waiting → countdown → playing → finished` and never goes
+  backward. `start()` is a no-op once we've left `waiting`.
+- **No late joins.** Each peer's presence (kind `30078`, replaceable, retained by
+  relays) carries the current `status`. A client that opens the link **after** the
+  race started — and was never on the roster — sees **"this race already
+  started"** and cannot join. This also stops a player who left from re-opening
+  the link and **restarting** the match.
+- **Reconnection.** A player who *was* on the roster can re-open the link and
+  rejoin the race in progress (or see the results if it already finished) — it
+  never restarts the match for anyone. Their own runner resumes from progress
+  saved in `sessionStorage` (keyed by matchId, ~1 Hz); a reconnect from a fresh
+  device with no saved progress resumes from the start line. (Live runner frames
+  are ephemeral, so exact mid-race position can't be reconstructed from relays —
+  this is the casual, no-authoritative-server tradeoff.)
+
+### Ending a race
+
+The race ends the **instant the first runner crosses the finish line** — that
+runner wins, and **every** client swaps to the results screen immediately (no
+waiting for stragglers). Non-finishers are ranked by total points, where the
+**arrival placement adds a points bonus** (`POINTS.placement`), so where you
+reached the line still counts. The non-winners see the **⚡ Zap the winner**
+button.
+
+### Amber / NIP-46 signing without per-frame prompts
+
+Runner frames broadcast ~5 Hz. Prompting a remote signer (Amber) for every frame
+is unusable, so each client generates a **throwaway session keypair** per match.
+The real identity signs the **presence** event once (which announces the session
+key, binding the two); all high-frequency traffic (runner `21000`, finish
+`21002`) is signed **locally** with the session key — zero prompts during the
+race. The frames still carry the **real** pubkey in their content, so roster,
+standings and the leaderboard are unaffected. Clients reject a frame whose signer
+doesn't match the session key its claimed identity announced (anti-spoof).
+
+### Rivals on the track
+
+Other players render as their **actual animated character sprite** (by lane),
+with a name label — not a colored dot. All four character sheets are loaded in a
+match; a rival whose sheet fails to load falls back to a translucent colored
+ghost. The minimap still uses lane-colored dots.
+
 ## Testing multiplayer locally
 
 > [!IMPORTANT]
@@ -60,9 +110,12 @@ break** — back to the start line. This reset is **per-player and entirely
 local**: it changes only that client's own runner and **emits no event**, so one
 player's bathroom break cannot reset another's race.
 
-Because the track is **deterministic** (the same food sits at the same spots for
-everyone), two players running similar lines will eat the same junk and may hit
-the bathroom at nearly the same time — which can look causal but isn't.
+Because the track is **deterministic per match** (its obstacle/food layout is
+seeded from the `matchId`, so every player in that match sees the exact same
+track while different matches differ), two players running similar lines will eat
+the same junk and may hit the bathroom at nearly the same time — which can look
+causal but isn't. The booster gauntlets stay dodgeable on every seed (the 🚀 lane
+plus a guaranteed junk-free escape lane).
 
 The one code-level way a race could appear to "restart" is the Phaser game being
 rebuilt by React. The live-match snapshot updates ~5 Hz, so `GameCanvas` is

@@ -15,10 +15,11 @@ import {
   RUNNER_SPRITE,
   TRACK_DRAW_DISTANCE,
 } from "../config";
-import { TRACK, SIGNS, type FoodItem } from "../track";
+import { TRACK, SIGNS, buildTrack, type FoodItem, type Track } from "../track";
 import { FOODS } from "../foods";
 import { Sound } from "../sound";
 import { laneColor, type RemoteRunnerView } from "../remote-runners";
+import { CHARACTERS, type Character } from "../characters";
 import type { RaceNet } from "../race-net";
 import type { RunnerStatus } from "@/lib/multiplayer/types";
 
@@ -83,6 +84,10 @@ export class RaceScene extends Phaser.Scene {
   private world!: Phaser.GameObjects.Graphics; // food bubbles, signs, finish
   private remoteG?: Phaser.GameObjects.Graphics; // other players' ghosts (MP only)
   private minimapG?: Phaser.GameObjects.Graphics; // all-runner minimap (MP only)
+  // Other players drawn as their actual (animated) character sprite, pooled by
+  // pubkey. A name label rides above each. Built lazily in a match only.
+  private remoteSprites = new Map<string, Phaser.GameObjects.Sprite>();
+  private remoteLabels = new Map<string, Phaser.GameObjects.Text>();
   private runnerG!: Phaser.GameObjects.Graphics; // runner shadow + vector fallback
   private runnerSprite?: Phaser.GameObjects.Sprite; // used when a sheet is present
   private useSprite = false;
@@ -104,6 +109,14 @@ export class RaceScene extends Phaser.Scene {
 
   // Localized in-game strings (handed in via the game registry).
   private strings: GameStrings = DEFAULT_STRINGS;
+
+  // Per-match track (obstacle/food layout). Seeded by the matchId so every
+  // player in a match shares it; defaults to the classic track single-player.
+  private track: Track = TRACK;
+  // Live match id (when in a match) — keys the resume-on-reconnect store.
+  private matchId?: string;
+  // Accumulates dt to throttle persisting progress for reconnects (seconds).
+  private resumeSaveAcc = 0;
 
   // Player state.
   private now = 0; // last frame timestamp (ms)
@@ -154,6 +167,21 @@ export class RaceScene extends Phaser.Scene {
       frameWidth: ch?.frameWidth ?? RUNNER_SPRITE.frameWidth,
       frameHeight: ch?.frameHeight ?? RUNNER_SPRITE.frameHeight,
     });
+
+    // In a match, also load every character sheet so rivals render as their
+    // real (animated) character, not a colored dot. Keyed by sheet path, so a
+    // sheet shared with the local runner isn't loaded twice.
+    if (this.registry.get("raceNet")) {
+      for (const c of CHARACTERS) {
+        if (this.textures.exists(c.sheet) || c.sheet === this.spriteKey) {
+          continue;
+        }
+        this.load.spritesheet(c.sheet, c.sheet, {
+          frameWidth: c.frameWidth,
+          frameHeight: c.frameHeight,
+        });
+      }
+    }
   }
 
   create() {
@@ -177,6 +205,11 @@ export class RaceScene extends Phaser.Scene {
 
     this.world = this.add.graphics().setDepth(1);
 
+    // Per-match track: seed the obstacle/food layout off the matchId so every
+    // player in this match shares the exact same track (no syncing needed).
+    this.matchId = this.registry.get("matchId") as string | undefined;
+    this.track = this.matchId ? buildTrack(this.matchId) : TRACK;
+
     // Multiplayer: optional realtime port (set by the lobby). Absent in
     // single-player, in which case none of the broadcast/ghost code runs.
     this.net = this.registry.get("raceNet") as RaceNet | undefined;
@@ -184,6 +217,19 @@ export class RaceScene extends Phaser.Scene {
       // Ghosts sit just under the local runner (depth 3); minimap is HUD-level.
       this.remoteG = this.add.graphics().setDepth(2);
       this.minimapG = this.add.graphics().setDepth(9);
+      // A run animation per character whose sheet loaded, so rivals animate as
+      // themselves. Keyed separately from the local "run" to avoid clashes.
+      for (const c of CHARACTERS) {
+        const key = `remote-run-${c.id}`;
+        if (this.textures.exists(c.sheet) && !this.anims.exists(key)) {
+          this.anims.create({
+            key,
+            frames: this.anims.generateFrameNumbers(c.sheet, {}),
+            frameRate: RUNNER_SPRITE.frameRate,
+            repeat: -1,
+          });
+        }
+      }
       // The RaceNet lifecycle is owned by React (MatchProvider) — it outlives
       // this scene (lobby → race), so we don't dispose it on shutdown.
     }
@@ -271,6 +317,7 @@ export class RaceScene extends Phaser.Scene {
     });
 
     this.resetRace();
+    this.applyResumeOnBoot();
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer) {
@@ -386,6 +433,74 @@ export class RaceScene extends Phaser.Scene {
     this.resolved.clear();
   }
 
+  /**
+   * Reconnect: if we have saved progress for this match (a page reload mid-
+   * race), resume from there instead of the start line and skip the "on your
+   * marks" hold. Called once at boot only — never on a solo R-restart, which
+   * must always start from zero.
+   */
+  private applyResumeOnBoot(): void {
+    const resumed = this.loadResume();
+    if (resumed === null) return;
+    this.playerDistance = resumed;
+    this.startHold = 0;
+    // Mark everything already behind us as resolved so we don't re-trigger
+    // food/obstacles we passed before disconnecting.
+    for (const f of [
+      ...this.track.goodFood,
+      ...this.track.junkFood,
+      ...this.track.boosters,
+    ]) {
+      if (f.at <= resumed) this.resolved.add(f.id);
+    }
+  }
+
+  /** sessionStorage key for this match's resume progress (null if not a match). */
+  private resumeKey(): string | null {
+    return this.net && this.matchId ? `bbr:dist:${this.matchId}` : null;
+  }
+
+  /** Saved distance for this match, or null (no match / no save / bad value). */
+  private loadResume(): number | null {
+    const key = this.resumeKey();
+    if (!key) return null;
+    try {
+      const raw = window.sessionStorage.getItem(key);
+      if (raw === null) return null;
+      const dist = Number(raw);
+      return Number.isFinite(dist) && dist > 0 && dist < TRACK.length
+        ? dist
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Persist current distance so a reload mid-race can resume (throttled). */
+  private persistResume(dt: number): void {
+    const key = this.resumeKey();
+    if (!key || this.finished) return;
+    this.resumeSaveAcc += dt;
+    if (this.resumeSaveAcc < 1) return; // ~1 Hz is plenty
+    this.resumeSaveAcc = 0;
+    try {
+      window.sessionStorage.setItem(key, String(Math.round(this.playerDistance)));
+    } catch {
+      // Storage unavailable (private mode / quota) — resume is best-effort.
+    }
+  }
+
+  /** Drop the saved progress (race over — a fresh run must start from zero). */
+  private clearResume(): void {
+    const key = this.resumeKey();
+    if (!key) return;
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Ignore — nothing to clean up if storage is unavailable.
+    }
+  }
+
   private pick(arr: string[]): string {
     if (!arr || arr.length === 0) return "";
     return arr[Math.floor(Math.random() * arr.length)];
@@ -426,6 +541,7 @@ export class RaceScene extends Phaser.Scene {
       if (this.boostTimer > 0) this.boostTimer -= dt;
       this.checkFinish();
       this.elapsed += dt;
+      this.persistResume(dt);
     }
 
     if (this.toastTimer > 0) {
@@ -515,7 +631,11 @@ export class RaceScene extends Phaser.Scene {
       Math.abs(f.lane - this.playerLane) <= HIT_LANE_TOLERANCE ||
       f.lane === lane;
 
-    for (const f of [...TRACK.goodFood, ...TRACK.junkFood, ...TRACK.boosters]) {
+    for (const f of [
+      ...this.track.goodFood,
+      ...this.track.junkFood,
+      ...this.track.boosters,
+    ]) {
       if (this.resolved.has(f.id)) continue;
       if (f.at > this.playerDistance) continue; // not reached yet
       this.resolved.add(f.id);
@@ -577,6 +697,7 @@ export class RaceScene extends Phaser.Scene {
       this.finished = true;
       this.status = "finished";
       this.points += POINTS.finishBonus;
+      this.clearResume(); // race over — a future run must start from zero
       Sound.finish();
       // In a match, "press R to race again" doesn't apply — the result stands.
       const tail = this.net ? "" : `\n${this.strings.again}`;
@@ -809,7 +930,11 @@ export class RaceScene extends Phaser.Scene {
     }
 
     // Food: a bubble with the food's emoji inside. Far-to-near.
-    const visible = [...TRACK.goodFood, ...TRACK.junkFood, ...TRACK.boosters]
+    const visible = [
+      ...this.track.goodFood,
+      ...this.track.junkFood,
+      ...this.track.boosters,
+    ]
       .map((f) => ({ f, def: FOODS[f.type] }))
       .filter(({ f, def }) => {
         if (!def) return false;
@@ -935,9 +1060,16 @@ export class RaceScene extends Phaser.Scene {
     g.fillEllipse(cx, headY - 5, 19, 10);
   }
 
-  /** Other players' runners as translucent colored ghosts on the track. Only
-   *  those ahead of us and within view are drawable; the rest live on the
-   *  minimap. Far-to-near so nearer ghosts paint on top. */
+  /** The character that owns a given lane (rivals render as their own runner). */
+  private laneCharacter(lane: number): Character | undefined {
+    const l = Phaser.Math.Clamp(Math.round(lane), 0, LANES - 1);
+    return CHARACTERS.find((c) => c.startLane === l);
+  }
+
+  /** Other players drawn as their actual animated character on the track (with
+   *  a name label), pooled by pubkey. Only those ahead of us and within view
+   *  show; the rest live on the minimap. Far-to-near so nearer ones paint on
+   *  top. A remote whose sheet didn't load falls back to a colored ghost. */
   private drawRemotes() {
     const g = this.remoteG;
     if (!g) return;
@@ -948,22 +1080,101 @@ export class RaceScene extends Phaser.Scene {
       .filter(({ d }) => d >= 0 && d <= VIEW_DISTANCE)
       .sort((a, b) => b.d - a.d);
 
-    for (const { r, d } of visible) {
-      const p = this.project(d, r.lane);
-      const alpha = r.status === "finished" ? 0.35 : 0.62;
-      const h = Math.max(10, 46 * p.s);
-      const w = Math.max(5, 16 * p.s);
+    const drawn = new Set<string>();
 
-      // Shadow.
+    visible.forEach(({ r, d }, i) => {
+      const p = this.project(d, r.lane);
+      const alpha = r.status === "finished" ? 0.5 : 1;
+      const character = this.laneCharacter(r.lane);
+
+      // Ground shadow (kept for both the sprite and the ghost fallback).
       g.fillStyle(0x000000, 0.18);
-      g.fillEllipse(p.x, p.y - 2, w * 2, 8 * p.s);
-      // Body + head.
-      g.fillStyle(r.color, alpha);
-      g.fillRoundedRect(p.x - w / 2, p.y - h, w, h * 0.72, Math.max(2, 6 * p.s));
-      g.fillCircle(p.x, p.y - h, w * 0.5);
-      g.lineStyle(Math.max(1, 1.5 * p.s), 0xffffff, alpha * 0.7);
-      g.strokeCircle(p.x, p.y - h, w * 0.5);
+      g.fillEllipse(p.x, p.y - 2, Math.max(10, 30 * p.s), 8 * p.s);
+
+      if (character && this.textures.exists(character.sheet)) {
+        const spr = this.getRemoteSprite(r.pubkey, character.sheet);
+        const moving = r.status === "running";
+        const animKey = `remote-run-${character.id}`;
+        if (moving) {
+          if (!spr.anims.isPlaying) spr.play(animKey);
+        } else if (spr.anims.isPlaying) {
+          spr.anims.pause();
+        }
+        spr
+          .setPosition(p.x, p.y + RUNNER_SPRITE.offsetY * p.s)
+          .setScale(RUNNER_SPRITE.scale * p.s)
+          .setAlpha(alpha)
+          // Nearer rivals (later in the far-to-near list) sit on top.
+          .setDepth(2 + i * 0.001)
+          .setVisible(true);
+        this.drawRemoteLabel(r, p);
+        drawn.add(r.pubkey);
+      } else {
+        // No sheet → translucent colored ghost (same shape as before).
+        const h = Math.max(10, 46 * p.s);
+        const w = Math.max(5, 16 * p.s);
+        g.fillStyle(r.color, r.status === "finished" ? 0.35 : 0.62);
+        g.fillRoundedRect(
+          p.x - w / 2,
+          p.y - h,
+          w,
+          h * 0.72,
+          Math.max(2, 6 * p.s)
+        );
+        g.fillCircle(p.x, p.y - h, w * 0.5);
+      }
+    });
+
+    // Hide any pooled sprite/label whose runner isn't on screen this frame.
+    for (const [pubkey, spr] of this.remoteSprites) {
+      if (!drawn.has(pubkey)) {
+        spr.setVisible(false);
+        this.remoteLabels.get(pubkey)?.setVisible(false);
+      }
     }
+  }
+
+  /** Get (or lazily create) the pooled sprite for a remote runner. */
+  private getRemoteSprite(
+    pubkey: string,
+    sheet: string
+  ): Phaser.GameObjects.Sprite {
+    let spr = this.remoteSprites.get(pubkey);
+    if (!spr) {
+      spr = this.add.sprite(0, 0, sheet).setOrigin(0.5, 1).setDepth(2);
+      this.remoteSprites.set(pubkey, spr);
+    } else if (spr.texture.key !== sheet) {
+      spr.setTexture(sheet);
+    }
+    return spr;
+  }
+
+  /** A small name tag floating above a remote runner. */
+  private drawRemoteLabel(r: RemoteRunnerView, p: Projected): void {
+    if (!r.name) {
+      this.remoteLabels.get(r.pubkey)?.setVisible(false);
+      return;
+    }
+    let label = this.remoteLabels.get(r.pubkey);
+    if (!label) {
+      label = this.add
+        .text(0, 0, "", {
+          fontFamily: this.fontBody,
+          fontSize: "12px",
+          color: "#ffffff",
+          stroke: "#0b1f33",
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(7);
+      this.remoteLabels.set(r.pubkey, label);
+    }
+    label
+      .setText(r.name)
+      .setPosition(p.x, p.y - 70 * p.s)
+      .setScale(Math.max(0.7, p.s))
+      .setAlpha(r.status === "finished" ? 0.6 : 1)
+      .setVisible(true);
   }
 
   /** A compact vertical track showing every runner's progress (self + remotes)
@@ -1058,7 +1269,10 @@ export const createGameConfig = (
   strings?: GameStrings,
   character?: SpriteChoice,
   onFinish?: (result: { time: number; points: number }) => void,
-  raceNet?: RaceNet
+  raceNet?: RaceNet,
+  /** Live match id — seeds this match's obstacle/food layout (so every player
+   *  in the match shares it) and keys the local resume-on-reconnect store. */
+  matchId?: string
 ): Phaser.Types.Core.GameConfig => ({
   type: Phaser.AUTO,
   parent,
@@ -1078,6 +1292,7 @@ export const createGameConfig = (
       if (character) game.registry.set("character", character);
       if (onFinish) game.registry.set("onFinish", onFinish);
       if (raceNet) game.registry.set("raceNet", raceNet);
+      if (matchId) game.registry.set("matchId", matchId);
     },
   },
   scene: [RaceScene],

@@ -94,12 +94,18 @@ export function buildFinishEvent(
   };
 }
 
-/** A validated, typed inbound event. */
+/**
+ * A validated, typed inbound event. For `runner`/`finish`, `signer` is the
+ * event's outer Nostr author (the key that actually signed it) — which is the
+ * sender's ephemeral session key, *not* the real identity in `data.pubkey`.
+ * Clients verify it matches the `sessionKey` that identity announced in its
+ * presence, so a peer can't spoof frames as someone else.
+ */
 export type ParsedEvent =
   | { type: "discovery"; data: MatchDiscovery }
   | { type: "control"; data: MatchControl }
-  | { type: "runner"; data: RunnerState }
-  | { type: "finish"; data: MatchFinish };
+  | { type: "runner"; data: RunnerState; signer: string }
+  | { type: "finish"; data: MatchFinish; signer: string };
 
 /**
  * Validate an untrusted relay event into a typed payload, or `null` if the
@@ -125,11 +131,15 @@ export function parseEvent(event: NostrEvent): ParsedEvent | null {
     }
     case KIND.RUNNER: {
       const r = RunnerStateSchema.safeParse(content);
-      return r.success ? { type: "runner", data: r.data } : null;
+      return r.success
+        ? { type: "runner", data: r.data, signer: event.pubkey }
+        : null;
     }
     case KIND.FINISH: {
       const r = MatchFinishSchema.safeParse(content);
-      return r.success ? { type: "finish", data: r.data } : null;
+      return r.success
+        ? { type: "finish", data: r.data, signer: event.pubkey }
+        : null;
     }
     default:
       return null;
