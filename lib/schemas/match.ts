@@ -39,6 +39,9 @@ export const MatchPlayerSchema = z.object({
   /** Local-only: when this seat was claimed (presence `createdAt`, unix ms).
    *  Used to resolve two peers racing for the same lane deterministically. */
   claimedAt: z.number().int().nonnegative().optional(),
+  /** Ephemeral per-match signing key this peer announced (binds their runner/
+   *  finish frames to this identity without re-prompting Amber). */
+  sessionKey: NostrPubkeySchema.optional(),
 });
 export type MatchPlayer = z.infer<typeof MatchPlayerSchema>;
 
@@ -69,6 +72,10 @@ export const MatchDiscoverySchema = z.object({
   name: z.string().max(80).optional(),
   status: MatchLobbyStatusSchema.default("waiting"),
   createdAt: z.number().int().nonnegative(),
+  /** Ephemeral signing key for this peer's in-match frames (runner/finish), so
+   *  Amber/NIP-46 isn't prompted per frame. Bound here by the real identity
+   *  that signs this presence; the binding lets clients reject spoofed frames. */
+  sessionKey: NostrPubkeySchema.optional(),
 });
 export type MatchDiscovery = z.infer<typeof MatchDiscoverySchema>;
 

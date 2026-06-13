@@ -218,6 +218,58 @@ describe("MatchClient plausibility guard (anti-cheat)", () => {
     victim.leave();
   });
 
+  it("rejects a runner frame not signed by the announced session key", async () => {
+    const hub = new MemoryHub();
+    const hostSigner = makeSigner();
+    const guestSigner = makeSigner();
+    const host = new MatchClient({
+      transport: new MemoryTransport(hub),
+      signer: hostSigner,
+      matchId: "ac3",
+      trackId: "classic-v1",
+      isHost: true,
+    });
+    const guest = new MatchClient({
+      transport: new MemoryTransport(hub),
+      signer: guestSigner,
+      matchId: "ac3",
+      trackId: "classic-v1",
+      host: hostSigner.pubkey,
+    });
+
+    // Both announce — guest's presence binds its ephemeral session key.
+    await host.announceSelf({ lane: 0, name: "Host" });
+    await guest.announceSelf({ lane: 1, name: "Guest" });
+
+    // A legit frame (signed by guest's session key) is accepted.
+    await guest.broadcastRunner({ ...moving, lane: 1, progress: 0.5 }, { force: true });
+    expect(host.getSnapshot().runners[guestSigner.pubkey]?.progress).toBeCloseTo(
+      0.5
+    );
+
+    // An impostor forges a frame *claiming* to be the guest, signed by a foreign
+    // key. The binding check drops it, so the guest's state is unchanged.
+    const impostor = makeSigner();
+    const cheat = new MemoryTransport(hub);
+    await cheat.publish(
+      await impostor.sign(
+        buildRunnerEvent("ac3", {
+          ...moving,
+          pubkey: guestSigner.pubkey,
+          lane: 1,
+          progress: 0.95,
+          t: Date.now() + 1000,
+        })
+      )
+    );
+    expect(host.getSnapshot().runners[guestSigner.pubkey]?.progress).toBeCloseTo(
+      0.5
+    );
+
+    host.leave();
+    guest.leave();
+  });
+
   it("rejects a finish stamped before the race clock started", async () => {
     const hub = new MemoryHub();
     const hostSigner = makeSigner();

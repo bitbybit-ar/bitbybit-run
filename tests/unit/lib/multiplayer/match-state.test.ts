@@ -9,6 +9,7 @@ import {
   resolveStandings,
 } from "@/lib/multiplayer/match-state";
 import type { RunnerState } from "@/lib/multiplayer/types";
+import { POINTS } from "@/lib/game/config";
 
 const A = "a".repeat(64);
 const B = "b".repeat(64);
@@ -162,81 +163,121 @@ describe("match-state control + countdown", () => {
   });
 });
 
+function runnerEvent(pubkey: string, over: Partial<RunnerState> = {}): ParsedEvent {
+  return { type: "runner", data: runner(pubkey, over), signer: pubkey };
+}
+
+function finishEvent(
+  pubkey: string,
+  over: Partial<{ finishTime: number; position: number; points: number }> = {}
+): ParsedEvent {
+  return {
+    type: "finish",
+    data: {
+      pubkey,
+      finishTime: over.finishTime ?? 100,
+      position: over.position ?? 1,
+      points: over.points ?? 500,
+    },
+    signer: pubkey,
+  };
+}
+
 describe("match-state runner merge", () => {
   it("keeps the newest frame per pubkey and drops stale ones", () => {
     let s = base();
-    s = applyEvent(s, {
-      type: "runner",
-      data: runner(A, { t: 10, progress: 0.2 }),
-    });
+    s = applyEvent(s, runnerEvent(A, { t: 10, progress: 0.2 }));
     expect(s.runners[A].progress).toBeCloseTo(0.2);
 
     // stale (older t) → ignored, returns same reference
-    const same = applyEvent(s, {
-      type: "runner",
-      data: runner(A, { t: 5, progress: 0.9 }),
-    });
+    const same = applyEvent(s, runnerEvent(A, { t: 5, progress: 0.9 }));
     expect(same).toBe(s);
 
     // newer t → applied
-    s = applyEvent(s, {
-      type: "runner",
-      data: runner(A, { t: 20, progress: 0.6 }),
-    });
+    s = applyEvent(s, runnerEvent(A, { t: 20, progress: 0.6 }));
     expect(s.runners[A].progress).toBeCloseTo(0.6);
   });
 });
 
 describe("match-state finish + standings", () => {
-  it("ranks finishers by earliest finishTime and completes the match", () => {
+  it("finishes the race the instant the first runner crosses", () => {
     let s = base();
-    s = applyEvent(s, {
-      type: "finish",
-      data: { pubkey: B, finishTime: 200, position: 1, points: 510 },
-    });
-    expect(s.status).not.toBe("finished"); // only one of two finished
-    expect(isComplete(s)).toBe(false);
+    // B is mid-race with more points; A crosses the line first.
+    s = applyEvent(s, runnerEvent(B, { t: 1, points: 90, progress: 0.5 }));
+    s = applyEvent(s, finishEvent(A, { finishTime: 100, points: 520 }));
 
-    s = applyEvent(s, {
-      type: "finish",
-      data: { pubkey: A, finishTime: 100, position: 1, points: 520 },
-    });
-    expect(isComplete(s)).toBe(true);
-    expect(s.status).toBe("finished");
-    // A finished earlier (100 < 200) → position 1 despite arriving second.
-    expect(s.standings.map((r) => r.pubkey)).toEqual([A, B]);
+    expect(s.status).toBe("finished"); // first crossing ends it for everyone
+    // The runner who crossed wins; the rest trail (B never finished).
+    expect(s.standings[0].pubkey).toBe(A);
     expect(s.standings[0].position).toBe(1);
-    expect(s.standings[1].position).toBe(2);
+    expect(s.standings[1].pubkey).toBe(B);
+    expect(s.standings[1].finishTime).toBeNull();
   });
 
   it("does not let a later duplicate finish overwrite the first", () => {
     let s = base();
-    s = applyEvent(s, {
-      type: "finish",
-      data: { pubkey: A, finishTime: 100, position: 1, points: 500 },
-    });
-    const same = applyEvent(s, {
-      type: "finish",
-      data: { pubkey: A, finishTime: 300, position: 2, points: 999 },
-    });
+    s = applyEvent(s, finishEvent(A, { finishTime: 100, points: 500 }));
+    const same = applyEvent(
+      s,
+      finishEvent(A, { finishTime: 300, position: 2, points: 999 })
+    );
     expect(same).toBe(s);
+  });
+
+  it("still reports the full roster once complete", () => {
+    let s = base();
+    s = applyEvent(s, finishEvent(B, { finishTime: 200 }));
+    s = applyEvent(s, finishEvent(A, { finishTime: 100 }));
+    expect(isComplete(s)).toBe(true);
+    // A finished earlier (100 < 200) → ranks first despite arriving second.
+    expect(s.standings.map((r) => r.pubkey)).toEqual([A, B]);
   });
 });
 
 describe("match-state resolveStandings", () => {
   it("orders unfinished players by points behind finishers", () => {
     let s = base();
-    s = applyEvent(s, {
-      type: "runner",
-      data: runner(A, { t: 1, points: 40 }),
-    });
-    s = applyEvent(s, {
-      type: "runner",
-      data: runner(B, { t: 1, points: 90 }),
-    });
+    s = applyEvent(s, runnerEvent(A, { t: 1, points: 40 }));
+    s = applyEvent(s, runnerEvent(B, { t: 1, points: 90 }));
     const standings = resolveStandings(s);
     // No finishers → higher points first.
     expect(standings[0].pubkey).toBe(B);
     expect(standings[0].finishTime).toBeNull();
+  });
+
+  it("adds a placement bonus by arrival order, so position counts toward points", () => {
+    let s = base();
+    // Both unfinished. A is further along the track but B has more base points.
+    s = applyEvent(s, runnerEvent(A, { t: 1, points: 0, progress: 0.8 }));
+    s = applyEvent(s, runnerEvent(B, { t: 1, points: 200, progress: 0.2 }));
+    const standings = resolveStandings(s);
+    const byKey = Object.fromEntries(standings.map((r) => [r.pubkey, r]));
+    // A arrives 1st (further) → +placement[0]; B arrives 2nd → +placement[1].
+    expect(byKey[A].points).toBe(POINTS.placement[0]);
+    expect(byKey[B].points).toBe(200 + POINTS.placement[1]);
+  });
+});
+
+describe("match-state status adoption from presence", () => {
+  it("advances the lifecycle forward from a peer's announced status", () => {
+    let s = base();
+    expect(s.status).toBe("waiting");
+    // A reconnecting client learns from retained presence that it's playing.
+    s = applyEvent(s, {
+      type: "discovery",
+      data: {
+        matchId: "m1",
+        host: A,
+        trackId: "classic-v1",
+        pubkey: A,
+        lane: 0,
+        status: "playing",
+        createdAt: 1,
+      },
+    });
+    expect(s.status).toBe("playing");
+    // Never moves backward: a stale "waiting" presence can't un-start it.
+    s = applyEvent(s, presence(B, 1));
+    expect(s.status).toBe("playing");
   });
 });

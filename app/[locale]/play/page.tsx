@@ -8,17 +8,31 @@ import styles from "./page.module.scss";
 
 type Props = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ m?: string; h?: string }>;
 };
 
 // The competitive game requires an identity — send anonymous visitors to sign in
-// (they can still try the free /demo). Returns to /play after login.
-export default async function PlayPage({ params }: Props) {
+// (they can still try the free /demo). Returns to /play after login — preserving
+// an invite link's `?m=&h=` so an invited (logged-out) player lands back in the
+// runner lobby for that match, not the generic races browser.
+export default async function PlayPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
   const session = await getSession();
   if (!session) {
-    redirect({ href: { pathname: "/sign-in", query: { next: "/play" } }, locale });
+    const { m, h } = await searchParams;
+    const query = new URLSearchParams();
+    if (m) query.set("m", m);
+    if (h) query.set("h", h);
+    const qs = query.toString();
+    redirect({
+      href: {
+        pathname: "/sign-in",
+        query: { next: qs ? `/play?${qs}` : "/play" },
+      },
+      locale,
+    });
     return null;
   }
 

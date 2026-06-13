@@ -11,7 +11,7 @@
  * React, but a headless Node script (or a test) can drive it the same way.
  */
 import type { NostrEvent } from "@/lib/nostr/types";
-import type { SignerHandle } from "@/lib/nostr/signers";
+import { makeSessionSigner, type SignerHandle } from "@/lib/nostr/signers";
 import type {
   MatchDiscovery,
   MatchFinish,
@@ -74,6 +74,11 @@ export class MatchClient {
 
   private readonly transport: Transport;
   private readonly signer: SignerHandle;
+  /** Throwaway per-match key that signs the high-frequency frames (runner,
+   *  finish) locally, so a remote signer (Amber) isn't prompted per frame. The
+   *  presence event (signed by the real `signer`) announces this key, binding
+   *  the two; the frames' content still carries the real pubkey. */
+  private readonly sessionSigner: SignerHandle;
   private readonly isHost: boolean;
   private readonly host: string;
   private readonly intervalMs: number;
@@ -97,6 +102,7 @@ export class MatchClient {
     this.trackId = opts.trackId;
     this.transport = opts.transport;
     this.signer = opts.signer;
+    this.sessionSigner = makeSessionSigner();
     this.isHost = opts.isHost ?? false;
     this.host = opts.host ?? (this.isHost ? opts.signer.pubkey : "");
     this.intervalMs = 1000 / (opts.broadcastHz ?? 5);
@@ -150,8 +156,10 @@ export class MatchClient {
     await this.publishPresence();
   }
 
-  /** This peer's current self-presence payload, from the held seat. */
-  private presencePayload(): MatchDiscovery {
+  /** This peer's current self-presence payload, from the held seat. The status
+   *  can be overridden so we can publish a transition (e.g. "playing") whose
+   *  state hasn't been committed to `this.state` yet. */
+  private presencePayload(status = this.state.status): MatchDiscovery {
     const seat = this.lastSeat!;
     return {
       matchId: this.matchId,
@@ -160,16 +168,17 @@ export class MatchClient {
       pubkey: this.signer.pubkey,
       lane: seat.lane,
       name: seat.name,
-      status: this.state.status,
+      status,
       createdAt: seat.createdAt,
+      sessionKey: this.sessionSigner.pubkey,
     };
   }
 
   /** Sign + publish the held presence (no local apply). */
-  private async publishPresence(): Promise<void> {
+  private async publishPresence(status = this.state.status): Promise<void> {
     if (!this.lastSeat) return;
     const event = await this.signer.sign(
-      buildDiscoveryEvent(this.presencePayload(), this.state.status)
+      buildDiscoveryEvent(this.presencePayload(status), status)
     );
     await this.transport.publish(event);
   }
@@ -208,6 +217,10 @@ export class MatchClient {
   /** Host-only: send the start signal with a synced `startAt`. */
   async start(countdownMs = 3000): Promise<void> {
     this.assertHost("start");
+    // A match only ever starts once. If we already left "waiting" (including a
+    // host who rejoined a match that's mid-race or finished — its retained
+    // presence advances our status), refuse, so a race can never be restarted.
+    if (this.state.status !== "waiting") return;
     const startAt = Date.now() + Math.max(0, countdownMs);
     const event = await this.signer.sign(
       buildControlEvent({
@@ -238,7 +251,9 @@ export class MatchClient {
       pubkey: this.signer.pubkey,
       t: now,
     };
-    const event = await this.signer.sign(
+    // Signed with the ephemeral session key (no Amber prompt); the payload's
+    // `pubkey` is still the real identity, bound to this key via presence.
+    const event = await this.sessionSigner.sign(
       buildRunnerEvent(this.matchId, payload)
     );
     await this.transport.publish(event);
@@ -257,7 +272,9 @@ export class MatchClient {
       position,
       points: input.points,
     };
-    const event = await this.signer.sign(
+    // Session-key signed (no Amber prompt at the line); content carries the
+    // real pubkey, bound to the session key via this peer's presence.
+    const event = await this.sessionSigner.sign(
       buildFinishEvent(this.matchId, payload)
     );
     await this.transport.publish(event);
@@ -327,9 +344,11 @@ export class MatchClient {
   private isPlausible(parsed: ParsedEvent): boolean {
     const future = Date.now() + STAMP_SKEW_TOLERANCE_MS;
     if (parsed.type === "runner") {
+      if (!this.boundSigner(parsed.data.pubkey, parsed.signer)) return false;
       return parsed.data.t <= future;
     }
     if (parsed.type === "finish") {
+      if (!this.boundSigner(parsed.data.pubkey, parsed.signer)) return false;
       if (parsed.data.finishTime > future) return false;
       // A finish can't predate the race clock (the earliest finishTime wins, so
       // a stamp before `startAt` would be an instant, illegitimate victory).
@@ -346,17 +365,43 @@ export class MatchClient {
     return true;
   }
 
+  /**
+   * Anti-spoof binding: a runner/finish frame is signed by the sender's
+   * ephemeral session key, and its content claims a real `pubkey`. Accept it
+   * only if that pubkey announced this exact session key in its presence. If
+   * we haven't seen the seat yet (presence still propagating), allow it —
+   * best-effort, matching the no-authoritative-server scope (ARCHITECTURE §0).
+   */
+  private boundSigner(claimedPubkey: string, signer: string): boolean {
+    const seat = this.state.players.find((p) => p.pubkey === claimedPubkey);
+    if (!seat?.sessionKey) return true;
+    return seat.sessionKey === signer;
+  }
+
   /** Schedule the countdown→playing flip; flips now if `startAt` has passed. */
   private armCountdown(state: MatchSnapshot): MatchSnapshot {
     if (state.status !== "countdown" || state.startAt === null) return state;
     this.clearCountdown();
     const delay = state.startAt - Date.now();
-    if (delay <= 0) return beginPlaying(state);
+    if (delay <= 0) return this.onBeginPlaying(state);
     this.countdownTimer = setTimeout(() => {
-      this.state = beginPlaying(this.state);
+      this.state = this.onBeginPlaying(this.state);
       this.emit();
     }, delay);
     return state;
+  }
+
+  /** Flip to playing and refresh our presence to "playing", so the retained
+   *  roster reflects the live lifecycle for anyone who (re)joins mid-race. */
+  private onBeginPlaying(state: MatchSnapshot): MatchSnapshot {
+    const next = beginPlaying(state);
+    if (next !== state && this.lastSeat) {
+      // Publish "playing" explicitly (the override) so the retained roster
+      // reflects the live status, without mutating this.state here — callers own
+      // committing + emitting the new snapshot.
+      void this.publishPresence("playing").catch(() => {});
+    }
+    return next;
   }
 
   private clearCountdown(): void {

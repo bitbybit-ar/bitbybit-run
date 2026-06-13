@@ -6,6 +6,42 @@ Dates use `YYYY-MM-DD`.
 
 ## [Unreleased]
 
+### Fixed (multiplayer playtest)
+
+- **Amber no longer prompts per frame.** Each client now mints a throwaway
+  **session keypair** per match; the real identity signs the presence event once
+  (announcing + binding that key) and all ~5 Hz runner/finish frames are signed
+  locally — so a NIP-46/Amber user gets no prompts during the race and their live
+  position actually propagates. Frames still carry the real pubkey; a frame whose
+  signer doesn't match the announced session key is rejected (anti-spoof).
+- **Rivals render as their real animated character** (by lane) with a name label,
+  instead of a moving colored dot. All character sheets load in a match; a
+  missing sheet falls back to the old ghost. Minimap keeps lane-colored dots.
+- **A race ends when the first runner crosses** — every client jumps to the
+  results screen at once (no waiting for stragglers). The crosser wins; the rest
+  rank by total points, and **finishing position adds a points bonus**
+  (`POINTS.placement`).
+- **No joining or restarting a started match.** A match's lifecycle is now carried
+  in retained presence, so a client that (re)joins learns it already started.
+  Latecomers who weren't on the roster see "race already started"; `start()` is a
+  no-op past `waiting`, killing the "leave → re-open link → restart" exploit. A
+  rostered player can reconnect and resume (progress saved in `sessionStorage`),
+  or see the results if it finished — without restarting it for anyone.
+- **Invite link lands in the runner lobby.** A logged-out invitee's `?m=&h=` is
+  now preserved through sign-in (in `next`), so after login they return to the
+  match lobby instead of the generic races browser.
+- **Global leaderboard is paginated** (10/player per page) with locale-aware
+  prev/next links; rank badges show true global rank and keep podium colors on
+  the real top three.
+
+### Changed
+
+- **Per-match track layout.** Obstacle/food positions are now seeded from the
+  `matchId` (`buildTrack(seed)` + `lib/game/rng.ts`), so every player in a match
+  shares the exact same track while different matches differ. Single-player/demo
+  use the fixed `"classic-v1"` seed. Booster gauntlets stay dodgeable on every
+  seed (🚀 lane + a guaranteed junk-free escape lane).
+
 ### Added
 
 - **Multiplayer realtime hardening (Nostr).** Optimizations to the serverless

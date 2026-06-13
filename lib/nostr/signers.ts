@@ -9,7 +9,7 @@
  * policy.
  */
 
-import { finalizeEvent } from "nostr-tools/pure";
+import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import type { BunkerSigner } from "nostr-tools/nip46";
 import type { NostrEvent, UnsignedNostrEvent } from "./types";
 import type { SignerType } from "@/lib/schemas/auth";
@@ -55,6 +55,20 @@ export function makeNsecSigner(
       };
     },
   };
+}
+
+/**
+ * A throwaway, in-memory keypair for a single match session — never persisted,
+ * never the user's real identity. Used to sign the high-frequency match traffic
+ * (runner frames ~5 Hz, finish) locally so a remote signer (Amber/NIP-46) isn't
+ * prompted for every frame. The real identity signs the presence/discovery
+ * event once, which announces this session key (`sessionKey`) and binds the two;
+ * the runner/finish payloads still carry the *real* pubkey in their content, so
+ * the roster, standings and leaderboard are unaffected. See docs/MULTIPLAYER.md.
+ */
+export function makeSessionSigner(): SignerHandle {
+  const secretKey = generateSecretKey();
+  return makeNsecSigner(secretKey, getPublicKey(secretKey));
 }
 
 export function makeNip46Signer(

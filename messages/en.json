@@ -31,7 +31,10 @@
     "wins": "Wins",
     "points": "Points",
     "races": "Races",
-    "empty": "No races yet — be the first to top the board."
+    "empty": "No races yet — be the first to top the board.",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}"
   },
   "play": {
     "phase": "Multiplayer race",
@@ -64,6 +67,11 @@
     },
     "notFound": {
       "title": "This race doesn't exist or already ended",
+      "cta": "Browse open races"
+    },
+    "alreadyStarted": {
+      "title": "This race already started — you can't join now",
+      "titleFinished": "This race already finished",
       "cta": "Browse open races"
     },
     "results": {

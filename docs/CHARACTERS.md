@@ -32,6 +32,10 @@ plugs straight into the game pipeline.
 - **Naming:** `runner-<id>.png` (back → in-game) and `runner-<id>-south.png`
   (front → UI). The default uses `runner.png` / `runner-south.png`.
 - The in-game default runner is wired via `lib/game/config.ts` → `RUNNER_SPRITE`.
+- **Multiplayer:** in a match, all character sheets are loaded so **rivals render
+  as their own animated character** (by lane) — the back-facing run sheet, the
+  same one the local runner uses. A sheet that fails to load falls back to a
+  translucent colored ghost.
 - Raw PixelLab export folders pasted in the project root are git-ignored.
 
 ## Roster

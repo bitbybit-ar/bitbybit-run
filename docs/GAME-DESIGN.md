@@ -87,13 +87,15 @@ Design rule: controls must be **dead simple** and readable at a glance. No combo
   coasting past it safely is always an option.
 - Strategy: a clean grab is a big speed gain; a sloppy merge clips junk instead.
 
-### 4.5 Food placement (shared, static)
+### 4.5 Food placement (deterministic, per-match)
 
-- Food lives at **fixed, predefined positions** along the track ("hydration
-  stations" for good food, junk-food clusters for bad food).
-- Because positions are **static and identical for everyone**, all clients see
-  the exact same track with **zero synchronization** — the track layout is just
-  shared data. (See `docs/ARCHITECTURE.md` → "Static track model".)
+- Food lives at positions **seeded from the `matchId`** ("hydration stations" for
+  good food, junk-food clusters for bad food, booster gauntlets).
+- Every player **in a match** sees the **exact same track with zero
+  synchronization** (same seed → same layout), while **different matches get
+  different layouts**, so the course stays fresh. Single-player/demo use a fixed
+  default seed. (See `docs/ARCHITECTURE.md` → "The deterministic, per-match track
+  model".)
 
 ## 5. Scoring & points
 
@@ -107,30 +109,42 @@ Players earn **points** during the race (shown live and in the final ranking):
 | Finishing position          | big bonus (1st > 2nd > ... ) |
 
 - Points are tallied per match for the **end-of-race ranking**.
+- The **finishing-position bonus** (`POINTS.placement`) is added into each
+  player's points, so where you reach the line counts toward the ranking.
 - Aggregate points/wins feed the **global leaderboard** stored in Neon Postgres.
 
 ## 6. Win condition & ranking
 
-- **Winner** = first runner to cross the finish line.
-- When the winner finishes, remaining players are ranked by their **position on
-  the track at that moment** (or by finish order if they finish afterward).
-- Final standings = ordered list of `{ player, position, points }`.
+- **Winner** = first runner to cross the finish line. The race ends **the instant
+  the first runner crosses** — every client jumps to the results screen at once
+  (no waiting for stragglers).
+- The winner ranks #1; the remaining players are ordered by **total points**,
+  which fold in the placement bonus (further-along players placed higher), so
+  finishing position still matters.
+- Final standings = ordered list of `{ player, position, points }`, recomputed
+  locally — a remote event's claimed position is never trusted.
 
 ## 7. Screens / UI
 
 1. **Landing** — single-screen (100vh), title, short pitch, "Play" button.
 2. **Login** — Nostr login (NIP-07); shows your name + avatar from your profile.
 3. **Waiting room (lobby)** — list of **open matches** (discovered via Nostr).
-   - Join an existing match, **or** create a new one.
+   - Join an existing match, **or** create a new one. An **invite link** drops the
+     invitee straight into the runner-select lobby for that match (preserved
+     through sign-in if they're logged out).
    - The **host** can start the match with a button, or wait until all 4 lanes
-     fill (auto-start).
+     fill (auto-start). Once a match starts, **no one new can join**; a rostered
+     player who drops can reconnect (it never restarts the match).
 4. **Game room** — the race itself. On screen:
-   - **Main view (2.5D):** your runner from behind, upcoming food & obstacles.
+   - **Main view (2.5D):** your runner from behind, upcoming food & obstacles, and
+     **rivals drawn as their own animated character** (with a name tag).
    - **Minimap:** where every runner is along the track (the shared multiplayer
      surface — updates a few times per second).
    - **Live HUD:** energy bar, poison bar, current position, live points/ranking.
-5. **Results** — final standings, points, and a **⚡ Zap winner** button.
-6. **Rules & demo** — how to play, the mechanics, and a playable/looping demo.
+5. **Results** — final standings, points, and a **⚡ Zap winner** button (shown to
+   everyone the moment the first runner crosses).
+6. **Leaderboard** — global ranking, **paginated 10 per page**.
+7. **Rules & demo** — how to play, the mechanics, and a playable/looping demo.
 
 ## 8. Match flow
 

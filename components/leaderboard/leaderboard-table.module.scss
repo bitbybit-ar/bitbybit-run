@@ -172,6 +172,46 @@
   overflow-wrap: anywhere;
 }
 
+// Prev / page-status / next, centered under the table.
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-16;
+  margin-top: $spacing-8;
+}
+
+.pageLink {
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-8 $spacing-16;
+  background: $color-surface;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-md;
+  box-shadow: 3px 3px 0 0 $arcade-edge;
+  color: $color-text-primary;
+  font-family: $font-display;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    background: $color-bg-2;
+  }
+}
+
+.pageLinkDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.pageStatus {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-variant-numeric: tabular-nums;
+}
+
 // On phones the races column is the least essential — hide to keep rows tidy.
 @include mobile {
   .colRaces {

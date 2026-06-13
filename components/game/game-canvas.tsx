@@ -20,11 +20,14 @@ export function GameCanvas({
   character = DEFAULT_CHARACTER,
   onFinish,
   raceNet,
+  matchId,
 }: {
   character?: Character;
   onFinish?: (result: { time: number; points: number }) => void;
   /** Multiplayer port (from the lobby). Absent → the canvas is single-player. */
   raceNet?: RaceNet;
+  /** Live match id — seeds the per-match track + keys the reconnect resume. */
+  matchId?: string;
 }) {
   const t = useTranslations("game");
   const locale = useLocale();
@@ -36,6 +39,8 @@ export function GameCanvas({
   // The match is fixed for this canvas's life; read at boot, don't re-create.
   const raceNetRef = useRef(raceNet);
   raceNetRef.current = raceNet;
+  const matchIdRef = useRef(matchId);
+  matchIdRef.current = matchId;
   // Latest strings/character, read at boot only. Kept in refs so the
   // game-creation effect can depend on *stable primitives* (locale + character
   // id) instead of the `t` function and `character` object — otherwise a parent
@@ -87,7 +92,8 @@ export function GameCanvas({
           strings,
           sprite,
           (result) => onFinishRef.current?.(result),
-          raceNetRef.current
+          raceNetRef.current,
+          matchIdRef.current
         )
       );
     })();
