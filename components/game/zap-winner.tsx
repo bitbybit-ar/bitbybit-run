@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button/button";
 import { Modal } from "@/components/ui/modal";
-import { ZAP_SATS, zapLightningAddress } from "@/lib/lightning/zap";
+import { CheckIcon, CopyIcon, ExternalLinkIcon } from "@/components/icons";
+import {
+  ZAP_SATS,
+  getZapInvoice,
+  hasWebln,
+  payWithWebln,
+} from "@/lib/lightning/zap";
 import styles from "./zap-winner.module.scss";
 
-type Status = "idle" | "zapping" | "sent" | "error";
+// "invoice" = no wallet (or WebLN pay failed): we show the BOLT11 invoice as a
+// QR / copyable string so the viewer can pay from any Lightning wallet.
+type Status = "idle" | "zapping" | "sent" | "error" | "invoice";
 
 /** Preset amounts (sats) offered in the zap dialog. */
 const PRESETS = [21, 100, 1000, 5000] as const;
@@ -39,6 +48,11 @@ export function ZapWinner({
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<string | null>(null);
+  // The amount the invoice is actually for (clamped to the recipient's range),
+  // which can differ from `amount` the viewer typed.
+  const [invoiceSats, setInvoiceSats] = useState<number>(ZAP_SATS);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,13 +90,53 @@ export function ZapWinner({
     setStatus("zapping");
     setErrorCode(null);
     try {
-      await zapLightningAddress(lud16, amount, message.trim() || undefined);
-      setStatus("sent");
-      setOpen(false);
+      // Always fetch the invoice first — that part needs no wallet. If WebLN is
+      // present, pay it in-browser; otherwise (or if that pay fails) fall back
+      // to showing the invoice so the viewer can pay from any wallet.
+      const { invoice: inv, sats } = await getZapInvoice(
+        lud16,
+        amount,
+        message.trim() || undefined
+      );
+      setInvoice(inv);
+      setInvoiceSats(sats);
+      if (hasWebln()) {
+        try {
+          await payWithWebln(inv);
+          setStatus("sent");
+          setOpen(false);
+          return;
+        } catch {
+          // Wallet missing/declined/errored — degrade to the QR fallback
+          // rather than dead-ending, since we already have a payable invoice.
+        }
+      }
+      setStatus("invoice");
     } catch (err) {
       setErrorCode(err instanceof Error ? err.message : null);
       setStatus("error");
     }
+  };
+
+  const copyInvoice = async () => {
+    if (!invoice) return;
+    try {
+      await navigator.clipboard.writeText(invoice);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Insecure context / no clipboard — the QR is the fallback.
+    }
+  };
+
+  // Closing resets the transient state so reopening starts at a fresh form
+  // (e.g. after viewing the invoice fallback or hitting an error).
+  const close = () => {
+    setOpen(false);
+    setStatus("idle");
+    setInvoice(null);
+    setErrorCode(null);
+    setCopied(false);
   };
 
   return (
@@ -93,78 +147,130 @@ export function ZapWinner({
 
       {open && (
         <Modal
-          onClose={() => setOpen(false)}
+          onClose={close}
           title={t("zapTitle", { name: winnerName })}
           ariaLabel={t("zapTitle", { name: winnerName })}
           size="sm"
         >
-          <div className={styles.dialog}>
-            <div className={styles.presets}>
-              {PRESETS.map((sats) => (
+          {status === "invoice" && invoice ? (
+            <div className={styles.dialog}>
+              <p className={styles.note}>
+                {t("zapScanToPay", { sats: invoiceSats, name: winnerName })}
+              </p>
+
+              <div
+                className={styles.qrWrapper}
+                role="img"
+                aria-label={t("zapQrAlt", { name: winnerName })}
+              >
+                <QRCodeSVG
+                  value={invoice}
+                  size={200}
+                  level="M"
+                  bgColor="transparent"
+                  fgColor="currentColor"
+                />
+              </div>
+
+              <div className={styles.invoiceField}>
+                <input
+                  type="text"
+                  readOnly
+                  value={invoice}
+                  className={styles.invoiceInput}
+                  aria-label={t("zapCopyInvoice")}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
                 <button
-                  key={sats}
                   type="button"
-                  className={styles.preset}
-                  aria-pressed={amount === sats}
-                  onClick={() => setAmount(sats)}
+                  className={styles.copyBtn}
+                  onClick={copyInvoice}
+                  aria-label={
+                    copied ? t("zapCopiedInvoice") : t("zapCopyInvoice")
+                  }
                 >
-                  {sats}
+                  {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
                 </button>
-              ))}
+              </div>
+
+              <a href={`lightning:${invoice}`} className={styles.openWallet}>
+                <ExternalLinkIcon size={18} />
+                {t("zapOpenInWallet")}
+              </a>
             </div>
-
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>{t("zapAmountLabel")}</span>
-              <input
-                className={styles.input}
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
-              />
-            </label>
-
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>{t("zapMessageLabel")}</span>
+          ) : (
+            <div className={styles.dialog}>
               <div className={styles.presets}>
-                {suggestions.map((msg) => (
+                {PRESETS.map((sats) => (
                   <button
-                    key={msg}
+                    key={sats}
                     type="button"
                     className={styles.preset}
-                    aria-pressed={message === msg}
-                    onClick={() => setMessage(msg)}
+                    aria-pressed={amount === sats}
+                    onClick={() => setAmount(sats)}
                   >
-                    {msg}
+                    {sats}
                   </button>
                 ))}
               </div>
-              <input
-                className={styles.input}
-                type="text"
-                maxLength={200}
-                value={message}
-                placeholder={t("zapMessagePlaceholder")}
-                onChange={(e) => setMessage(e.target.value)}
-              />
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>{t("zapAmountLabel")}</span>
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={(e) =>
+                    setAmount(Math.max(0, Number(e.target.value)))
+                  }
+                />
+              </label>
+
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>
+                  {t("zapMessageLabel")}
+                </span>
+                <div className={styles.presets}>
+                  {suggestions.map((msg) => (
+                    <button
+                      key={msg}
+                      type="button"
+                      className={styles.preset}
+                      aria-pressed={message === msg}
+                      onClick={() => setMessage(msg)}
+                    >
+                      {msg}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className={styles.input}
+                  type="text"
+                  maxLength={200}
+                  value={message}
+                  placeholder={t("zapMessagePlaceholder")}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+              </div>
+
+              {status === "error" && (
+                <p className={styles.error}>{t(errorKeyFor(errorCode))}</p>
+              )}
+
+              <Button
+                type="button"
+                size="lg"
+                onClick={send}
+                disabled={status === "zapping" || !amount}
+              >
+                {status === "zapping"
+                  ? t("zapping")
+                  : t("zapSend", { sats: amount })}
+              </Button>
             </div>
-
-            {status === "error" && (
-              <p className={styles.error}>{t(errorKeyFor(errorCode))}</p>
-            )}
-
-            <Button
-              type="button"
-              size="lg"
-              onClick={send}
-              disabled={status === "zapping" || !amount}
-            >
-              {status === "zapping"
-                ? t("zapping")
-                : t("zapSend", { sats: amount })}
-            </Button>
-          </div>
+          )}
         </Modal>
       )}
     </>

@@ -83,3 +83,83 @@
   font-size: $font-size-sm;
   color: $color-text-secondary;
 }
+
+// No-wallet fallback: show the BOLT11 invoice as a QR + copyable string so the
+// viewer can pay from any Lightning wallet. Mirrors the Nostr-connect panel.
+.qrWrapper {
+  display: flex;
+  justify-content: center;
+  padding: $spacing-16;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  color: $color-text-primary;
+}
+
+.invoiceField {
+  display: flex;
+  align-items: stretch;
+  gap: $spacing-8;
+  min-width: 0;
+}
+
+.invoiceInput {
+  flex: 1;
+  min-width: 0;
+  padding: $spacing-8 $spacing-12;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-family: monospace;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  outline: none;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    color: $color-primary;
+    border-color: $color-primary;
+  }
+}
+
+.openWallet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-8;
+  padding: $spacing-12;
+  background: $color-surface;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-md;
+  color: $color-text-primary;
+  font-family: $font-display;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+}

@@ -6,6 +6,17 @@ Dates use `YYYY-MM-DD`.
 
 ## [Unreleased]
 
+### Added
+
+- **Zap the winner — no-wallet invoice fallback.** Zapping no longer dead-ends
+  when the viewer has no WebLN wallet (e.g. Alby). The flow now fetches the
+  winner's BOLT11 invoice (LNURL-pay, independent of having a wallet) for the
+  chosen amount + message; if WebLN is present it pays in-browser as before,
+  otherwise — or if that payment is declined/errors — the dialog shows the
+  invoice as a **QR code + copyable string + `lightning:` deep link**, payable
+  from any phone/desktop wallet. `lib/lightning/zap.ts` is split into
+  `getZapInvoice` (no wallet) + `payWithWebln`; see ARCHITECTURE §7.
+
 ### Fixed (multiplayer playtest)
 
 - **Amber no longer prompts per frame.** Each client now mints a throwaway

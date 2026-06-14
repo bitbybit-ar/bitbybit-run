@@ -261,6 +261,12 @@ Free tier: Neon scale-to-zero, native Vercel integration.
   Nostr profile) and a **⚡ Zap winner** button.
 - Since players are already logged in with Nostr, the button triggers a zap via
   **WebLN** (e.g. Alby) / LNURL-pay to the winner's address.
+- **No-wallet fallback.** Resolving the winner's address to a BOLT11 invoice
+  (LNURL-pay) is independent of having a wallet. So when the viewer has no WebLN
+  provider — or the WebLN payment is declined/errors — we still fetch the invoice
+  for the chosen amount + message and present it as a **QR code + copyable string
+  + `lightning:` deep link**, payable from any mobile/desktop Lightning wallet.
+  (`getZapInvoice` / `payWithWebln` in `lib/lightning/zap.ts`.)
 - No custody, no backend secrets. (Automated NWC payouts are possible future work
   via a serverless function — out of MVP scope.)
 

@@ -92,18 +92,18 @@
       "zapAmountLabel": "Amount (sats)",
       "zapMessageLabel": "Message (optional)",
       "zapMessagePlaceholder": "Leave a message…",
-      "zapMessages": [
-        "GG! 🏆",
-        "Great race! 🏃",
-        "Respect ⚡️",
-        "WAGMI 🚀"
-      ],
+      "zapMessages": ["GG! 🏆", "Great race! 🏃", "Respect ⚡️", "WAGMI 🚀"],
       "zapSend": "Send {sats} sats",
       "zapping": "Zapping…",
       "zapSent": "⚡️ Zapped {name}!",
       "zapFailed": "Couldn't zap. Try again.",
       "zapNoWebln": "You need a Lightning wallet (e.g. Alby) to zap.",
-      "zapNoWallet": "This player has no Lightning wallet to receive zaps."
+      "zapNoWallet": "This player has no Lightning wallet to receive zaps.",
+      "zapScanToPay": "No wallet connected? Scan or copy this invoice to send {sats} sats to {name} from any Lightning wallet.",
+      "zapQrAlt": "Lightning invoice QR code to zap {name}",
+      "zapCopyInvoice": "Copy invoice",
+      "zapCopiedInvoice": "Copied",
+      "zapOpenInWallet": "Open in wallet"
     },
     "soundOn": "Turn sound on",
     "soundOff": "Mute",
