@@ -227,11 +227,15 @@ export function applyEvent(
       if (prev && prev.finishTime <= event.data.finishTime) return state;
       const next: MatchSnapshot = {
         ...state,
-        // The first runner across the line ends the race for everyone — the
-        // rest are ranked by where they'd reached (see resolveStandings).
-        status: "finished",
         finishes: { ...state.finishes, [event.data.pubkey]: event.data },
       };
+      // Everyone races their own line: the match only ends once *every* roster
+      // player has crossed. Until then finishers see a live waiting screen
+      // while the rest keep running. The orchestrator arms a grace timeout
+      // (see match-client) so a straggler/disconnect can't stall it forever.
+      if (isComplete(next)) next.status = "finished";
+      // Recompute on every finish so the waiting screen's live ranking updates
+      // (finishers by time, the rest by track progress).
       next.standings = resolveStandings(next);
       return next;
     }

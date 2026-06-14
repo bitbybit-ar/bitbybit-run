@@ -17,10 +17,29 @@ Dates use `YYYY-MM-DD`.
 - **Rivals render as their real animated character** (by lane) with a name label,
   instead of a moving colored dot. All character sheets load in a match; a
   missing sheet falls back to the old ghost. Minimap keeps lane-colored dots.
-- **A race ends when the first runner crosses** — every client jumps to the
-  results screen at once (no waiting for stragglers). The crosser wins; the rest
-  rank by total points, and **finishing position adds a points bonus**
-  (`POINTS.placement`).
+- **Everyone gets to finish their race.** A finish no longer ends the match for
+  everyone — each runner races their own line. Finishers wait on a **live-ranking
+  screen** until the rest cross; the match ends when all have finished, or when a
+  20s grace window after the first finish elapses (`FINISH_GRACE_MS`), ranking any
+  stragglers/disconnects as DNF. The crosser still wins; the rest rank by total
+  points with the **placement bonus** (`POINTS.placement`) folded in.
+- **A real match requires ≥2 players to start** (`MIN_PLAYERS`) — the Start button
+  is gated and `MatchClient.start` is the backstop. A new **Practice** button runs
+  a solo race that never counts for the ranking.
+- **"Zap the winner" no longer vanishes silently.** When the winner has no
+  Lightning address, the results screen now shows a short note instead of
+  rendering nothing.
+- **"Jugar de nuevo" works.** It now resets the match and returns to the races
+  browser (a plain link to `/play` didn't re-mount the already-mounted route).
+- **No more accidental solo race.** `CompetitiveStage` waits for the extension
+  signer to finish auto-attaching (new `signerLoading` flag) before choosing
+  competitive vs. the solo fallback — a logged-in user (or an invite link) no
+  longer flashes into a lonely practice race during the brief signer-null window.
+- **nsec / NIP-46 users get a reconnect prompt.** Their signer doesn't survive a
+  reload (unlike an extension), so instead of silently dropping them into solo,
+  `/play` now offers to **reconnect** via the shared re-sign modal (nsec paste /
+  NIP-46 QR or bunker), with a solo-practice escape hatch. After reconnecting,
+  any invite-link `?m=` carries through into the join.
 - **No joining or restarting a started match.** A match's lifecycle is now carried
   in retained presence, so a client that (re)joins learns it already started.
   Latecomers who weren't on the roster see "race already started"; `start()` is a

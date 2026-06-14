@@ -26,9 +26,14 @@ import {
   parseEvent,
   type ParsedEvent,
 } from "./events";
-import { applyEvent, beginPlaying, createMatchState } from "./match-state";
+import {
+  applyEvent,
+  beginPlaying,
+  createMatchState,
+  resolveStandings,
+} from "./match-state";
 import type { Subscription, Transport } from "./transport";
-import type { MatchPlayer, MatchSnapshot } from "./types";
+import { MIN_PLAYERS, type MatchPlayer, type MatchSnapshot } from "./types";
 
 export interface MatchClientOptions {
   transport: Transport;
@@ -65,6 +70,16 @@ const REANNOUNCE_DEBOUNCE_MS = 400;
  */
 const STAMP_SKEW_TOLERANCE_MS = 5000;
 
+/**
+ * Grace window after the *first* runner crosses the line. The match normally
+ * ends only once every roster player has finished (so everyone gets to run
+ * their own race), but a straggler — or someone who quit/disconnected — would
+ * otherwise stall it forever. When this elapses we end the match anyway; the
+ * runners who hadn't crossed are ranked as "did not finish". Every client arms
+ * it off the same first finish, so they converge without a server.
+ */
+const FINISH_GRACE_MS = 20000;
+
 /** Runner fields the caller supplies; `pubkey` and `t` are stamped here. */
 export type RunnerInput = Omit<RunnerState, "pubkey" | "t">;
 
@@ -86,6 +101,7 @@ export class MatchClient {
   private state: MatchSnapshot;
   private sub: Subscription | null = null;
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
+  private finishTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reannounceTimer: ReturnType<typeof setTimeout> | null = null;
   private lastBroadcast = 0;
@@ -221,6 +237,9 @@ export class MatchClient {
     // host who rejoined a match that's mid-race or finished — its retained
     // presence advances our status), refuse, so a race can never be restarted.
     if (this.state.status !== "waiting") return;
+    // A real match needs rivals — a lone host should practice instead. (The UI
+    // also gates the Start button; this is the authoritative backstop.)
+    if (this.state.players.length < MIN_PLAYERS) return;
     const startAt = Date.now() + Math.max(0, countdownMs);
     const event = await this.signer.sign(
       buildControlEvent({
@@ -272,6 +291,18 @@ export class MatchClient {
       position,
       points: input.points,
     };
+    // Optimistic local apply (same path as an inbound finish) so this peer's
+    // waiting screen appears immediately, without waiting for the relay echo.
+    const next = applyEvent(this.state, {
+      type: "finish",
+      data: payload,
+      signer: this.sessionSigner.pubkey,
+    });
+    if (next !== this.state) {
+      this.state = next;
+      this.emit();
+      this.armFinishGrace();
+    }
     // Session-key signed (no Amber prompt at the line); content carries the
     // real pubkey, bound to the session key via this peer's presence.
     const event = await this.sessionSigner.sign(
@@ -283,6 +314,7 @@ export class MatchClient {
   /** Stop receiving and release timers. */
   leave(): void {
     this.clearCountdown();
+    this.clearFinishGrace();
     this.stopHeartbeat();
     if (this.reannounceTimer !== null) {
       clearTimeout(this.reannounceTimer);
@@ -319,6 +351,10 @@ export class MatchClient {
 
     this.state = next;
     this.emit();
+
+    // The first finish starts the grace clock that bounds how long finishers
+    // wait for the rest (no-op once already armed or the match is over).
+    if (parsed.type === "finish") this.armFinishGrace();
 
     // When the match leaves "waiting" (e.g. the host started), re-announce our
     // presence so the lobby browser can drop this now-started match.
@@ -408,6 +444,32 @@ export class MatchClient {
     if (this.countdownTimer !== null) {
       clearTimeout(this.countdownTimer);
       this.countdownTimer = null;
+    }
+  }
+
+  /**
+   * Arm the post-first-finish grace timeout (idempotent). When it fires, end
+   * the match even if some runners never crossed — they're ranked as DNF. Skips
+   * if the match is already finished or no one has finished yet.
+   */
+  private armFinishGrace(): void {
+    if (this.finishTimer !== null) return;
+    if (this.state.status === "finished") return;
+    if (Object.keys(this.state.finishes).length === 0) return;
+    this.finishTimer = setTimeout(() => {
+      this.finishTimer = null;
+      if (this.state.status === "finished") return;
+      const next: MatchSnapshot = { ...this.state, status: "finished" };
+      next.standings = resolveStandings(next);
+      this.state = next;
+      this.emit();
+    }, FINISH_GRACE_MS);
+  }
+
+  private clearFinishGrace(): void {
+    if (this.finishTimer !== null) {
+      clearTimeout(this.finishTimer);
+      this.finishTimer = null;
     }
   }
 

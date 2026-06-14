@@ -50,12 +50,23 @@ they return to the lobby (not the generic races browser).
 
 ### Ending a race
 
-The race ends the **instant the first runner crosses the finish line** — that
-runner wins, and **every** client swaps to the results screen immediately (no
-waiting for stragglers). Non-finishers are ranked by total points, where the
-**arrival placement adds a points bonus** (`POINTS.placement`), so where you
-reached the line still counts. The non-winners see the **⚡ Zap the winner**
-button.
+**Everyone runs their own line.** A finish records that runner's time but does
+**not** end the match — the rest keep racing. A finisher swaps to a **waiting
+screen with a live ranking** (finishers by time, the rest by track progress)
+until the match resolves. The match ends when **every** roster player has
+crossed, or — as a backstop against a straggler/disconnect — when the
+`FINISH_GRACE_MS` window (20s) after the *first* finish elapses; whoever hasn't
+crossed by then is ranked **DNF** ("No terminó"). Every client arms this grace
+off the same first finish, so they converge without a server.
+
+Final order: finishers by earliest `finishTime`, then non-finishers, with an
+**arrival placement bonus** (`POINTS.placement`) folded into each total so where
+you reached the line still counts. On the results screen the non-winners see the
+**⚡ Zap the winner** button (or a note when the winner has no Lightning
+address); **Jugar de nuevo** returns to the races browser to host/join a fresh
+match. A real match also requires **at least 2 players** to start (`MIN_PLAYERS`)
+— a lone player should use **Practice** (a solo race that never counts for the
+ranking).
 
 ### Amber / NIP-46 signing without per-frame prompts
 

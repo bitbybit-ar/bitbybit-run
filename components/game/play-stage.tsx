@@ -8,6 +8,7 @@ import { GameControls } from "./game-controls";
 import { RunnerLobby, LobbyAlreadyStarted } from "./runner-lobby";
 import { MatchBrowser } from "./match-browser";
 import { MatchResults } from "./match-results";
+import { MatchWaiting } from "./match-waiting";
 import { MatchProvider, useMatchContext } from "./match-provider";
 import { InterstitialAd } from "./interstitial-ad";
 import { Modal } from "@/components/ui/modal";
@@ -43,7 +44,17 @@ export function PlayStage({
  * single-player lobby so play still works.
  */
 function CompetitiveStage({ currentUser }: { currentUser: CurrentUser }) {
-  const { signer, session } = useSignerContext();
+  const { signer, session, sessionLoading, signerLoading } =
+    useSignerContext();
+  const t = useTranslations("play");
+
+  // The extension signer attaches asynchronously after a reload. Until that
+  // settles, don't decide between competitive and the solo fallback — otherwise
+  // a logged-in user (or someone opening an invite link) flashes into a lonely
+  // practice race before their signer is ready.
+  if (sessionLoading || signerLoading) {
+    return <p className={styles.loading}>{t("loading")}</p>;
+  }
   if (signer && session?.pubkey) {
     return (
       <SignedInStage
@@ -53,7 +64,68 @@ function CompetitiveStage({ currentUser }: { currentUser: CurrentUser }) {
       />
     );
   }
+  // Logged in but no in-memory signer — an nsec/NIP-46 user who reloaded (their
+  // key doesn't survive like an extension does), or an extension that's gone.
+  // Offer to reconnect so they can race, instead of silently dropping to solo.
+  if (session?.pubkey) {
+    return <ReconnectStage currentUser={currentUser} />;
+  }
+  // No session at all (the /play page server-guards this, so effectively only
+  // a torn-down session) → plain solo.
   return <LocalStage currentUser={currentUser} />;
+}
+
+/**
+ * Logged in, but the signer isn't in memory (nsec/NIP-46 after a reload, or a
+ * missing extension). Prompt a re-attach via the shared re-sign modal — on
+ * success the context signer updates and this swaps to the competitive flow,
+ * carrying any invite-link `?m=` into the join. A solo-practice escape hatch is
+ * offered for anyone who doesn't want to reconnect.
+ */
+function ReconnectStage({ currentUser }: { currentUser: CurrentUser }) {
+  const { requestReSignIn } = useSignerContext();
+  const t = useTranslations("play");
+  const [practice, setPractice] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (practice) {
+    return (
+      <LocalStage currentUser={currentUser} onLeave={() => setPractice(false)} />
+    );
+  }
+
+  const reconnect = async () => {
+    setBusy(true);
+    try {
+      // Resolves once the modal attaches a matching signer; the context update
+      // re-renders CompetitiveStage into SignedInStage and unmounts this.
+      await requestReSignIn();
+    } catch {
+      // Cancelled or failed — stay on the prompt.
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={styles.reconnect}>
+      <p className={styles.reconnectTitle}>{t("reconnect.title")}</p>
+      <p className={styles.reconnectText}>{t("reconnect.text")}</p>
+      <div className={styles.reconnectActions}>
+        <Button type="button" size="lg" onClick={reconnect} disabled={busy}>
+          {t("reconnect.cta")}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={() => setPractice(true)}
+        >
+          {t("reconnect.practice")}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 type Target = { matchId: string; isHost: boolean; host: string };
@@ -78,6 +150,18 @@ function SignedInStage({
   const [target, setTarget] = useState<Target | null>(() =>
     joinId ? { matchId: joinId, isHost: false, host: joinHost ?? "" } : null
   );
+  // Solo practice from the races browser — a real (no-net) single-player race
+  // that never persists to the leaderboard. Separate from `target` (a match).
+  const [practice, setPractice] = useState(false);
+
+  if (practice) {
+    return (
+      <LocalStage
+        currentUser={currentUser}
+        onLeave={() => setPractice(false)}
+      />
+    );
+  }
 
   if (!target) {
     return (
@@ -90,6 +174,7 @@ function SignedInStage({
           })
         }
         onJoin={(matchId, host) => setTarget({ matchId, isHost: false, host })}
+        onPractice={() => setPractice(true)}
       />
     );
   }
@@ -151,10 +236,24 @@ function LobbyAndRace({
   // otherwise a solo host would get MP behavior (lonely minimap, no restart).
   const multiplayer = (snap?.players.length ?? 0) > 1;
 
-  // The first runner across the line ends the race → everyone sees the
-  // standings (multiplayer only). A reconnecting player lands here too.
+  // The match ends only once every runner has crossed (or the grace timeout
+  // fires) → everyone sees the standings (multiplayer only). A reconnecting
+  // player lands here too.
   if (status === "finished" && multiplayer && snap && selfPubkey) {
-    return <MatchResults snapshot={snap} selfPubkey={selfPubkey} />;
+    return (
+      <MatchResults
+        snapshot={snap}
+        selfPubkey={selfPubkey}
+        onPlayAgain={onLeave}
+      />
+    );
+  }
+
+  // I've crossed but others are still racing → wait on a live-ranking screen
+  // (my own scene is frozen at the line) until the match resolves.
+  const selfFinished = !!selfPubkey && !!snap?.finishes[selfPubkey];
+  if (selfFinished && multiplayer && snap && selfPubkey) {
+    return <MatchWaiting snapshot={snap} selfPubkey={selfPubkey} />;
   }
 
   return (
@@ -198,8 +297,18 @@ function usePersistOnFinish(match: ReturnType<typeof useMatchContext>) {
   }, [match.isHost, match.selfPubkey, finished, multiplayer, snap]);
 }
 
-/** No live signer: a local single-player lobby + race (no match). */
-function LocalStage({ currentUser }: { currentUser: CurrentUser }) {
+/**
+ * A local single-player race (no match, no network). Used both as the no-live-
+ * signer fallback and as explicit "practice" from the races browser. Solo runs
+ * never persist to the leaderboard — there's no match to post.
+ */
+function LocalStage({
+  currentUser,
+  onLeave,
+}: {
+  currentUser: CurrentUser;
+  onLeave?: () => void;
+}) {
   const [selectedId, setSelectedId] = useState<CharacterId>("default");
   const [started, setStarted] = useState(false);
 
@@ -209,6 +318,7 @@ function LocalStage({ currentUser }: { currentUser: CurrentUser }) {
         currentUser={currentUser}
         onClaim={setSelectedId}
         onStart={() => setStarted(true)}
+        onLeave={onLeave}
       />
     );
   }

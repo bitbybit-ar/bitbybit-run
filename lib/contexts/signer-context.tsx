@@ -86,6 +86,13 @@ interface SignerContextValue {
   session: SessionUser | null;
   /** True until the initial session fetch resolves. */
   sessionLoading: boolean;
+  /**
+   * True while we're auto-attaching the extension signer for a logged-in user
+   * (the key lives in the extension, restored async after reload). Lets callers
+   * wait instead of treating the brief signer-null window as "signed out" —
+   * which would, e.g., drop a competitive player into a solo race.
+   */
+  signerLoading: boolean;
   signer: SignerHandle | null;
   setSigner: (signer: SignerHandle) => void;
   completeLoginWithSigner: (
@@ -161,6 +168,12 @@ export function SignerProvider({
     initialSession === undefined
   );
   const [signer, setSignerState] = useState<SignerHandle | null>(null);
+  // Whether an extension-signer auto-restore is still in flight. Seeded true
+  // for a logged-in extension user so the very first render doesn't briefly
+  // look signed-out (see `signerLoading`).
+  const [signerRestoring, setSignerRestoring] = useState(
+    (initialSession ?? null)?.signer_type === "extension"
+  );
   // Mirror of `signer` state. signWithPrompt reads from this ref so a
   // handler that called `requestReSignIn()` and THEN falls through to
   // `signWithPrompt` can see the freshly-attached signer instead of a
@@ -207,9 +220,14 @@ export function SignerProvider({
   // survives reloads — the key lives in the extension itself, not
   // in our app memory.
   useEffect(() => {
-    if (!session || signer) return;
-    if (session.signer_type !== "extension") return;
+    // Nothing to restore (no session, already attached, or a non-extension
+    // signer that can't survive a reload) → we're definitively done loading.
+    if (!session || signer || session.signer_type !== "extension") {
+      setSignerRestoring(false);
+      return;
+    }
 
+    setSignerRestoring(true);
     let cancelled = false;
     const tryAttach = async () => {
       if (typeof window === "undefined" || !window.nostr) return;
@@ -227,10 +245,17 @@ export function SignerProvider({
     void tryAttach();
     // Extensions can inject window.nostr asynchronously after page
     // load; retry once after a short delay.
-    const timer = setTimeout(() => void tryAttach(), 600);
+    const retry = setTimeout(() => void tryAttach(), 600);
+    // Stop waiting once the retry window has passed: a successful attach flips
+    // `signer` (re-running this effect into the done branch); otherwise the
+    // extension is absent/declined and callers should fall back.
+    const done = setTimeout(() => {
+      if (!cancelled) setSignerRestoring(false);
+    }, 800);
     return () => {
       cancelled = true;
-      clearTimeout(timer);
+      clearTimeout(retry);
+      clearTimeout(done);
     };
   }, [session, signer, setSigner]);
 
@@ -359,6 +384,7 @@ export function SignerProvider({
     () => ({
       session,
       sessionLoading,
+      signerLoading: signerRestoring,
       signer,
       setSigner,
       completeLoginWithSigner,
@@ -370,6 +396,7 @@ export function SignerProvider({
     [
       session,
       sessionLoading,
+      signerRestoring,
       signer,
       setSigner,
       completeLoginWithSigner,

@@ -10,6 +10,48 @@
   width: 100%;
 }
 
+.loading {
+  margin: $spacing-32 auto;
+  text-align: center;
+  font-family: $font-display;
+  font-size: $font-size-lg;
+  color: $color-text-secondary;
+}
+
+.reconnect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-16;
+  max-width: 480px;
+  margin: $spacing-32 auto;
+  padding: $spacing-24 $spacing-16;
+  text-align: center;
+}
+
+.reconnectTitle {
+  margin: 0;
+  font-family: $font-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-shadow: 3px 3px 0 $pixel-shadow;
+}
+
+.reconnectText {
+  margin: 0;
+  font-size: $font-size-base;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.reconnectActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-12;
+  justify-content: center;
+}
+
 // Demo finish → login-invite modal body.
 .invite {
   display: flex;

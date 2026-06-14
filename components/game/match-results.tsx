@@ -17,9 +17,13 @@ import styles from "./match-results.module.scss";
 export function MatchResults({
   snapshot,
   selfPubkey,
+  onPlayAgain,
 }: {
   snapshot: MatchSnapshot;
   selfPubkey: string;
+  /** Reset the match and return to the lobby browser to host/join a new one.
+   *  A plain link to /play wouldn't re-mount this already-mounted route. */
+  onPlayAgain?: () => void;
 }) {
   const t = useTranslations("play.results");
 
@@ -68,9 +72,20 @@ export function MatchResults({
         <Button href={{ pathname: "/leaderboard" }} size="lg">
           {t("toLeaderboard")}
         </Button>
-        <Button href={{ pathname: "/play" }} variant="outline" size="lg">
-          {t("playAgain")}
-        </Button>
+        {onPlayAgain ? (
+          <Button
+            type="button"
+            onClick={onPlayAgain}
+            variant="outline"
+            size="lg"
+          >
+            {t("playAgain")}
+          </Button>
+        ) : (
+          <Button href={{ pathname: "/play" }} variant="outline" size="lg">
+            {t("playAgain")}
+          </Button>
+        )}
       </div>
     </section>
   );

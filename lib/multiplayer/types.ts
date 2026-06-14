@@ -18,6 +18,9 @@ export type { MatchFinish, MatchPlayer, RunnerState, RunnerStatus };
 /** One runner per lane → the lane count is the player cap. */
 export const MAX_PLAYERS = LANES;
 
+/** A real match needs rivals — below this, the host should practice solo. */
+export const MIN_PLAYERS = 2;
+
 /**
  * Lifecycle of a match from a client's point of view:
  *   waiting   — lobby open, roster filling

@@ -200,18 +200,29 @@ describe("match-state runner merge", () => {
 });
 
 describe("match-state finish + standings", () => {
-  it("finishes the race the instant the first runner crosses", () => {
+  it("keeps the race going until everyone crosses, but ranks the leader first", () => {
     let s = base();
     // B is mid-race with more points; A crosses the line first.
     s = applyEvent(s, runnerEvent(B, { t: 1, points: 90, progress: 0.5 }));
     s = applyEvent(s, finishEvent(A, { finishTime: 100, points: 520 }));
 
-    expect(s.status).toBe("finished"); // first crossing ends it for everyone
-    // The runner who crossed wins; the rest trail (B never finished).
+    // The match isn't over — B is still running (the grace timeout that bounds
+    // this lives in the orchestrator, not the pure reducer).
+    expect(s.status).not.toBe("finished");
+    // Standings are live: A (crossed) provisionally leads, B trails.
     expect(s.standings[0].pubkey).toBe(A);
     expect(s.standings[0].position).toBe(1);
     expect(s.standings[1].pubkey).toBe(B);
     expect(s.standings[1].finishTime).toBeNull();
+  });
+
+  it("ends the match once the final runner crosses", () => {
+    let s = base();
+    s = applyEvent(s, finishEvent(A, { finishTime: 100, points: 520 }));
+    expect(s.status).not.toBe("finished"); // B still out there
+    s = applyEvent(s, finishEvent(B, { finishTime: 200, points: 300 }));
+    expect(s.status).toBe("finished"); // everyone's in → race over
+    expect(isComplete(s)).toBe(true);
   });
 
   it("does not let a later duplicate finish overwrite the first", () => {

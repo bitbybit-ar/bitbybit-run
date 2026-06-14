@@ -184,11 +184,13 @@ Each client announces its finish; the **earliest** `finishTime` is the winner.
 }
 ```
 
-**The race ends the instant the first runner crosses** — that runner wins and
-every client swaps to the results screen at once (no waiting for stragglers).
-Non-finishers are ranked by total points, where the **arrival placement adds a
-points bonus** (`POINTS.placement`), so where you reached the line counts toward
-the ranking (`resolveStandings` in `match-state.ts`).
+**The race ends once every runner has crossed** — each finish is recorded but
+the others keep racing; finishers wait on a live-ranking screen meanwhile. A
+`FINISH_GRACE_MS` (20s) timeout armed off the first finish (in `match-client.ts`)
+bounds the wait: anyone still out when it fires is ranked DNF. Final order is
+finishers by earliest `finishTime`, then non-finishers, with an **arrival
+placement bonus** (`POINTS.placement`) folded into totals so where you reached
+the line counts toward the ranking (`resolveStandings` in `match-state.ts`).
 
 ### 4.5 Validating untrusted frames (anti-cheat)
 

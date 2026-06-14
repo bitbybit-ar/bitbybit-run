@@ -49,7 +49,8 @@
       "players": "{count}/{max} corredores",
       "join": "Unirme",
       "loading": "Buscando carreras…",
-      "empty": "No hay carreras abiertas. ¡Creá una!"
+      "empty": "No hay carreras abiertas. ¡Creá una!",
+      "practice": "🏃 Practicar"
     },
     "lobby": {
       "players": "{count}/4 corredores",
@@ -63,7 +64,8 @@
       "waitingHost": "Esperando al anfitrión…",
       "invite": "Invitá a tus rivales",
       "copy": "Copiar link",
-      "copied": "¡Copiado!"
+      "copied": "¡Copiado!",
+      "needPlayers": "Necesitás al menos {min} jugadores para empezar."
     },
     "notFound": {
       "title": "Esta carrera no existe o ya terminó",
@@ -90,12 +92,18 @@
       "zapAmountLabel": "Cantidad (sats)",
       "zapMessageLabel": "Mensaje (opcional)",
       "zapMessagePlaceholder": "Dejá un mensaje…",
-      "zapMessages": ["¡GG! 🏆", "¡Qué carrera! 🏃", "Respeto ⚡️", "WAGMI 🚀"],
+      "zapMessages": [
+        "¡GG! 🏆",
+        "¡Qué carrera! 🏃",
+        "Respeto ⚡️",
+        "WAGMI 🚀"
+      ],
       "zapSend": "Enviar {sats} sats",
       "zapping": "Zapeando…",
       "zapSent": "⚡️ ¡Le zapeaste a {name}!",
       "zapFailed": "No se pudo zapear. Probá de nuevo.",
-      "zapNoWebln": "Necesitás una billetera Lightning (ej. Alby) para zapear."
+      "zapNoWebln": "Necesitás una billetera Lightning (ej. Alby) para zapear.",
+      "zapNoWallet": "Este jugador no tiene billetera Lightning para recibir zaps."
     },
     "soundOn": "Activar sonido",
     "soundOff": "Silenciar",
@@ -107,6 +115,19 @@
       "touchLanes": "tocá los costados para cambiar carril",
       "touchSprint": "mantené el centro para acelerar",
       "touchRestart": "tocá para reiniciar"
+    },
+    "waiting": {
+      "leading": "🏆 ¡Vas primero!",
+      "finished": "🏁 ¡Llegaste!",
+      "subtitle": "Esperando a que los demás terminen…",
+      "racing": "Corriendo…"
+    },
+    "loading": "Cargando…",
+    "reconnect": {
+      "title": "Reconectá tu firma",
+      "text": "Para jugar partidas reales necesitás volver a conectar tu firma (nsec o NIP-46). También podés practicar en modo solo.",
+      "cta": "🔌 Reconectar",
+      "practice": "🏃 Practicar"
     }
   },
   "demo": {

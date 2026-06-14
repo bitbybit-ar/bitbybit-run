@@ -23,6 +23,13 @@
   text-shadow: 3px 3px 0 $pixel-shadow;
 }
 
+.subtitle {
+  margin: 0;
+  text-align: center;
+  font-size: $font-size-body;
+  color: $color-text-secondary;
+}
+
 .results > div {
   width: 100%;
 }

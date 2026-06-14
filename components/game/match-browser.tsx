@@ -14,9 +14,12 @@ import styles from "./match-browser.module.scss";
 export function MatchBrowser({
   onHost,
   onJoin,
+  onPractice,
 }: {
   onHost: () => void;
   onJoin: (matchId: string, host: string) => void;
+  /** Start a solo practice race (no match, never counts for the ranking). */
+  onPractice?: () => void;
 }) {
   const t = useTranslations("play.browser");
   const { matches, loading } = useMatchDiscovery();
@@ -28,9 +31,21 @@ export function MatchBrowser({
         <p className={styles.subtitle}>{t("subtitle")}</p>
       </header>
 
-      <Button type="button" size="lg" onClick={onHost}>
-        {t("host")}
-      </Button>
+      <div className={styles.cta}>
+        <Button type="button" size="lg" onClick={onHost}>
+          {t("host")}
+        </Button>
+        {onPractice && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={onPractice}
+          >
+            {t("practice")}
+          </Button>
+        )}
+      </div>
 
       <div className={styles.list}>
         <h3 className={styles.listTitle}>{t("openMatches")}</h3>
