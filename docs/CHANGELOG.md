@@ -16,6 +16,33 @@ Dates use `YYYY-MM-DD`.
   invoice as a **QR code + copyable string + `lightning:` deep link**, payable
   from any phone/desktop wallet. `lib/lightning/zap.ts` is split into
   `getZapInvoice` (no wallet) + `payWithWebln`; see ARCHITECTURE §7.
+- **Optional race name.** When hosting, the creator can label the race in the
+  browser; the name rides the host's presence (kind `30078`) and shows in
+  everyone's lobby browser (with the host attributed), so players can find a
+  specific match. Blank stays anonymous (falls back to the host name).
+- **Practice runs say so at the finish.** A solo practice race now shows a
+  "doesn't count for the ranking" note on its finish overlay (matches/demo
+  unaffected), making the rule explicit at the moment it matters.
+
+### Changed
+
+- **Ranking copy is consistent with practice.** The leaderboard subtitle and the
+  how-to-play ranking card now say **multiplayer** races count (and that solo
+  practice doesn't), instead of the misleading "every race counts".
+
+### Fixed
+
+- **Rival no longer changes character mid-race.** The rival sprite was keyed off
+  the live racing lane, so a rival swerving into another character's lane briefly
+  re-rendered as that character. It's now keyed off the lane they **claimed in
+  the lobby** (stable identity); the live lane still drives position.
+- **Host can always start their own match.** The host role now follows identity
+  (`host === pubkey`) instead of the entry path, so a creator who navigated away
+  and rejoined from the browser/invite link is recognized as host again — fixing
+  the "match created but nobody can start it" dead end.
+- **`/play` title reflects the mode.** The header reads **"Practice"** during a
+  solo run and **"Multiplayer race"** in the browser/lobby/real race, instead of
+  always saying multiplayer.
 
 ### Fixed (multiplayer playtest)
 

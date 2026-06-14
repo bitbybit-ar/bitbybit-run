@@ -61,6 +61,9 @@ export type GameStrings = {
   go: string;
   finish: string;
   again: string;
+  /** Shown on the finish overlay of a solo practice run, to make clear it
+   *  doesn't persist to the leaderboard. Absent for matches and the demo. */
+  practiceNote?: string;
   goodPhrases: string[];
   badPhrases: string[];
   boostPhrases: string[];
@@ -699,10 +702,14 @@ export class RaceScene extends Phaser.Scene {
       this.points += POINTS.finishBonus;
       this.clearResume(); // race over — a future run must start from zero
       Sound.finish();
+      // Solo practice: remind the player this run doesn't count for the ranking.
+      const note = this.strings.practiceNote
+        ? `\n${this.strings.practiceNote}`
+        : "";
       // In a match, "press R to race again" doesn't apply — the result stands.
       const tail = this.net ? "" : `\n${this.strings.again}`;
       this.showToast(
-        `${this.strings.finish}\n${this.elapsed.toFixed(1)}s   ${this.points} pts${tail}`,
+        `${this.strings.finish}\n${this.elapsed.toFixed(1)}s   ${this.points} pts${note}${tail}`,
         9999
       );
       // Surface the finish to React (e.g. the demo's login-invite modal).
@@ -1085,7 +1092,10 @@ export class RaceScene extends Phaser.Scene {
     visible.forEach(({ r, d }, i) => {
       const p = this.project(d, r.lane);
       const alpha = r.status === "finished" ? 0.5 : 1;
-      const character = this.laneCharacter(r.lane);
+      // Character is keyed off the lane they *claimed* in the lobby, not the
+      // live racing lane — otherwise a rival swerving into another character's
+      // lane would re-render as that character on our screen.
+      const character = this.laneCharacter(r.seatLane);
 
       // Ground shadow (kept for both the sprite and the ghost fallback).
       g.fillStyle(0x000000, 0.18);

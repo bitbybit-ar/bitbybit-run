@@ -25,7 +25,7 @@
   },
   "leaderboard": {
     "title": "Leaderboard",
-    "subtitle": "Every race counts. Win lanes, bank points, climb the board.",
+    "subtitle": "Every multiplayer race counts. Win lanes, bank points, climb the board.",
     "rank": "#",
     "player": "Player",
     "wins": "Wins",
@@ -38,6 +38,7 @@
   },
   "play": {
     "phase": "Multiplayer race",
+    "practicePhase": "Practice",
     "choose": "Choose your runner",
     "start": "Start",
     "change": "Change runner",
@@ -45,8 +46,11 @@
       "title": "Races",
       "subtitle": "Create a race and invite your rivals, or join an open one.",
       "host": "➕ Create race",
+      "nameLabel": "Race name",
+      "namePlaceholder": "Race name (optional)",
       "openMatches": "Open races",
       "players": "{count}/{max} runners",
+      "hostedBy": "by {host} · {count}/{max} runners",
       "join": "Join",
       "loading": "Looking for races…",
       "empty": "No open races. Start one!",
@@ -154,6 +158,7 @@
     "go": "GO!",
     "finish": "🏁 FINISH!",
     "again": "press R to race again",
+    "practiceNote": "Practice run — doesn't count for the ranking",
     "goodPhrases": [
       "yum! 😋",
       "pure energy ⚡",
@@ -251,7 +256,7 @@
     "zapTitle": "⚡️ Zap the winner",
     "zapText": "When the race ends, you can send sat zaps to the winner. Running fast pays out in Bitcoin.",
     "rankingTitle": "🏆 Ranking",
-    "rankingText": "Your position when you cross the finish sets your place in the ranking. Climb it race after race.",
+    "rankingText": "Your finish position in a multiplayer race sets your place in the ranking — solo practice runs don't count. Climb it race after race.",
     "demo": "Demo",
     "cta": "Play now ▶"
   },

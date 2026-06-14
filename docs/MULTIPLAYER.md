@@ -10,7 +10,9 @@ There is no game server. Each peer announces its own seat on the relays and
 every client aggregates those presences into the roster.
 
 1. **Host** opens the races browser and presses **Create race** (hosts a new
-   match) or **Join** on an open one.
+   match) or **Join** on an open one. They may give the race an **optional
+   name** before creating it — the label rides the host's presence and shows in
+   everyone's browser so players can find a specific match.
 2. Pick a runner — each character owns a lane (Sprinter 1 … Bitcoin 4).
 3. The **host** presses **"Crear carrera" / "Create race"**. This publishes the
    match and reveals the **invite link** — so a link can never be shared for a
@@ -81,10 +83,13 @@ doesn't match the session key its claimed identity announced (anti-spoof).
 
 ### Rivals on the track
 
-Other players render as their **actual animated character sprite** (by lane),
-with a name label — not a colored dot. All four character sheets are loaded in a
-match; a rival whose sheet fails to load falls back to a translucent colored
-ghost. The minimap still uses lane-colored dots.
+Other players render as their **actual animated character sprite**, with a name
+label — not a colored dot. The sprite is keyed off the lane the rival **claimed
+in the lobby** (their character), not the live lane they swerve across mid-race —
+otherwise a rival crossing into another character's lane would briefly re-render
+as that character. All four character sheets are loaded in a match; a rival whose
+sheet fails to load falls back to a translucent colored ghost. The minimap still
+uses lane-colored dots.
 
 ## Testing multiplayer locally
 

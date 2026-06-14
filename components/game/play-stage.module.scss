@@ -2,6 +2,16 @@
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
 
+// Vertically centers the game (canvas + controls) in the space below the
+// header — the competitive PlayStage owns this wrapper so the header above it
+// can reflect the current phase (race vs. practice).
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .wrap {
   display: flex;
   flex-direction: column;

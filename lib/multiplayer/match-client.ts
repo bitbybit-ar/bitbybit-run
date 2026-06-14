@@ -46,6 +46,9 @@ export interface MatchClientOptions {
   players?: MatchPlayer[];
   /** Is this client the match host (can start the race)? */
   isHost?: boolean;
+  /** Optional human label for the race (host only) — surfaced in the lobby
+   *  browser so players can find a specific match. */
+  raceName?: string;
   /** Runner-state broadcast rate; defaults to ~5 Hz (ARCHITECTURE §4.3). */
   broadcastHz?: number;
 }
@@ -96,6 +99,9 @@ export class MatchClient {
   private readonly sessionSigner: SignerHandle;
   private readonly isHost: boolean;
   private readonly host: string;
+  /** Host-supplied race label, echoed in every presence so the lobby browser
+   *  can show it. Undefined for joiners (only the host names the race). */
+  private readonly raceName?: string;
   private readonly intervalMs: number;
 
   private state: MatchSnapshot;
@@ -121,6 +127,7 @@ export class MatchClient {
     this.sessionSigner = makeSessionSigner();
     this.isHost = opts.isHost ?? false;
     this.host = opts.host ?? (this.isHost ? opts.signer.pubkey : "");
+    this.raceName = opts.raceName?.trim() || undefined;
     this.intervalMs = 1000 / (opts.broadcastHz ?? 5);
     this.state = createMatchState({
       matchId: opts.matchId,
@@ -184,6 +191,7 @@ export class MatchClient {
       pubkey: this.signer.pubkey,
       lane: seat.lane,
       name: seat.name,
+      raceName: this.raceName,
       status,
       createdAt: seat.createdAt,
       sessionKey: this.sessionSigner.pubkey,

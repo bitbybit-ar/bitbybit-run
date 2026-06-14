@@ -1,8 +1,7 @@
-import { setRequestLocale, getTranslations } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/routing";
 import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/creator/users";
-import { GameHeader } from "@/components/game/game-header/game-header";
 import { PlayStage } from "@/components/game/play-stage";
 import styles from "./page.module.scss";
 
@@ -36,20 +35,17 @@ export default async function PlayPage({ params, searchParams }: Props) {
     return null;
   }
 
-  const t = await getTranslations("play");
-
   const user = await getUserByPubkey(session.pubkey);
   const currentUser = {
     name: user?.display_name ?? "Player",
     avatarUrl: user?.avatar_url ?? null,
   };
 
+  // PlayStage owns the header + stage chrome so the title can reflect the
+  // current phase (e.g. "Practice" during a solo run).
   return (
     <div className={styles.page}>
-      <GameHeader phase={t("phase")} />
-      <div className={styles.stage}>
-        <PlayStage currentUser={currentUser} />
-      </div>
+      <PlayStage currentUser={currentUser} />
     </div>
   );
 }

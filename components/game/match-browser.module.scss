@@ -41,6 +41,53 @@
 
 .cta {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-12;
+  width: 100%;
+}
+
+.nameField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-4;
+  width: 100%;
+  max-width: 360px;
+}
+
+.nameLabel {
+  align-self: flex-start;
+  font-family: $font-display;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+}
+
+.nameInput {
+  width: 100%;
+  padding: $spacing-12 $spacing-16;
+  font-family: $font-body;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: $color-surface;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: 4px 4px 0 0 $arcade-edge;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+  }
+}
+
+.ctaButtons {
+  display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: $spacing-12;
