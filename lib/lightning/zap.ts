@@ -5,6 +5,10 @@
  * winner's Lightning address. Browser-only (`window.webln`); the pure URL
  * helpers are unit-tested.
  *
+ * If the viewer has no WebLN wallet, we still fetch the BOLT11 invoice so the
+ * UI can show it as a QR / copyable string to pay from any wallet (mobile,
+ * etc.) — getting the invoice is independent of having a wallet to pay it.
+ *
  * Thrown error messages are stable codes the UI maps to localized copy:
  *   invalid_lud16 · no_webln · lnurl_unreachable · not_pay_request ·
  *   invoice_failed
@@ -85,20 +89,31 @@ async function fetchInvoice(
   return data.pr;
 }
 
+/** Whether a WebLN wallet (Alby, etc.) is available to pay in-browser. */
+export function hasWebln(): boolean {
+  return typeof window !== "undefined" && !!window.webln;
+}
+
+export interface ZapInvoice {
+  /** BOLT11 invoice to pay. */
+  invoice: string;
+  /** Amount the invoice is actually for, in sats (clamped to the recipient's
+   * accepted range — may differ from what the caller requested). */
+  sats: number;
+}
+
 /**
- * Zap a Lightning address: resolve LNURL-pay, fetch an invoice for `sats`
- * (clamped to the recipient's min/max) with an optional `comment` (sent only
- * when the recipient supports comments, truncated to their limit), and pay it
- * with WebLN. Resolves with the payment preimage on success.
+ * Resolve a Lightning address to a payable BOLT11 invoice for `sats` (clamped
+ * to the recipient's min/max) with an optional `comment` (sent only when the
+ * recipient supports comments, truncated to their limit). Does not require a
+ * wallet — the caller pays it via WebLN or hands it off (QR / copy). Returns
+ * the clamped amount alongside the invoice so the UI can show the true value.
  */
-export async function zapLightningAddress(
+export async function getZapInvoice(
   lud16: string,
   sats: number = ZAP_SATS,
   comment?: string
-): Promise<string> {
-  if (typeof window === "undefined" || !window.webln) {
-    throw new Error("no_webln");
-  }
+): Promise<ZapInvoice> {
   const { callback, min, max, commentAllowed } = await fetchPayParams(lud16);
   const msats = Math.min(Math.max(sats * 1000, min), max);
   const trimmed =
@@ -106,7 +121,30 @@ export async function zapLightningAddress(
       ? comment.slice(0, commentAllowed)
       : undefined;
   const invoice = await fetchInvoice(callback, msats, trimmed);
-  await window.webln.enable();
-  const { preimage } = await window.webln.sendPayment(invoice);
+  return { invoice, sats: Math.round(msats / 1000) };
+}
+
+/**
+ * Pay a BOLT11 invoice with the viewer's WebLN wallet. Throws `no_webln` when
+ * none is present. Resolves with the payment preimage on success.
+ */
+export async function payWithWebln(invoice: string): Promise<string> {
+  if (!hasWebln()) throw new Error("no_webln");
+  await window.webln!.enable();
+  const { preimage } = await window.webln!.sendPayment(invoice);
   return preimage;
+}
+
+/**
+ * Zap a Lightning address end-to-end with WebLN: fetch an invoice and pay it.
+ * Resolves with the payment preimage on success. (Callers wanting the
+ * no-wallet QR fallback use {@link getZapInvoice} + {@link payWithWebln}.)
+ */
+export async function zapLightningAddress(
+  lud16: string,
+  sats: number = ZAP_SATS,
+  comment?: string
+): Promise<string> {
+  const { invoice } = await getZapInvoice(lud16, sats, comment);
+  return payWithWebln(invoice);
 }
