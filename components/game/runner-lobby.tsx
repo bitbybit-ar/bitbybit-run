@@ -24,7 +24,11 @@ import {
   getCharacter,
   type CharacterId,
 } from "@/lib/game/characters";
-import { MAX_PLAYERS, type MatchPlayer } from "@/lib/multiplayer/types";
+import {
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  type MatchPlayer,
+} from "@/lib/multiplayer/types";
 import { CharacterSelect, type LobbyOccupant } from "./character-select";
 import { useMatchContext, type MatchContextValue } from "./match-provider";
 import styles from "./runner-lobby.module.scss";
@@ -169,6 +173,15 @@ function WiredLobby({
     return <LobbyNotFound onBack={onLeave} />;
   }
 
+  // A real match needs ≥2 runners; the host waits (Start disabled) until a
+  // rival joins. The mirrors the authoritative guard in MatchClient.start.
+  const enoughPlayers = players.length >= MIN_PLAYERS;
+  const notice = lostClaim
+    ? t("lobby.taken")
+    : isHost && created && !enoughPlayers
+      ? t("lobby.needPlayers", { min: MIN_PLAYERS })
+      : undefined;
+
   return (
     <CharacterSelect
       occupants={occupants}
@@ -179,13 +192,14 @@ function WiredLobby({
       onBack={onLeave}
       isHost={isHost}
       created={created}
+      canStart={enoughPlayers}
       inviteUrl={inviteUrl}
-      notice={lostClaim ? t("lobby.taken") : undefined}
+      notice={notice}
     />
   );
 }
 
-function LocalLobby({ currentUser, onClaim, onStart }: RunnerLobbyProps) {
+function LocalLobby({ currentUser, onClaim, onStart, onLeave }: RunnerLobbyProps) {
   const [claimedId, setClaimedId] = useState<CharacterId | null>(null);
 
   const occupants = useMemo<Partial<Record<CharacterId, LobbyOccupant>>>(
@@ -216,6 +230,7 @@ function LocalLobby({ currentUser, onClaim, onStart }: RunnerLobbyProps) {
       playerCount={claimedId ? 1 : 0}
       onClaim={claim}
       onStart={() => onStart?.()}
+      onBack={onLeave}
       // The local fallback has no match to create — start the solo race directly.
       created
     />

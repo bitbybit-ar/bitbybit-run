@@ -49,7 +49,8 @@
       "players": "{count}/{max} runners",
       "join": "Join",
       "loading": "Looking for races…",
-      "empty": "No open races. Start one!"
+      "empty": "No open races. Start one!",
+      "practice": "🏃 Practice"
     },
     "lobby": {
       "players": "{count}/4 runners",
@@ -63,7 +64,8 @@
       "waitingHost": "Waiting for the host…",
       "invite": "Invite your rivals",
       "copy": "Copy link",
-      "copied": "Copied!"
+      "copied": "Copied!",
+      "needPlayers": "You need at least {min} players to start."
     },
     "notFound": {
       "title": "This race doesn't exist or already ended",
@@ -90,12 +92,18 @@
       "zapAmountLabel": "Amount (sats)",
       "zapMessageLabel": "Message (optional)",
       "zapMessagePlaceholder": "Leave a message…",
-      "zapMessages": ["GG! 🏆", "Great race! 🏃", "Respect ⚡️", "WAGMI 🚀"],
+      "zapMessages": [
+        "GG! 🏆",
+        "Great race! 🏃",
+        "Respect ⚡️",
+        "WAGMI 🚀"
+      ],
       "zapSend": "Send {sats} sats",
       "zapping": "Zapping…",
       "zapSent": "⚡️ Zapped {name}!",
       "zapFailed": "Couldn't zap. Try again.",
-      "zapNoWebln": "You need a Lightning wallet (e.g. Alby) to zap."
+      "zapNoWebln": "You need a Lightning wallet (e.g. Alby) to zap.",
+      "zapNoWallet": "This player has no Lightning wallet to receive zaps."
     },
     "soundOn": "Turn sound on",
     "soundOff": "Mute",
@@ -107,6 +115,19 @@
       "touchLanes": "tap the sides to change lane",
       "touchSprint": "hold the centre to sprint",
       "touchRestart": "tap to restart"
+    },
+    "waiting": {
+      "leading": "🏆 You are in the lead!",
+      "finished": "🏁 You finished!",
+      "subtitle": "Waiting for the others to finish…",
+      "racing": "Racing…"
+    },
+    "loading": "Loading…",
+    "reconnect": {
+      "title": "Reconnect your signer",
+      "text": "To play real matches you need to reconnect your signer (nsec or NIP-46). You can also practice solo.",
+      "cta": "🔌 Reconnect",
+      "practice": "🏃 Practice"
     }
   },
   "demo": {

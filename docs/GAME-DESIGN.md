@@ -115,12 +115,15 @@ Players earn **points** during the race (shown live and in the final ranking):
 
 ## 6. Win condition & ranking
 
-- **Winner** = first runner to cross the finish line. The race ends **the instant
-  the first runner crosses** — every client jumps to the results screen at once
-  (no waiting for stragglers).
+- **Winner** = first runner to cross the finish line. The race **continues until
+  every runner crosses** (or a 20s grace window after the first finish elapses);
+  finishers wait on a live-ranking screen meanwhile, and anyone still out when
+  the grace fires is ranked DNF ("No terminó").
 - The winner ranks #1; the remaining players are ordered by **total points**,
   which fold in the placement bonus (further-along players placed higher), so
   finishing position still matters.
+- A real match needs **at least 2 players** to start; a lone player uses
+  **Practice** (a solo race that never counts for the ranking).
 - Final standings = ordered list of `{ player, position, points }`, recomputed
   locally — a remote event's claimed position is never trusted.
 
@@ -132,17 +135,20 @@ Players earn **points** during the race (shown live and in the final ranking):
    - Join an existing match, **or** create a new one. An **invite link** drops the
      invitee straight into the runner-select lobby for that match (preserved
      through sign-in if they're logged out).
-   - The **host** can start the match with a button, or wait until all 4 lanes
-     fill (auto-start). Once a match starts, **no one new can join**; a rostered
-     player who drops can reconnect (it never restarts the match).
+   - The **host** can start the match with a button once **≥2 players** are in,
+     or wait until all 4 lanes fill (auto-start). There's also a **Practice**
+     button for a solo race that never counts for the ranking. Once a match
+     starts, **no one new can join**; a rostered player who drops can reconnect
+     (it never restarts the match).
 4. **Game room** — the race itself. On screen:
    - **Main view (2.5D):** your runner from behind, upcoming food & obstacles, and
      **rivals drawn as their own animated character** (with a name tag).
    - **Minimap:** where every runner is along the track (the shared multiplayer
      surface — updates a few times per second).
    - **Live HUD:** energy bar, poison bar, current position, live points/ranking.
-5. **Results** — final standings, points, and a **⚡ Zap winner** button (shown to
-   everyone the moment the first runner crosses).
+5. **Results** — final standings, points, and a **⚡ Zap winner** button (shown
+   to the non-winners once the match resolves; a note appears if the winner has
+   no Lightning address). **Jugar de nuevo** returns to the races browser.
 6. **Leaderboard** — global ranking, **paginated 10 per page**.
 7. **Rules & demo** — how to play, the mechanics, and a playable/looping demo.
 

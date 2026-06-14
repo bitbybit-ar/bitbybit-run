@@ -33,6 +33,7 @@ export function ZapWinner({
 }) {
   const t = useTranslations("play.results");
   const [lud16, setLud16] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState<number>(ZAP_SATS);
   const [message, setMessage] = useState("");
@@ -46,14 +47,23 @@ export function ZapWinner({
       .then((d) => {
         if (active) setLud16(typeof d?.lud16 === "string" ? d.lud16 : null);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoaded(true);
+      });
     return () => {
       active = false;
     };
   }, [winnerPubkey]);
 
-  // No Lightning address → nothing to zap.
-  if (!lud16) return null;
+  // No Lightning address: stay silent while loading, then explain why there's
+  // nothing to zap (rather than rendering nothing, which reads as a bug).
+  if (!lud16) {
+    if (!loaded) return null;
+    return (
+      <p className={styles.note}>{t("zapNoWallet", { name: winnerName })}</p>
+    );
+  }
 
   if (status === "sent") {
     return <p className={styles.sent}>{t("zapSent", { name: winnerName })}</p>;
