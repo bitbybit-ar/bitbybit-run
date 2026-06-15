@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button/button";
+import { Modal } from "@/components/ui/modal";
 import { useMatchDiscovery } from "@/lib/hooks/use-match-discovery";
 import { MAX_PLAYERS } from "@/lib/multiplayer/types";
 import { shortPubkey } from "@/lib/utils";
@@ -25,7 +26,15 @@ export function MatchBrowser({
 }) {
   const t = useTranslations("play.browser");
   const { matches, loading } = useMatchDiscovery();
+  // The race name is asked for in a prompt opened by "Create race" — not shown
+  // inline upfront — so the browser stays focused on choosing what to play.
+  const [naming, setNaming] = useState(false);
   const [raceName, setRaceName] = useState("");
+
+  const submitHost = () => {
+    setNaming(false);
+    onHost(raceName.trim() || undefined);
+  };
 
   return (
     <section className={styles.browser}>
@@ -35,23 +44,8 @@ export function MatchBrowser({
       </header>
 
       <div className={styles.cta}>
-        <label className={styles.nameField}>
-          <span className={styles.nameLabel}>{t("nameLabel")}</span>
-          <input
-            type="text"
-            className={styles.nameInput}
-            value={raceName}
-            onChange={(e) => setRaceName(e.target.value)}
-            placeholder={t("namePlaceholder")}
-            maxLength={80}
-          />
-        </label>
         <div className={styles.ctaButtons}>
-          <Button
-            type="button"
-            size="lg"
-            onClick={() => onHost(raceName.trim() || undefined)}
-          >
+          <Button type="button" size="lg" onClick={() => setNaming(true)}>
             {t("host")}
           </Button>
           {onPractice && (
@@ -66,6 +60,34 @@ export function MatchBrowser({
           )}
         </div>
       </div>
+
+      {naming && (
+        <Modal title={t("nameTitle")} onClose={() => setNaming(false)} size="sm">
+          <form
+            className={styles.nameForm}
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitHost();
+            }}
+          >
+            <label className={styles.nameField}>
+              <span className={styles.nameLabel}>{t("nameLabel")}</span>
+              <input
+                type="text"
+                className={styles.nameInput}
+                value={raceName}
+                onChange={(e) => setRaceName(e.target.value)}
+                placeholder={t("namePlaceholder")}
+                maxLength={80}
+                autoFocus
+              />
+            </label>
+            <Button type="submit" size="lg">
+              {t("nameConfirm")}
+            </Button>
+          </form>
+        </Modal>
+      )}
 
       <div className={styles.list}>
         <h3 className={styles.listTitle}>{t("openMatches")}</h3>

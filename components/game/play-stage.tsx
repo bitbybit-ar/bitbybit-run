@@ -30,6 +30,35 @@ import styles from "./play-stage.module.scss";
 
 type FinishResult = { time: number; points: number };
 
+// The play flow lives on a single route; each screen reflects itself in the
+// `?stage=` query param so the URL says where you are (shareable, and the back
+// button lands somewhere meaningful) without splitting /play into sub-routes.
+type PlayStageName =
+  | "browser"
+  | "practice"
+  | "lobby"
+  | "race"
+  | "waiting"
+  | "results";
+
+/**
+ * Mirror the active stage into `?stage=` on the current URL. Write-only: we
+ * reflect state into the URL, never read it back to drive navigation, so a live
+ * match (and its client) is never re-created by a URL change. `replaceState`
+ * keeps it off the history stack (no Back-button churn mid-race) and preserves
+ * every other param — the locale prefix and the `?m=&h=` invite link included.
+ * `null` means "this component doesn't own the stage right now" (no write).
+ */
+function useStageUrl(stage: PlayStageName | null) {
+  useEffect(() => {
+    if (!stage || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("stage") === stage) return;
+    url.searchParams.set("stage", stage);
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, [stage]);
+}
+
 // Lets the active solo view (LocalStage) tell the page header it's a practice
 // run, so the title reads "Practice" instead of "Multiplayer race". Everything
 // else (browser, lobby, real race) leaves it false.
@@ -196,6 +225,10 @@ function SignedInStage({
   // that never persists to the leaderboard. Separate from `target` (a match).
   const [practice, setPractice] = useState(false);
 
+  // Own the "browser" stage only; practice (LocalStage) and a live match
+  // (LobbyAndRace) reflect their own finer-grained stages.
+  useStageUrl(!target && !practice ? "browser" : null);
+
   if (practice) {
     return (
       <LocalStage
@@ -269,6 +302,28 @@ function LobbyAndRace({
     return () => setActive(false);
   }, [guardLeave, setActive]);
 
+  // Only hand the scene a live net when there's company on the track —
+  // otherwise a solo host would get MP behavior (lonely minimap, no restart).
+  const multiplayer = (snap?.players.length ?? 0) > 1;
+  // I've crossed but others may still be racing.
+  const selfFinished = !!selfPubkey && !!snap?.finishes[selfPubkey];
+
+  // Reflect the match sub-stage in the URL (mirrors the render branches below).
+  useStageUrl(
+    status === "waiting"
+      ? "lobby"
+      : !amInRoster
+        ? // Latecomer to an already-started (or finished) match: not racing.
+          status === "finished"
+          ? "results"
+          : "lobby"
+        : status === "finished" && multiplayer
+          ? "results"
+          : selfFinished && multiplayer
+            ? "waiting"
+            : "race"
+  );
+
   if (status === "waiting") {
     return (
       <RunnerLobby
@@ -291,10 +346,6 @@ function LobbyAndRace({
     );
   }
 
-  // Only hand the scene a live net when there's company on the track —
-  // otherwise a solo host would get MP behavior (lonely minimap, no restart).
-  const multiplayer = (snap?.players.length ?? 0) > 1;
-
   // The match ends only once every runner has crossed (or the grace timeout
   // fires) → everyone sees the standings (multiplayer only). A reconnecting
   // player lands here too.
@@ -310,7 +361,6 @@ function LobbyAndRace({
 
   // I've crossed but others are still racing → wait on a live-ranking screen
   // (my own scene is frozen at the line) until the match resolves.
-  const selfFinished = !!selfPubkey && !!snap?.finishes[selfPubkey];
   if (selfFinished && multiplayer && snap && selfPubkey) {
     return <MatchWaiting snapshot={snap} selfPubkey={selfPubkey} />;
   }
@@ -387,6 +437,9 @@ function LocalStage({
     setPractice(true);
     return () => setPractice(false);
   }, [setPractice]);
+
+  // Solo flow owns "practice" (lobby/picker) → "race" (running).
+  useStageUrl(started ? "race" : "practice");
 
   if (!started) {
     return (

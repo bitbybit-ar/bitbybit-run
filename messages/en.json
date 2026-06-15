@@ -49,6 +49,8 @@
       "host": "➕ Create race",
       "nameLabel": "Race name",
       "namePlaceholder": "Race name (optional)",
+      "nameTitle": "Name your race",
+      "nameConfirm": "Create race",
       "openMatches": "Open races",
       "players": "{count}/{max} runners",
       "hostedBy": "by {host} · {count}/{max} runners",

@@ -47,6 +47,15 @@
   width: 100%;
 }
 
+// Race-name prompt (inside the "Create race" modal).
+.nameForm {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $spacing-16;
+  width: 100%;
+}
+
 .nameField {
   display: flex;
   flex-direction: column;
