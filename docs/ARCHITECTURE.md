@@ -242,9 +242,12 @@ Suggested tables (Drizzle schema):
   player's personal best (max points in a single match). Ordered by wins, then
   personal best — peak performance, not a lifetime sum.
 
-Written via **Next.js API routes** (Vercel serverless) when a match ends. The
-client posts the final standings; the route validates basic shape and upserts.
-Free tier: Neon scale-to-zero, native Vercel integration.
+Written via **Next.js API routes** (Vercel serverless) when a match ends. *Any*
+participant's client posts the final standings (not just the host's), so a match
+isn't lost if the host leaves before it resolves; the route validates basic
+shape, checks the submitter is one of the players, and upserts idempotently by
+`nostrId` so concurrent posts never duplicate. Free tier: Neon scale-to-zero,
+native Vercel integration.
 
 > Why a DB instead of storing the leaderboard on Nostr? Reliability and easy
 > queries. Aggregating/ranking from scattered Nostr events is fiddly; Postgres is

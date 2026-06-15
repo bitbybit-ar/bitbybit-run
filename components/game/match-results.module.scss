@@ -30,6 +30,19 @@
   color: $color-text-secondary;
 }
 
+// Explains a forced (grace-timeout) finish to a runner who didn't cross.
+.timedOut {
+  margin: 0;
+  max-width: 460px;
+  text-align: center;
+  font-size: $font-size-body;
+  color: $color-text-secondary;
+  padding: $spacing-12 $spacing-16;
+  background: $color-surface;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-lg;
+}
+
 .results > div {
   width: 100%;
 }

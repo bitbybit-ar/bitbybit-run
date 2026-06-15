@@ -9,6 +9,7 @@ import {
 import { Pixelify_Sans, Nunito_Sans } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/lib/contexts/theme-context";
+import { ActiveMatchProvider } from "@/lib/contexts/active-match-context";
 import { Navbar } from "@/components/layout/navbar/navbar";
 import { SiteFooter } from "@/components/layout/footer/site-footer";
 import { FakeAds } from "@/components/layout/fake-ads/fake-ads";
@@ -140,13 +141,15 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <SignerProviderClient initialSession={initialSession}>
-              <a href="#main" className="skip-link">
-                {t("skipToContent")}
-              </a>
-              <Navbar />
-              <main id="main">{children}</main>
-              <FakeAds />
-              <SiteFooter />
+              <ActiveMatchProvider>
+                <a href="#main" className="skip-link">
+                  {t("skipToContent")}
+                </a>
+                <Navbar />
+                <main id="main">{children}</main>
+                <FakeAds />
+                <SiteFooter />
+              </ActiveMatchProvider>
             </SignerProviderClient>
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -42,6 +42,9 @@ export const MatchPlayerSchema = z.object({
   /** Ephemeral per-match signing key this peer announced (binds their runner/
    *  finish frames to this identity without re-prompting Amber). */
   sessionKey: NostrPubkeySchema.optional(),
+  /** This peer announced it left the match (closed the tab / navigated away).
+   *  Lets others stop waiting on them and label them "left" instead of DNF. */
+  left: z.boolean().optional(),
 });
 export type MatchPlayer = z.infer<typeof MatchPlayerSchema>;
 
@@ -79,6 +82,10 @@ export const MatchDiscoverySchema = z.object({
    *  Amber/NIP-46 isn't prompted per frame. Bound here by the real identity
    *  that signs this presence; the binding lets clients reject spoofed frames. */
   sessionKey: NostrPubkeySchema.optional(),
+  /** Announced when this peer leaves the match, so others stop waiting on them
+   *  (see `MatchPlayerSchema.left`). Best-effort: a hard tab-close may not send
+   *  it, which is why the finish-grace timeout still backstops the match end. */
+  left: z.boolean().optional(),
 });
 export type MatchDiscovery = z.infer<typeof MatchDiscoverySchema>;
 

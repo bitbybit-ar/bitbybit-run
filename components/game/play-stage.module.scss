@@ -13,6 +13,7 @@
 }
 
 .wrap {
+  position: relative; // anchors the in-race finish banner overlay
   display: flex;
   flex-direction: column;
   align-items: center;

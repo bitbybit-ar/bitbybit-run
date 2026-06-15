@@ -8,7 +8,7 @@ import {
   isComplete,
   resolveStandings,
 } from "@/lib/multiplayer/match-state";
-import type { RunnerState } from "@/lib/multiplayer/types";
+import { FINISH_GRACE_MS, type RunnerState } from "@/lib/multiplayer/types";
 import { POINTS } from "@/lib/game/config";
 
 const A = "a".repeat(64);
@@ -242,6 +242,66 @@ describe("match-state finish + standings", () => {
     expect(isComplete(s)).toBe(true);
     // A finished earlier (100 < 200) → ranks first despite arriving second.
     expect(s.standings.map((r) => r.pubkey)).toEqual([A, B]);
+  });
+});
+
+/** A presence event announcing the peer left the match (mid-race). */
+function leftEvent(pubkey: string, lane: number): ParsedEvent {
+  return {
+    type: "discovery",
+    data: {
+      matchId: "m1",
+      host: A,
+      trackId: "classic-v1",
+      pubkey,
+      lane,
+      status: "playing",
+      createdAt: 1,
+      left: true,
+    },
+  };
+}
+
+describe("match-state finish grace deadline", () => {
+  it("anchors finishGraceUntil to the earliest finishTime", () => {
+    let s = base();
+    expect(s.finishGraceUntil).toBeNull();
+    s = applyEvent(s, finishEvent(A, { finishTime: 100 }));
+    expect(s.finishGraceUntil).toBe(100 + FINISH_GRACE_MS);
+    // A second finisher who crossed *earlier* pulls the shared deadline back.
+    s = applyEvent(s, finishEvent(B, { finishTime: 80 }));
+    expect(s.finishGraceUntil).toBe(80 + FINISH_GRACE_MS);
+  });
+});
+
+describe("match-state leaving a match", () => {
+  it("marks a peer as left from their announced presence", () => {
+    let s = base();
+    s = applyEvent(s, leftEvent(B, 1));
+    expect(s.players.find((p) => p.pubkey === B)?.left).toBe(true);
+  });
+
+  it("counts a left player as done so they don't block completion", () => {
+    let s = base();
+    s = applyEvent(s, finishEvent(A, { finishTime: 100 }));
+    expect(isComplete(s)).toBe(false); // B still out there
+    s = applyEvent(s, leftEvent(B, 1)); // B bails
+    expect(isComplete(s)).toBe(true);
+  });
+
+  it("ends the race immediately when the last unfinished player leaves mid-race", () => {
+    const started: ParsedEvent = {
+      type: "control",
+      data: { type: "start", matchId: "m1", trackId: "classic-v1", startAt: 1 },
+    };
+    let s = base();
+    s = applyEvent(s, started);
+    s = beginPlaying(s);
+    s = applyEvent(s, finishEvent(A, { finishTime: 100 }));
+    expect(s.status).toBe("playing");
+    s = applyEvent(s, leftEvent(B, 1));
+    expect(s.status).toBe("finished");
+    expect(s.standings.map((r) => r.pubkey)).toContain(A);
   });
 });
 

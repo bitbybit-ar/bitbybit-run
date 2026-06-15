@@ -89,6 +89,8 @@
       "time": "Tiempo",
       "points": "Puntos",
       "dnf": "No terminó",
+      "left": "Se fue",
+      "timedOut": "⏱ Se acabó el tiempo — {winner} llegó primero y la carrera cerró mientras te esperaba.",
       "toLeaderboard": "Ver ranking",
       "playAgain": "Jugar de nuevo",
       "zapWinner": "⚡️ Zapear al ganador",
@@ -123,10 +125,25 @@
     "waiting": {
       "leading": "🏆 ¡Vas primero!",
       "finished": "🏁 ¡Llegaste!",
-      "subtitle": "Esperando a que los demás terminen…",
-      "racing": "Corriendo…"
+      "subtitle": "Quedate para ver el podio final — la carrera cierra cuando todos cruzan.",
+      "racing": "Corriendo…",
+      "resultsIn": "Resultados finales en {seconds}s",
+      "left": "Se fue",
+      "cheers": [
+        "¡Mantené la corona! 👑",
+        "Te vienen a alcanzar… 👀",
+        "No te vayas — el podio está por cerrarse 🏁",
+        "Ojo a la pista 🔥",
+        "Hinchando por un final de foto 📸",
+        "Quedate para la tabla ⚡"
+      ]
+    },
+    "race": {
+      "firstFinisher": "🏁 ¡{name} cruzó! {seconds}s para llegar a la meta",
+      "lastCall": "⏱ Quedan {seconds}s — ¡acelerá a la meta!"
     },
     "loading": "Cargando…",
+    "leaveConfirm": "¿Salir de la carrera? Vas a abandonar la partida y los demás siguen sin vos.",
     "reconnect": {
       "title": "Reconectá tu firma",
       "text": "Para jugar partidas reales necesitás volver a conectar tu firma (nsec o NIP-46). También podés practicar en modo solo.",

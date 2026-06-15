@@ -13,7 +13,12 @@
  */
 import { POINTS } from "@/lib/game/config";
 import type { ParsedEvent } from "./events";
-import type { FinalStanding, MatchSnapshot, MatchStatus } from "./types";
+import {
+  FINISH_GRACE_MS,
+  type FinalStanding,
+  type MatchSnapshot,
+  type MatchStatus,
+} from "./types";
 
 /** Lifecycle ordering — the match status only ever advances along this. */
 const STATUS_ORDER: Record<MatchStatus, number> = {
@@ -47,6 +52,7 @@ export function createMatchState(input: CreateMatchInput): MatchSnapshot {
     runners: {},
     finishes: {},
     standings: [],
+    finishGraceUntil: null,
   };
 }
 
@@ -114,11 +120,14 @@ export function resolveStandings(state: MatchSnapshot): FinalStanding[] {
   return rows.map((row, index) => ({ ...row, position: index + 1 }));
 }
 
-/** True once every roster player has a recorded finish. */
+/** True once every roster player is done — finished, or left the match (so a
+ *  departed player no longer blocks the others from seeing the results). */
 export function isComplete(state: MatchSnapshot): boolean {
   return (
     state.players.length > 0 &&
-    state.players.every((p) => state.finishes[p.pubkey] !== undefined)
+    state.players.every(
+      (p) => state.finishes[p.pubkey] !== undefined || p.left === true
+    )
   );
 }
 
@@ -136,7 +145,12 @@ function sameRoster(a: MatchSnapshot["players"], b: MatchSnapshot["players"]) {
   if (a.length !== b.length) return false;
   return a.every((p, i) => {
     const q = b[i];
-    return p.pubkey === q.pubkey && p.lane === q.lane && p.name === q.name;
+    return (
+      p.pubkey === q.pubkey &&
+      p.lane === q.lane &&
+      p.name === q.name &&
+      !!p.left === !!q.left
+    );
   });
 }
 
@@ -176,6 +190,7 @@ export function applyEvent(
             name,
             claimedAt: createdAt,
             sessionKey: event.data.sessionKey,
+            left: event.data.left,
           },
         ];
       }
@@ -193,13 +208,20 @@ export function applyEvent(
       // the orchestrator doesn't emit a needless snapshot.
       const rosterSame = sameRoster(players, state.players);
       if (rosterSame && nextStatus === state.status) return state;
-      return {
+      const next: MatchSnapshot = {
         ...state,
         host: state.host || event.data.host,
         trackId: event.data.trackId,
         players: rosterSame ? state.players : players,
         status: nextStatus,
       };
+      // If a player leaving mid-race means everyone remaining is done, end the
+      // match now rather than making the finishers wait out the grace timeout.
+      if (next.status === "playing" && isComplete(next)) {
+        next.status = "finished";
+        next.standings = resolveStandings(next);
+      }
+      return next;
     }
 
     case "control": {
@@ -225,14 +247,19 @@ export function applyEvent(
       // First finish wins for a given pubkey (a later duplicate can only be
       // slower, so keep the earliest).
       if (prev && prev.finishTime <= event.data.finishTime) return state;
+      const finishes = { ...state.finishes, [event.data.pubkey]: event.data };
+      // The grace deadline is anchored to the *earliest* finish, so every
+      // client converges on the same countdown end without a server clock.
+      const earliest = Math.min(...Object.values(finishes).map((f) => f.finishTime));
       const next: MatchSnapshot = {
         ...state,
-        finishes: { ...state.finishes, [event.data.pubkey]: event.data },
+        finishes,
+        finishGraceUntil: earliest + FINISH_GRACE_MS,
       };
       // Everyone races their own line: the match only ends once *every* roster
-      // player has crossed. Until then finishers see a live waiting screen
-      // while the rest keep running. The orchestrator arms a grace timeout
-      // (see match-client) so a straggler/disconnect can't stall it forever.
+      // player has crossed (or left). Until then finishers see a live waiting
+      // screen while the rest keep running. The orchestrator arms a grace
+      // timeout (see match-client) so a straggler/disconnect can't stall it.
       if (isComplete(next)) next.status = "finished";
       // Recompute on every finish so the waiting screen's live ranking updates
       // (finishers by time, the rest by track progress).

@@ -1,0 +1,56 @@
+@use "@/styles/colors" as *;
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.piece {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: fall;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+
+  &[data-color="0"] {
+    background: $color-primary;
+  }
+  &[data-color="1"] {
+    background: $color-warning;
+  }
+  &[data-color="2"] {
+    background: $color-success;
+  }
+  &[data-color="3"] {
+    background: $color-accent;
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(360px) rotate(540deg);
+    opacity: 0;
+  }
+}
+
+// Respect reduced-motion: hold the pieces still and hidden.
+@media (prefers-reduced-motion: reduce) {
+  .piece {
+    animation: none;
+    opacity: 0;
+  }
+}

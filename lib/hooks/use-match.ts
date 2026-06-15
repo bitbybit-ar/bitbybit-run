@@ -81,9 +81,12 @@ export function useMatch(options: UseMatchOptions): UseMatch {
 
     return () => {
       unsubscribe();
-      instance.leave();
+      // leave() fires the best-effort "I left" presence and resolves once it
+      // flushes; hold the transport open until then so the announce actually
+      // reaches the relays on navigation/unmount (it never rejects).
+      const left = instance.leave();
       // Only close a transport we created; an injected one is the caller's.
-      if (!injectedTransport) transport.close();
+      if (!injectedTransport) void left.finally(() => transport.close());
       clientRef.current = null;
       setClient(null);
     };
@@ -124,6 +127,7 @@ export function useMatch(options: UseMatchOptions): UseMatch {
       runners: {},
       finishes: {},
       standings: [],
+      finishGraceUntil: null,
     }),
     [matchId, trackId, host, isHost, signer.pubkey, players]
   );
