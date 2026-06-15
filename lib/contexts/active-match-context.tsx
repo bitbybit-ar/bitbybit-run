@@ -6,17 +6,20 @@
  * A live match is all peer-to-peer with no server, so one player bailing can
  * strand or DNF the rest — this is the guard that gives them a chance to stay.
  *
- * Two interception points while `active`:
+ * Three interception points while `active`:
  *   - `beforeunload` for hard navigation (refresh, tab close, address bar),
  *   - a capture-phase click listener on in-app links (`<a>`), since the App
  *     Router has no built-in navigation blocker. In-game controls are buttons,
- *     not anchors, so they're untouched; only real navigation is confirmed.
+ *     not anchors, so they're untouched; only real navigation is confirmed,
+ *   - a `popstate` + sentinel-entry trap for the browser back/forward buttons,
+ *     which the App Router handles client-side (so beforeunload never fires).
  */
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -39,10 +42,13 @@ export function useActiveMatch(): ActiveMatchValue {
 export function ActiveMatchProvider({ children }: { children: ReactNode }) {
   const t = useTranslations("play");
   const [active, setActive] = useState(false);
+  // Read the prompt through a ref so the guard effect depends only on `active`
+  // — re-running it on an unstable `t` reference would stack history sentinels.
+  const messageRef = useRef("");
+  messageRef.current = t("leaveConfirm");
 
   useEffect(() => {
     if (!active) return;
-    const message = t("leaveConfirm");
 
     // Hard navigation (refresh / close / address bar): native browser prompt.
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -68,19 +74,38 @@ export function ActiveMatchProvider({ children }: { children: ReactNode }) {
       if (!anchor || !href || href.startsWith("#")) return; // not a navigation
       // A new-tab / download link doesn't unload this page — let it through.
       if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-      if (!window.confirm(message)) {
+      if (!window.confirm(messageRef.current)) {
         e.preventDefault();
         e.stopPropagation();
       }
     };
 
+    // Browser back/forward: the App Router navigates client-side without
+    // firing beforeunload, so trap it. We push a same-URL "sentinel" entry on
+    // top of the current one; the first back press pops that (a no-op popstate
+    // to the same URL, so nothing visibly moves) and lets us confirm. Decline →
+    // re-push the sentinel and stay; accept → go back for real, past it.
+    let confirmedLeave = false;
+    window.history.pushState(null, "", window.location.href);
+    const onPopState = () => {
+      if (confirmedLeave) return; // our own history.back() below — let it run
+      if (window.confirm(messageRef.current)) {
+        confirmedLeave = true;
+        window.history.back();
+      } else {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
     window.addEventListener("beforeunload", onBeforeUnload);
     document.addEventListener("click", onClickCapture, true);
+    window.addEventListener("popstate", onPopState);
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
       document.removeEventListener("click", onClickCapture, true);
+      window.removeEventListener("popstate", onPopState);
     };
-  }, [active, t]);
+  }, [active]);
 
   const value = useCallback((on: boolean) => setActive(on), []);
 

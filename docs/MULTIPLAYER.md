@@ -72,7 +72,10 @@ up — {winner} crossed first and waited"). Leaving mid-race is **announced** (a
 `left` presence) so the others stop waiting and the leaver is shown as **"left"**
 rather than DNF; a hard tab-close can't always send it, which is why the grace
 timeout still backstops the end. Navigating away from an active match is
-**confirmed** first (a `beforeunload` prompt plus an in-app link guard).
+**confirmed** first — a `beforeunload` prompt (refresh / tab close), an in-app
+link guard, and a back/forward-button trap (`popstate` + a sentinel history
+entry, since the App Router navigates client-side without firing
+`beforeunload`).
 
 Final order: finishers by earliest `finishTime`, then non-finishers, with an
 **arrival placement bonus** (`POINTS.placement`) folded into each total so where

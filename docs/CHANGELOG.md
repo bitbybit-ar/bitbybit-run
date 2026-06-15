@@ -50,7 +50,8 @@ Dates use `YYYY-MM-DD`.
 - **Leaving a match is handled gracefully (no more silent strandings).** A live
   race is peer-to-peer, so one player bailing used to strand or unfairly DNF the
   rest. Now: navigating away from an active match is **confirmed** first
-  (`beforeunload` + an in-app link guard); an intentional leave is **announced**
+  (`beforeunload` for refresh/close, an in-app link guard, and a back/forward
+  button trap); an intentional leave is **announced**
   (a `left` presence) so the others stop waiting and the leaver shows as "left"
   rather than DNF; and if the last unfinished player leaves, the race **resolves
   immediately** instead of waiting out the grace timeout.
