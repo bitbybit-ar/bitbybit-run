@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
-import type { LeaderboardRow } from "@/lib/multiplayer/store";
+import type { LeaderboardRow, LeaderboardSort } from "@/lib/multiplayer/store";
 import { RankingTable } from "./ranking-table";
 import { shortPubkey, cn } from "@/lib/utils";
 import styles from "./leaderboard-table.module.scss";
@@ -13,6 +13,8 @@ type Props = {
   totalPages?: number;
   /** Players per page (for the global rank offset on page 2+). */
   pageSize?: number;
+  /** Active sort column (the headers are sort toggles). */
+  sort?: LeaderboardSort;
 };
 
 /**
@@ -26,8 +28,19 @@ export async function LeaderboardTable({
   page = 1,
   totalPages = 1,
   pageSize = 10,
+  sort = "wins",
 }: Props) {
   const t = await getTranslations("leaderboard");
+
+  // Each numeric column is a sort toggle: clicking re-ranks the board by it and
+  // resets to page 1. The active column shows a ▼ and is highlighted.
+  const sortColumn = (key: LeaderboardSort, label: string, collapsible = false) => ({
+    label,
+    collapsible,
+    active: sort === key,
+    sortHref: { pathname: "/leaderboard" as const, query: { sort: key, page: 1 } },
+    sortLabel: t("sortBy", { column: label }),
+  });
 
   return (
     <section className={styles.page}>
@@ -43,9 +56,9 @@ export async function LeaderboardTable({
             playerLabel={t("player")}
             rankOffset={(page - 1) * pageSize}
             columns={[
-              { label: t("wins") },
-              { label: t("best") },
-              { label: t("races"), collapsible: true },
+              sortColumn("wins", t("wins")),
+              sortColumn("best", t("best")),
+              sortColumn("races", t("races"), true),
             ]}
             rows={rows.map((row) => ({
               key: row.pubkey,
@@ -58,7 +71,10 @@ export async function LeaderboardTable({
           {totalPages > 1 && (
             <nav className={styles.pagination} aria-label={t("title")}>
               <Link
-                href={{ pathname: "/leaderboard", query: { page: page - 1 } }}
+                href={{
+                  pathname: "/leaderboard",
+                  query: { page: page - 1, sort },
+                }}
                 className={cn(
                   styles.pageLink,
                   page <= 1 && styles.pageLinkDisabled
@@ -72,7 +88,10 @@ export async function LeaderboardTable({
                 {t("pageOf", { page, total: totalPages })}
               </span>
               <Link
-                href={{ pathname: "/leaderboard", query: { page: page + 1 } }}
+                href={{
+                  pathname: "/leaderboard",
+                  query: { page: page + 1, sort },
+                }}
                 className={cn(
                   styles.pageLink,
                   page >= totalPages && styles.pageLinkDisabled

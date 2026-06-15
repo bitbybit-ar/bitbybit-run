@@ -16,6 +16,7 @@ const HAS_DB = !!process.env.DATABASE_URL;
 
 const A = "a".repeat(64);
 const B = "b".repeat(64);
+const C = "c".repeat(64);
 
 describe.skipIf(!HAS_DB)("store persistence (integration)", () => {
   beforeEach(async () => {
@@ -94,5 +95,39 @@ describe.skipIf(!HAS_DB)("store persistence (integration)", () => {
     expect(b.bestPoints).toBe(530); // max(480, 530)
     // Wins tie → ordered by personal best, so B (530) ranks above A (500).
     expect(lb[0].pubkey).toBe(B);
+  });
+
+  it("ranks by the requested sort column (wins / best / races)", async () => {
+    // A: 1 win, best 600, 1 race. C: 2 wins, best 500, 2 races. B: 0 wins,
+    // best 400, 3 races. Each criterion yields a different leader.
+    await persistMatchResult({
+      nostrId: "sort-1",
+      trackId: "classic-v1",
+      hostPubkey: A,
+      standings: [
+        { pubkey: A, position: 1, points: 600, finishTime: 100 },
+        { pubkey: B, position: 2, points: 400, finishTime: 200 },
+      ],
+    });
+    for (const id of ["sort-2", "sort-3"]) {
+      await persistMatchResult({
+        nostrId: id,
+        trackId: "classic-v1",
+        hostPubkey: C,
+        standings: [
+          { pubkey: C, position: 1, points: 500, finishTime: 90 },
+          { pubkey: B, position: 2, points: 400, finishTime: 160 },
+        ],
+      });
+    }
+
+    const byWins = await getLeaderboard({ sort: "wins" });
+    expect(byWins.map((r) => r.pubkey)).toEqual([C, A, B]); // 2, 1, 0 wins
+
+    const byBest = await getLeaderboard({ sort: "best" });
+    expect(byBest.map((r) => r.pubkey)).toEqual([A, C, B]); // 600, 500, 400
+
+    const byRaces = await getLeaderboard({ sort: "races" });
+    expect(byRaces.map((r) => r.pubkey)).toEqual([B, C, A]); // 3, 2, 1 races
   });
 });

@@ -8,6 +8,17 @@ Dates use `YYYY-MM-DD`.
 
 ### Added
 
+- **Sortable leaderboard.** The Wins / Best / Races column headers are now sort
+  toggles — click one to re-rank the whole board by it (each keeps sensible
+  tiebreakers), with a ▼ marker on the active column. Driven by a `?sort=` query
+  param, preserved across pagination. (`getLeaderboard({ sort })`, `RankingTable`
+  sort links.)
+- **Platform audit ([AUDIT.md](AUDIT.md)).** Read-only review across security,
+  responsiveness/mobile, consistency (game ↔ docs ↔ pages ↔ i18n), and tests —
+  findings by severity with file refs and a remediation roadmap. Headlines: the
+  leaderboard is forgeable (unbounded standings), there's no mobile `viewport`
+  meta, no rate limiting, user copy says "8-lane" (game is 4), and the
+  leaderboard aggregation is only covered by a DB-gated test that skips in CI.
 - **Engaging "waiting for the others" screen.** A finisher no longer stares at
   a static "waiting…" — the screen now shows a **live countdown** to the
   auto-resolve, **progress bars** of the rivals still on the track (off the
@@ -47,6 +58,14 @@ Dates use `YYYY-MM-DD`.
 
 ### Fixed
 
+- **Leaderboard hardened against forged scores (security).** Per-race points are
+  now bounded to a sane range (`MATCH_POINTS_MIN/MAX`) at *every* untrusted
+  boundary — live runner/finish frames and the persisted standings — so a forged
+  frame or POST can't write a 2-billion "unbeatable" record. Positions are
+  capped at the lane count and the submitted standings must be internally
+  consistent (unique pubkeys, a contiguous `1..N` set), so a POST can't claim
+  position 1 twice or hand a rival position 99. Full protection still needs
+  multi-participant attestation (documented MVP gap). See [AUDIT.md](AUDIT.md) §1.
 - **Leaving a match is handled gracefully (no more silent strandings).** A live
   race is peer-to-peer, so one player bailing used to strand or unfairly DNF the
   rest. Now: navigating away from an active match is **confirmed** first
