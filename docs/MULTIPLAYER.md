@@ -47,9 +47,7 @@ they return to the lobby (not the generic races browser).
   rejoin the race in progress (or see the results if it already finished) — it
   never restarts the match for anyone. Their own runner resumes from progress
   saved in `sessionStorage` (keyed by matchId, ~1 Hz); a reconnect from a fresh
-  device with no saved progress resumes from the start line. (Live runner frames
-  are ephemeral, so exact mid-race position can't be reconstructed from relays —
-  this is the casual, no-authoritative-server tradeoff.)
+  device with no saved progress resumes from the start line.
 
 ### Ending a race
 

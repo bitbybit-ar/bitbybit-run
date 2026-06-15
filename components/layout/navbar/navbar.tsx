@@ -17,8 +17,14 @@ export function Navbar() {
       <div className={styles.inner}>
         <Logo />
         <div className={styles.right}>
-          <Button href="/leaderboard" variant="ghost" size="sm">
-            {t("leaderboard")}
+          <Button
+            href="/leaderboard"
+            variant="ghost"
+            size="sm"
+            aria-label={t("leaderboard")}
+          >
+            <span aria-hidden="true">🏆</span>
+            <span className={styles.navLabel}>{t("leaderboard")}</span>
           </Button>
           <LocaleThemeToggle />
           {session === null ? (

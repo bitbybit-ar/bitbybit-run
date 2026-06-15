@@ -2,12 +2,11 @@
 
 ## 0. Guiding constraints
 
-1. **Free.** Open-source hobby project → only free tiers, no always-on server.
+1. **Free.** Open-source project → only free tiers, no always-on server.
 2. **Lightweight.** Low-weight web game, fast to load.
-3. **Solo-buildable** in ~3 weeks (deadline: pitch on June 23).
-4. **On-theme.** Deep Nostr + Lightning integration (it's a scoring axis).
+3. **On-theme.** Deep Nostr + Lightning integration.
 
-The central design decision that satisfies all four: **use Nostr relays as the
+The central design decision that satisfies all three: **use Nostr relays as the
 real-time backbone instead of a dedicated game server.**
 
 ## 1. High-level overview
@@ -214,8 +213,7 @@ each client validates before merging (`lib/multiplayer`):
 - **Session-key binding** — runner/finish frames are signed by the sender's
   ephemeral session key (§4.3), and their `content` claims a real `pubkey`. A
   frame is accepted only if that pubkey announced this exact session key in its
-  presence (§4.1); otherwise it's a spoof and dropped. Frames arriving before the
-  presence has propagated are allowed (best-effort, fitting the no-server scope).
+  presence (§4.1); otherwise it's a spoof and dropped.
 
 The reducer (`match-state.ts`) stays pure/clock-free; the clock-dependent checks
 live in the orchestrator.
@@ -273,8 +271,7 @@ native Vercel integration.
   for the chosen amount + message and present it as a **QR code + copyable string
   + `lightning:` deep link**, payable from any mobile/desktop Lightning wallet.
   (`getZapInvoice` / `payWithWebln` in `lib/lightning/zap.ts`.)
-- No custody, no backend secrets. (Automated NWC payouts are possible future work
-  via a serverless function — out of MVP scope.)
+- No custody, no backend secrets — payments are peer-to-peer.
 
 ## 8. Why this is robust despite public-relay latency
 
@@ -295,10 +292,3 @@ native Vercel integration.
 | WebLN / user wallets | Zaps                            | $0 (P2P) |
 
 **Total infrastructure cost: $0.**
-
-## 10. Future work (post-MVP)
-
-- Authoritative netcode (Colyseus or Cloudflare Durable Objects) for anti-cheat.
-- Automated Lightning payouts via NWC (NIP-47).
-- Mobile touch controls, audio, richer art. (Seeded per-match tracks, session-key
-  signing, and animated rivals are now implemented — see §3, §4.)

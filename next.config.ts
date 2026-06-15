@@ -8,9 +8,7 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
  * framing/plugin/base directives only — these add real protection (clickjacking,
  * plugin injection, <base> hijacking) without restricting resource loading, so
  * they can't break the app's many origins (Nostr relays over `wss:`, arbitrary
- * avatar/LNURL hosts over `https:`, next/font, Phaser). A full resource CSP
- * (script/style/img/connect with per-request nonces) is a follow-up — see
- * docs/AUDIT.md §1.
+ * avatar/LNURL hosts over `https:`, next/font, Phaser).
  */
 const securityHeaders = [
   {

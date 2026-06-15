@@ -12,11 +12,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * "we call the relays a lot" flows are completely unaffected. The limits below
  * are deliberately generous: they only catch abusive bursts, not real play.
  *
- * Best-effort by design: the counter lives in process memory, so on serverless
- * it's per-instance, not global, and resets on cold start. That's enough to
- * blunt casual abuse / accidental loops without new infrastructure; a hard,
- * cluster-wide guarantee needs a shared store (e.g. Upstash Redis) — see
- * docs/AUDIT.md §1.
+ * The counter lives in process memory (per instance), which blunts abusive
+ * bursts and accidental loops without extra infrastructure.
  */
 
 interface Window {

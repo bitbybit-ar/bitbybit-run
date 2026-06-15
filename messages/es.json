@@ -108,6 +108,7 @@
       "zapFailed": "No se pudo zapear. Probá de nuevo.",
       "zapNoWebln": "Necesitás una billetera Lightning (ej. Alby) para zapear.",
       "zapNoWallet": "Este jugador no tiene billetera Lightning para recibir zaps.",
+      "zapClampNote": "La billetera del receptor ajustó el monto: vas a enviar {sats} sats (pediste {requested}). Confirmá para pagar.",
       "zapScanToPay": "¿No tenés billetera conectada? Escaneá o copiá esta factura para enviarle {sats} sats a {name} desde cualquier billetera Lightning.",
       "zapQrAlt": "Código QR de la factura Lightning para zapear a {name}",
       "zapCopyInvoice": "Copiar factura",

@@ -184,8 +184,8 @@ describe("schemas/match PersistMatchSchema", () => {
     ).toBe(false);
   });
 
-  // Anti-forgery bounds (see docs/AUDIT.md): a malicious client can't write
-  // absurd scores, out-of-range placements, or inconsistent standings.
+  // Anti-forgery bounds: a malicious client can't write absurd scores,
+  // out-of-range placements, or inconsistent standings.
   it("rejects points beyond the anti-abuse ceiling", () => {
     const standings = [
       { pubkey: PK, position: 1, points: MATCH_POINTS_MAX + 1, finishTime: 100 },

@@ -33,3 +33,13 @@
   align-items: center;
   gap: $spacing-12;
 }
+
+// On phones the leaderboard button collapses to its 🏆 icon to free up room
+// (the button keeps an aria-label, so its name is still announced).
+.navLabel {
+  margin-inline-start: $spacing-4;
+
+  @include mobile {
+    display: none;
+  }
+}
