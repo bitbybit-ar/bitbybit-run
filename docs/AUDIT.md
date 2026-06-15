@@ -62,11 +62,16 @@ nonce → polish.**
   Auth events are accepted within ±10s with no used-`event.id` store, so a
   captured `Authorization: Nostr …` header can be replayed within 10s to mint a
   session. Bounded but real; needs the deferred single-use-nonce store.
-- **No rate limiting on any API route.** `app/api/**` (no `middleware.ts`, no
-  limiter). Worst cases: spam forged matches (compounds the Critical), and
-  `POST /api/auth/sync-profile` / `POST /api/auth/nostr` each fan out to public
-  relays with a ~6s wait (`lib/.../profile.ts`) → cheap relay-amplification DoS.
-  `GET /api/lud16` allows unauthenticated enumeration of stored Lightning addrs.
+- **No rate limiting on any API route.** _(Mitigated 2026-06-15.)_ Worst cases:
+  spam forged matches (compounds the Critical), and `POST /api/auth/sync-profile`
+  / `POST /api/auth/nostr` each fan out to public relays with a ~6s wait → cheap
+  relay-amplification DoS; `GET /api/lud16` allows unauthenticated enumeration.
+  **✅ Done:** per-IP fixed-window limits via `lib/rate-limit.ts` on the four
+  sensitive routes (login 20/min, sync-profile 10/min, matches 60/min, lud16
+  120/min) — generous enough never to block real play (the realtime relay
+  traffic is client-side and never hits the server, so it's unaffected).
+  **⏳ Remaining:** the counter is in-memory (per serverless instance, resets on
+  cold start) — a cluster-wide guarantee needs a shared store (Upstash/Redis).
 
 ### Medium
 

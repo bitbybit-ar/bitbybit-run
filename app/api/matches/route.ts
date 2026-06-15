@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { PersistMatchSchema } from "@/lib/schemas/match";
 import { persistMatchResult } from "@/lib/multiplayer/store";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * Persist a finished match's standings for the leaderboard.
@@ -15,6 +16,11 @@ import { persistMatchResult } from "@/lib/multiplayer/store";
  * retried posts from several clients never duplicate a match.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  // Generous: a finished match has up to 4 players each POSTing once
+  // (idempotent), plus a few matches per minute — 60/min/IP only catches spam.
+  const limited = enforceRateLimit(req, "matches", 60, 60_000);
+  if (limited) return limited;
+
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

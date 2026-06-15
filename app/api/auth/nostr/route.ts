@@ -12,6 +12,7 @@ import {
 import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import { ensureUserForPubkey, refreshUserFromKind0 } from "@/lib/creator/users";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * NIP-98 (HTTP Auth) login.
@@ -68,6 +69,11 @@ function readLocale(tags: ReadonlyArray<ReadonlyArray<string>>): Locale {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  // Login fans out to relays for the kind:0 profile (~3s), so cap the burst.
+  // 20/min/IP is well above a human retrying their signer a few times.
+  const limited = enforceRateLimit(req, "auth-login", 20, 60_000);
+  if (limited) return limited;
+
   const parsed = parseNostrAuthHeader(req.headers.get("authorization"));
   if (!parsed.ok) {
     return NextResponse.json(

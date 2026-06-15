@@ -58,6 +58,14 @@ Dates use `YYYY-MM-DD`.
 
 ### Fixed
 
+- **API rate limiting (security).** Per-IP fixed-window limits (`lib/rate-limit.ts`)
+  on the four sensitive routes — login (20/min), profile sync (10/min), match
+  persist (60/min), lud16 lookup (120/min) — to blunt spam and the
+  relay-amplification DoS from the auth routes' ~6s relay fan-out. Limits are
+  generous so real play is never blocked, and the realtime multiplayer traffic
+  is client→relay (never hits the server), so it's unaffected. In-memory /
+  best-effort for now; a cluster-wide guarantee needs a shared store (see
+  [AUDIT.md](AUDIT.md) §1).
 - **Leaderboard hardened against forged scores (security).** Per-race points are
   now bounded to a sane range (`MATCH_POINTS_MIN/MAX`) at *every* untrusted
   boundary — live runner/finish frames and the persisted standings — so a forged
