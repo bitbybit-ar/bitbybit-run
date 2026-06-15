@@ -25,11 +25,11 @@
   },
   "leaderboard": {
     "title": "Leaderboard",
-    "subtitle": "Every multiplayer race counts. Win lanes, bank points, climb the board.",
+    "subtitle": "Most wins climbs the board; your best single multiplayer race is your score.",
     "rank": "#",
     "player": "Player",
     "wins": "Wins",
-    "points": "Points",
+    "best": "Best",
     "races": "Races",
     "empty": "No races yet — be the first to top the board.",
     "prev": "Previous",

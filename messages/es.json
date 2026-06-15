@@ -25,11 +25,11 @@
   },
   "leaderboard": {
     "title": "Ranking",
-    "subtitle": "Cada carrera multijugador cuenta. Ganá carriles, sumá puntos y escalá la tabla.",
+    "subtitle": "Más victorias para subir; tu mejor carrera multijugador es tu puntaje.",
     "rank": "#",
     "player": "Jugador",
     "wins": "Victorias",
-    "points": "Puntos",
+    "best": "Récord",
     "races": "Carreras",
     "empty": "Todavía no hay carreras — sé el primero en liderar la tabla.",
     "prev": "Anterior",

@@ -238,7 +238,9 @@ Suggested tables (Drizzle schema):
 - `players` — `pubkey` (pk), `name`, `avatar`, cached profile, totals.
 - `matches` — `id`, `trackId`, `hostPubkey`, `startedAt`, `finishedAt`.
 - `results` — `matchId`, `pubkey`, `position`, `points` (one row per player/match).
-- `leaderboard` (view or query) — aggregate wins & points per `pubkey`.
+- `leaderboard` (view or query) — per `pubkey`: wins (1st places) and the
+  player's personal best (max points in a single match). Ordered by wins, then
+  personal best — peak performance, not a lifetime sum.
 
 Written via **Next.js API routes** (Vercel serverless) when a match ends. The
 client posts the final standings; the route validates basic shape and upserts.

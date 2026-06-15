@@ -117,16 +117,20 @@ export async function getMatchResults(matchId: string): Promise<Result[]> {
 export interface LeaderboardRow {
   pubkey: string;
   wins: number;
-  points: number;
+  /** Personal record: the player's best (highest) points in a single match —
+   *  not a lifetime sum, so the board ranks by peak performance. */
+  bestPoints: number;
   races: number;
   display_name: string | null;
   avatar_url: string | null;
 }
 
 /**
- * Global leaderboard: wins (1st-place finishes) and total points per
- * player, joined to `users` for display. Ordered by wins, then points.
- * Paginated via `limit`/`offset` (see `getLeaderboardCount` for total pages).
+ * Global leaderboard: wins (1st-place finishes) and each player's personal
+ * record (best points in a single match), joined to `users` for display.
+ * Ordered by wins, then personal best — so winning ranks first, and a single
+ * great race counts more than grinding many mediocre ones. Paginated via
+ * `limit`/`offset` (see `getLeaderboardCount` for total pages).
  */
 export async function getLeaderboard(
   limit = 10,
@@ -134,14 +138,14 @@ export async function getLeaderboard(
 ): Promise<LeaderboardRow[]> {
   const db = getDb();
   const wins = sql<number>`count(*) filter (where ${results.position} = 1)`;
-  const points = sql<number>`coalesce(sum(${results.points}), 0)`;
+  const bestPoints = sql<number>`coalesce(max(${results.points}), 0)`;
   const races = sql<number>`count(*)`;
 
   const rows = await db
     .select({
       pubkey: results.pubkey,
       wins,
-      points,
+      bestPoints,
       races,
       display_name: users.display_name,
       avatar_url: users.avatar_url,
@@ -149,15 +153,15 @@ export async function getLeaderboard(
     .from(results)
     .leftJoin(users, eq(users.pubkey, results.pubkey))
     .groupBy(results.pubkey, users.display_name, users.avatar_url)
-    .orderBy(desc(wins), desc(points))
+    .orderBy(desc(wins), desc(bestPoints))
     .limit(limit)
     .offset(offset);
 
-  // Postgres returns count/sum as strings over the HTTP driver; normalize.
+  // Postgres returns count/max as strings over the HTTP driver; normalize.
   return rows.map((r) => ({
     pubkey: r.pubkey,
     wins: Number(r.wins),
-    points: Number(r.points),
+    bestPoints: Number(r.bestPoints),
     races: Number(r.races),
     display_name: r.display_name,
     avatar_url: r.avatar_url,
