@@ -10,6 +10,14 @@
   margin: 0 auto;
   border-radius: $border-radius-md;
   overflow: hidden;
+  // The game reads taps to change lane / hold to sprint, so stop the browser
+  // from hijacking those touches for scroll, text-selection, double-tap-zoom,
+  // or the long-press menu.
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: contain;
 }
 
 // Portrait/mobile: give the track real vertical room (a taller box) instead of

@@ -29,8 +29,18 @@ The headline gaps:
 5. **Leaderboard aggregation + several recent features are only covered by a
    DB-gated integration test that doesn't run in CI.** _High (tests)._
 
-Recommended fix order: **#1 → #3 → viewport → 8-lane copy → test gaps → headers/
-nonce → polish.**
+### Remediation status (updated 2026-06-15)
+
+Most of the audit has been worked through. **Done:** the Critical forgery bounds,
+rate limiting, NIP-98 anti-replay, the safe security headers/CSP, the 8-lane
+copy, the mobile `viewport` + canvas `touch-action`, the banner/waiting mobile
+tweaks, the doc-consistency drift, and new tests (matches route, grace-timeout
+firing, leave-announce, start backstops, rate-limit, nonce). **Still open:** a
+shared-store guarantee for rate-limit/nonce (Upstash), a full resource CSP with
+nonces, the Lightning-clamp UI confirmation (§1 Medium #5), the leaderboard
+aggregation test running in CI (needs `TEST_DATABASE_URL`), zap-flow error-path
+tests, and the Low polish (navbar collapse, dead i18n keys/component). Per-finding
+status is marked inline below.
 
 ---
 
@@ -58,10 +68,13 @@ nonce → polish.**
 
 ### High
 
-- **NIP-98 login replay window (no nonce store).** `lib/nostr/verify.ts:56,130`.
-  Auth events are accepted within ±10s with no used-`event.id` store, so a
-  captured `Authorization: Nostr …` header can be replayed within 10s to mint a
-  session. Bounded but real; needs the deferred single-use-nonce store.
+- **NIP-98 login replay window (no nonce store).** _(✅ Fixed 2026-06-15.)_
+  Auth events were accepted within ±10s with no used-`event.id` store, so a
+  captured `Authorization: Nostr …` header could be replayed within 10s to mint
+  a session. Now `lib/nostr/nonce-store.ts` records each honored `event.id` and
+  the login route rejects a repeat (`auth_replayed`). **⏳ Remaining:** in-memory
+  / per-instance — a replay routed to another instance within the window could
+  still slip through; a hard guarantee needs a shared store.
 - **No rate limiting on any API route.** _(Mitigated 2026-06-15.)_ Worst cases:
   spam forged matches (compounds the Critical), and `POST /api/auth/sync-profile`
   / `POST /api/auth/nostr` each fan out to public relays with a ~6s wait → cheap
@@ -75,13 +88,14 @@ nonce → polish.**
 
 ### Medium
 
-- **No CSP / security headers.** `next.config.ts:11` (CSP is a TODO). No
-  `Content-Security-Policy`, `X-Frame-Options`/`frame-ancestors`,
-  `X-Content-Type-Options`, `Referrer-Policy`. Combined with arbitrary
-  Nostr-controlled `avatar_url` rendered as raw `<img src>`
-  (`ranking-table.tsx:96`, `account-menu.tsx`), no defense-in-depth against
-  clickjacking and an attacker-chosen URL fetched by every leaderboard viewer
-  (passive IP/tracking leak). _Text_ names are safe (React escapes them.)
+- **No CSP / security headers.** _(✅ Fixed 2026-06-15.)_ Added `X-Frame-Options:
+  DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+  `Permissions-Policy`, and a CSP limited to `frame-ancestors 'none';
+  object-src 'none'; base-uri 'self'` in `next.config.ts` (clickjacking / plugin
+  / base-tag protection without restricting resource loading). **⏳ Remaining:** a
+  full resource CSP (script/style/img/connect with per-request nonces) — needs
+  middleware nonce wiring, deferred to avoid breaking Phaser / next/font / the
+  many relay+LNURL origins.
 - **Client-side fetch to attacker-controlled Lightning host.**
   `lib/lightning/zap.ts:55-90`. `lud16` domain is only `^[a-z0-9.-]+$`, so a
   hostile profile makes the victim's browser fetch an arbitrary host; the
@@ -109,31 +123,26 @@ only safe `excluded.*` in ON CONFLICT); no hardcoded secrets; only
 
 ### High
 
-- **No `viewport` export.** `app/[locale]/layout.tsx` (confirmed none
-  repo-wide). Without `width=device-width, initial-scale=1`, mobile renders at
-  ~980px and zooms out — the fluid `clamp()` typography and `dvh` layouts
-  effectively break, and double-tap-zoom fights game taps. **Fix:**
-  `export const viewport: Viewport = { width: "device-width", initialScale: 1 }`.
-- **Game canvas lacks `touch-action`/scroll-lock.** `game-canvas.module.scss:3`.
-  Hold-to-sprint / tap-to-change-lane will trigger page scroll, text selection,
-  and long-press menus on mobile. **Fix:** `touch-action: none; user-select:
-  none; overscroll-behavior: contain;` on `.canvas`.
+- **No `viewport` export.** _(✅ Fixed 2026-06-15.)_ Added
+  `export const viewport = { width: "device-width", initialScale: 1 }` to the
+  locale layout (zoom left enabled for a11y; the canvas opts out locally).
+- **Game canvas lacks `touch-action`/scroll-lock.** _(✅ Fixed 2026-06-15.)_
+  `.canvas` now sets `touch-action: none; user-select: none;
+  -webkit-touch-callout: none; overscroll-behavior: contain;`.
 
 ### Medium
 
-- **Race-finish banner can overflow.** `race-finish-banner.module.scss:21`
-  (`white-space: nowrap` + centered, narrow canvas) — longer Spanish strings
-  clip/spill. **Fix:** allow wrapping or shrink font on small widths.
-- **Match-waiting row grid rigid < ~320px.** `match-waiting.module.scss:54`
-  (fixed rank + name columns squeeze the `1fr` progress track). **Fix:** a
-  `@include mobile` rule shrinking/collapsing the rank or status column.
+- **Race-finish banner can overflow.** _(✅ Fixed 2026-06-15.)_ Dropped
+  `white-space: nowrap` (now wraps via `text-wrap: balance`).
+- **Match-waiting row grid rigid < ~320px.** _(✅ Fixed 2026-06-15.)_ Added an
+  `@include mobile` rule tightening the rank/name columns so the progress bar
+  keeps width.
 
 ### Low
 
 - Navbar never collapses (no hamburger) — cramped tap targets at ~320px
-  (`navbar.module.scss`); consider an icon-only Leaderboard on mobile.
-- `game-header` back-key is 40×40px (`game-header.module.scss:21`) — under the
-  44px touch-target guideline.
+  (`navbar.module.scss`); consider an icon-only Leaderboard on mobile. _(open)_
+- `game-header` back-key. _(✅ Fixed 2026-06-15 — now 44×44px.)_
 
 ### Handled well
 `styles/_media-mixins.scss` breakpoints; fluid `clamp()` type; `overflow-x:

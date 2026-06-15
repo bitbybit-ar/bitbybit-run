@@ -58,6 +58,21 @@ Dates use `YYYY-MM-DD`.
 
 ### Fixed
 
+- **Security headers + NIP-98 anti-replay (audit).** Added `X-Frame-Options`,
+  `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and a CSP
+  (`frame-ancestors/object-src/base-uri`) in `next.config.ts`; and a single-use
+  guard (`lib/nostr/nonce-store.ts`) so a captured login event can't be replayed
+  within its ±10s window. Both are best-effort/in-memory pending a shared store.
+- **Mobile responsiveness (audit).** Added the missing `viewport` meta (phones
+  no longer render at desktop width and zoom out); `touch-action: none` +
+  scroll-lock on the game canvas so taps/holds aren't hijacked by scroll/zoom;
+  the race-finish banner wraps instead of clipping; the match-waiting rows keep
+  the progress bar usable on narrow phones; the back-key is a 44px touch target.
+- **Doc consistency (audit).** Corrected the ARCHITECTURE discovery-event example
+  (bare `d` tag, no `players` tag, no server-side status filter), removed the
+  unbound "Space" sprint key and the wrong "red" junk halo (it's purple) from
+  GAME-DESIGN, fixed the lane names in MULTIPLAYER, and dropped the dead
+  `POINTS.goodFood/junkFood` constants.
 - **API rate limiting (security).** Per-IP fixed-window limits (`lib/rate-limit.ts`)
   on the four sensitive routes — login (20/min), profile sync (10/min), match
   persist (60/min), lud16 lookup (120/min) — to blunt spam and the

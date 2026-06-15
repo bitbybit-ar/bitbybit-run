@@ -40,7 +40,7 @@ Keyboard (default):
 | Key                | Action                              |
 | ------------------ | ----------------------------------- |
 | ⬅️ / ➡️ (or A / D) | Move sideways — change lane         |
-| ⬆️ (or W / Space)  | Accelerate / sprint (spends energy) |
+| ⬆️ (or W)          | Accelerate / sprint (spends energy) |
 | ⬇️ (or S)          | Brake / slow down                   |
 
 Design rule: controls must be **dead simple** and readable at a glance. No combos.
@@ -178,8 +178,8 @@ Create match ──► Lobby fills (1..4 players join via Nostr)
 - **Daytime athletics stadium:** daylight sky, an **orange tartan track** with
   **green grass** on the sides, white lane lines, a checkered finish line.
 - **Food = icons, not just colors:** good food is **⚡** (energy, on a green
-  halo), junk is **🍔** (on a red halo), the speed booster is **🚀** (on a yellow
-  halo, drawn bigger) — readable at a glance, zero assets.
+  halo), junk is **🍔** (on a purple halo), the speed booster is **🚀** (on a
+  yellow halo, drawn bigger) — readable at a glance, zero assets.
 - **Typography:** Nunito / Nunito Sans (same family as `bitbybit-cursats`),
   used in the React UI and inside the Phaser canvas.
 - **UI chrome:** the `Button` component and palette mirror `bitbybit-cursats`,

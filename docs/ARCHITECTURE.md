@@ -114,14 +114,13 @@ Published & updated in place by the **host**. Lets the lobby list open matches.
 {
   "kind": 30078,
   "tags": [
-    ["d", "bitbybit-run-<matchId>"], // addressable id
+    ["d", "<matchId>"], // addressable id — the bare matchId (rides the same channel as control/runner/finish)
     ["t", "bitbybit-run"], // discovery filter
-    ["status", "waiting"], // waiting | playing | finished
-    ["players", "3"],
+    ["status", "waiting"], // waiting | countdown | playing | finished
     ["max", "4"],
-    ["name", "Analia's race"],
+    ["name", "Analia"], // optional: the peer's display name
   ],
-  "content": "{ matchId, host, trackId, pubkey, lane, name, status, createdAt, sessionKey }",
+  "content": "{ matchId, trackId, host, pubkey, lane, name?, raceName?, status, createdAt, sessionKey, left? }",
 }
 ```
 
@@ -133,7 +132,9 @@ or finished — which is what blocks late joins and stops a returning player fro
 restarting it. `sessionKey` is this peer's ephemeral per-match signing key (see
 §4.3): announced once here, signed by the real identity, binding the two.
 
-Lobby subscribes: `{ "kinds":[30078], "#t":["bitbybit-run"], "#status?":["waiting"] }`.
+Lobby subscribes: `{ "kinds":[30078], "#t":["bitbybit-run"] }` — status is _not_
+filtered server-side; the client drops full/started/stale matches when it
+aggregates the presences (see `selectOpenMatches`).
 
 ### 4.2 Match control — kind `21001` (ephemeral)
 

@@ -13,6 +13,7 @@ import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import { ensureUserForPubkey, refreshUserFromKind0 } from "@/lib/creator/users";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { claimNonce } from "@/lib/nostr/nonce-store";
 
 /**
  * NIP-98 (HTTP Auth) login.
@@ -101,6 +102,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const event = validation.event;
+
+  // Single-use: a valid event is honored once. Replaying the captured header
+  // within the ±10s window (to mint a second session) is rejected here.
+  if (!claimNonce(event.id)) {
+    return NextResponse.json({ error: "auth_replayed" }, { status: 400 });
+  }
+
   const pubkey = event.pubkey;
   const signerType = readSignerType(event.tags);
   // The locale carried in the signed envelope — the one the user is
