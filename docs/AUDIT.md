@@ -152,10 +152,10 @@ docs/copy vs code drift, mostly stale "8-lane" leftovers from the 4-lane reducti
 
 ### High
 
-- **"8-lane" track in user-facing copy (both locales).** `messages/en.json:259`
-  / `messages/es.json:259` (`howToPlay.intro`) say 8 lanes / 8 carriles; the
-  game is `LANES = 4` (`lib/game/config.ts:6`). Shown to every visitor. **Fix:**
-  change to 4.
+- **"8-lane" track in user-facing copy (both locales).** _(✅ Fixed 2026-06-15.)_
+  `howToPlay.intro` (en/es) said 8 lanes / 8 carriles and the ARCHITECTURE
+  diagram showed "up to 8 … Player H"; the game is `LANES = 4`. Now reads 4 /
+  Player D.
 
 ### Medium
 
