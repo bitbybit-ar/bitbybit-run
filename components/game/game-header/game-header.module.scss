@@ -22,8 +22,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  // 44px min — the iOS/Android recommended touch-target size.
+  width: 44px;
+  height: 44px;
   color: $color-text-primary;
   background: $color-surface;
   border: 3px solid $arcade-edge;

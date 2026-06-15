@@ -13,7 +13,8 @@ every client aggregates those presences into the roster.
    match) or **Join** on an open one. They may give the race an **optional
    name** before creating it — the label rides the host's presence and shows in
    everyone's browser so players can find a specific match.
-2. Pick a runner — each character owns a lane (Sprinter 1 … Bitcoin 4).
+2. Pick a runner — each character owns a lane (Sprinter 1, Barbie 2, T-Rex 3,
+   Bitcoin 4).
 3. The **host** presses **"Crear carrera" / "Create race"**. This publishes the
    match and reveals the **invite link** — so a link can never be shared for a
    match that doesn't exist yet.

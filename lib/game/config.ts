@@ -74,10 +74,9 @@ export const POISON = {
   decayPerSecond: 0.02, // slowly recovers over time
 };
 
-/** Points awarded during a race. */
+/** Points awarded during a race. Per-food point values live in `foods.ts`
+ *  (each food carries its own `points`); these are the match-level bonuses. */
 export const POINTS = {
-  goodFood: 10,
-  junkFood: -5,
   finishBonus: 500,
   /** Bonus awarded by where you reach the line in a match (index 0 = 1st …),
    *  folded into a player's total points so finishing position counts toward

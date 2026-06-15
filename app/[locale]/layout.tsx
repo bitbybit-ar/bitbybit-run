@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import {
@@ -70,6 +70,15 @@ const nunitoSans = Nunito_Sans({
   variable: "--font-body",
   display: "swap",
 });
+
+// Without this, mobile browsers assume a ~980px desktop width and zoom out,
+// breaking the fluid `clamp()` typography and `dvh` layouts. Zoom is left
+// enabled (no maximumScale) for accessibility — the game canvas opts out of
+// touch-scroll/zoom locally via `touch-action: none` instead.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export async function generateMetadata({
   params,

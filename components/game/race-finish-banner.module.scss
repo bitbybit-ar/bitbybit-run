@@ -18,7 +18,9 @@
   background: $color-primary;
   border-radius: $border-radius-lg;
   box-shadow: 4px 4px 0 0 $arcade-edge;
-  white-space: nowrap;
+  // Wrap rather than clip — localized strings (longer in Spanish) must stay
+  // readable on the narrow portrait canvas.
+  text-wrap: balance;
 }
 
 .urgent {

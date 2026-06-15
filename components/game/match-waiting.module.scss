@@ -1,6 +1,7 @@
 @use "@/styles/colors" as *;
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
 
 .waiting {
   position: relative; // anchors the confetti overlay
@@ -59,6 +60,13 @@
   border: 2px solid $color-border;
   border-radius: $border-radius-lg;
   box-shadow: 4px 4px 0 0 $arcade-edge;
+
+  // On narrow phones the fixed rank + name columns starve the progress bar;
+  // tighten the name column and gap so the bar keeps usable width.
+  @include mobile {
+    grid-template-columns: 1.25rem minmax(3.5rem, 5rem) 1fr auto;
+    gap: $spacing-8;
+  }
 }
 
 .me {
