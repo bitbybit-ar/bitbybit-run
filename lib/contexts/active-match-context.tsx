@@ -65,7 +65,9 @@ export function ActiveMatchProvider({ children }: { children: ReactNode }) {
       }
       const anchor = (e.target as HTMLElement | null)?.closest("a");
       const href = anchor?.getAttribute("href");
-      if (!href || href.startsWith("#")) return; // not a navigation
+      if (!anchor || !href || href.startsWith("#")) return; // not a navigation
+      // A new-tab / download link doesn't unload this page — let it through.
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
       if (!window.confirm(message)) {
         e.preventDefault();
         e.stopPropagation();

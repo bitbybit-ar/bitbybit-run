@@ -332,13 +332,17 @@ export class MatchClient {
 
   /**
    * Stop receiving and release timers. Unless `announce` is false, fire a
-   * best-effort `left` presence first so others stop waiting on us — skipped
-   * once the match is over (nobody's waiting) or if we never claimed a seat.
+   * `left` presence first so others stop waiting on us — skipped once the match
+   * is over (nobody's waiting) or if we never claimed a seat. Returns the
+   * in-flight announce (never rejects) so the caller can keep the transport
+   * open until it flushes; closing the *subscription* here is safe meanwhile, as
+   * an outbound publish rides the transport, not the subscription.
    */
-  leave({ announce = true }: { announce?: boolean } = {}): void {
-    if (announce && this.lastSeat && this.state.status !== "finished") {
-      void this.announceLeave().catch(() => {});
-    }
+  leave({ announce = true }: { announce?: boolean } = {}): Promise<void> {
+    const pending =
+      announce && this.lastSeat && this.state.status !== "finished"
+        ? this.announceLeave().catch(() => {})
+        : Promise.resolve();
     this.clearCountdown();
     this.clearFinishGrace();
     this.stopHeartbeat();
@@ -349,6 +353,7 @@ export class MatchClient {
     this.sub?.close();
     this.sub = null;
     this.listeners.clear();
+    return pending;
   }
 
   // --- internals -----------------------------------------------------------
