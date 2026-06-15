@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import styles from "./leaderboard-table.module.scss";
 
@@ -5,6 +7,13 @@ export interface RankingColumn {
   label: string;
   /** Hidden on phones to keep rows tidy (e.g. the global "races" column). */
   collapsible?: boolean;
+  /** When set, the header becomes a link that re-sorts the table by this
+   *  column (used by the global leaderboard; the results screen leaves it off). */
+  sortHref?: ComponentProps<typeof Link>["href"];
+  /** True when the table is currently sorted by this column. */
+  active?: boolean;
+  /** Accessible label for the sort link (e.g. "Sort by wins"). */
+  sortLabel?: string;
 }
 
 export interface RankingRow {
@@ -60,8 +69,22 @@ export function RankingTable({
                   col.collapsible && styles.colRaces
                 )}
                 scope="col"
+                aria-sort={
+                  col.sortHref ? (col.active ? "descending" : "none") : undefined
+                }
               >
-                {col.label}
+                {col.sortHref ? (
+                  <Link
+                    href={col.sortHref}
+                    className={cn(styles.sortLink, col.active && styles.sortActive)}
+                    aria-label={col.sortLabel}
+                  >
+                    {col.label}
+                    <span aria-hidden="true">{col.active ? " ▼" : ""}</span>
+                  </Link>
+                ) : (
+                  col.label
+                )}
               </th>
             ))}
           </tr>

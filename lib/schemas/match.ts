@@ -12,7 +12,19 @@
  */
 import { z } from "zod";
 import { NostrPubkeySchema } from "./primitives";
-import { LANES, MAX_RUNNER_SPEED } from "@/lib/game/config";
+import {
+  LANES,
+  MATCH_POINTS_MAX,
+  MATCH_POINTS_MIN,
+  MAX_RUNNER_SPEED,
+} from "@/lib/game/config";
+
+/** Per-race score, bounded to a sane range so a forged frame/POST can't write
+ *  an absurd value (anti-abuse clamp, not the gameplay cap). */
+const PointsSchema = z.number().int().min(MATCH_POINTS_MIN).max(MATCH_POINTS_MAX);
+
+/** Finishing place — 1-based, never beyond the lane (player) count. */
+const PositionSchema = z.number().int().min(1).max(LANES);
 
 /** A runner's coarse state, mirrored from `RaceScene` (lib/game). */
 export const RunnerStatusSchema = z.enum(["running", "bathroom", "finished"]);
@@ -111,7 +123,7 @@ export const RunnerStateSchema = z.object({
   energy: UnitSchema,
   poison: UnitSchema,
   status: RunnerStatusSchema,
-  points: z.number().int(),
+  points: PointsSchema,
   /** Unix ms the sender stamped — used to drop stale frames. */
   t: z.number().int().nonnegative(),
 });
@@ -122,28 +134,42 @@ export const MatchFinishSchema = z.object({
   pubkey: NostrPubkeySchema,
   /** Unix ms of the finish — earliest wins (authoritative tiebreak). */
   finishTime: z.number().int().nonnegative(),
-  position: z.number().int().positive(),
-  points: z.number().int(),
+  position: PositionSchema,
+  points: PointsSchema,
 });
 export type MatchFinish = z.infer<typeof MatchFinishSchema>;
 
 /** One resolved placement, as posted to `POST /api/matches`. */
 export const FinalStandingSchema = z.object({
   pubkey: NostrPubkeySchema,
-  position: z.number().int().positive(),
-  points: z.number().int(),
+  position: PositionSchema,
+  points: PointsSchema,
   finishTime: z.number().int().nonnegative().nullable(),
 });
 
 /**
- * Body of `POST /api/matches` — the host submits a finished match's standings
- * to persist for the leaderboard. `nostrId` is the idempotency key.
+ * Body of `POST /api/matches` — a participant submits a finished match's
+ * standings to persist for the leaderboard. `nostrId` is the idempotency key.
+ * The standings must be internally consistent — one row per player (unique
+ * pubkeys) occupying a contiguous `1..N` set of positions — so a forged POST
+ * can't, say, claim position 1 twice or hand a rival position 99.
  */
 export const PersistMatchSchema = z.object({
   nostrId: ShortIdSchema.max(80),
   trackId: ShortIdSchema,
   host: NostrPubkeySchema,
   startedAt: z.number().int().nonnegative().nullable().optional(),
-  standings: z.array(FinalStandingSchema).min(1).max(LANES),
+  standings: z
+    .array(FinalStandingSchema)
+    .min(1)
+    .max(LANES)
+    .refine(
+      (rows) => new Set(rows.map((r) => r.pubkey)).size === rows.length,
+      "standings have duplicate pubkeys"
+    )
+    .refine((rows) => {
+      const positions = rows.map((r) => r.position).sort((a, b) => a - b);
+      return positions.every((p, i) => p === i + 1);
+    }, "standings positions must be a contiguous 1..N set"),
 });
 export type PersistMatchInput = z.infer<typeof PersistMatchSchema>;

@@ -1,14 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import { syncUserFromKind0 } from "@/lib/creator/users";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * Manual "sync profile from Nostr". Re-fetches the signed-in user's
  * kind:0 metadata and overwrites name/avatar/lightning on their row —
  * Nostr is the source of truth (there's no in-app profile editor).
  */
-export async function POST(): Promise<NextResponse> {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // Each call fans out to relays (~6s), so this is the priciest route — but
+  // it's a manual user action. 10/min/IP is plenty for legit use.
+  const limited = enforceRateLimit(req, "sync-profile", 10, 60_000);
+  if (limited) return limited;
+
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

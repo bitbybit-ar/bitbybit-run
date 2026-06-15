@@ -31,6 +31,7 @@
     "wins": "Victorias",
     "best": "Récord",
     "races": "Carreras",
+    "sortBy": "Ordenar por {column}",
     "empty": "Todavía no hay carreras — sé el primero en liderar la tabla.",
     "prev": "Anterior",
     "next": "Siguiente",

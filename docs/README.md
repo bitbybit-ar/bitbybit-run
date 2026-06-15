@@ -10,6 +10,7 @@ Welcome to the docs for **Bit by Bit Run**. Start here.
 | [ROADMAP.md](ROADMAP.md)           | Phased plan toward the Jun 23 pitch, milestones, risk register                                                      |
 | [CHARACTERS.md](CHARACTERS.md)     | Playable runner characters: PixelLab prompts, settings, sprite pipeline                                             |
 | [AUTH.md](AUTH.md)                 | Nostr login: connection methods, sign-in flow, env setup, users table, tests                                        |
+| [AUDIT.md](AUDIT.md)               | Platform audit (security, responsiveness, consistency, tests) — findings by severity + remediation roadmap          |
 | [CHANGELOG.md](CHANGELOG.md)       | Chronological log of changes to the project & docs                                                                  |
 
 > Looking for the project overview, tech stack, or hackathon scoring map? See the

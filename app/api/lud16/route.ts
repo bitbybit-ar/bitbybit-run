@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { NostrPubkeySchema } from "@/lib/schemas/primitives";
 import { getUserByPubkey } from "@/lib/creator/users";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * Look up a player's Lightning address (`lud16`) by pubkey so the results
@@ -8,6 +9,10 @@ import { getUserByPubkey } from "@/lib/creator/users";
  * user's Nostr kind:0 profile), so no auth — returns null when unset.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  // Throttle pubkey enumeration; high enough for normal results-screen lookups.
+  const limited = enforceRateLimit(req, "lud16", 120, 60_000);
+  if (limited) return limited;
+
   const parsed = NostrPubkeySchema.safeParse(
     req.nextUrl.searchParams.get("pubkey")
   );

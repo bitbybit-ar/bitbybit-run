@@ -82,6 +82,31 @@
   }
 }
 
+// Sortable column header — a clickable toggle; the active column is highlighted.
+.sortLink {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+
+  &:hover {
+    color: $color-text-primary;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+  }
+}
+
+.sortActive {
+  color: $color-primary;
+}
+
 .podiumRow {
   background: alpha($color-highlight, 8%);
 }

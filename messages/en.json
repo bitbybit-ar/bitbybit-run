@@ -31,6 +31,7 @@
     "wins": "Wins",
     "best": "Best",
     "races": "Races",
+    "sortBy": "Sort by {column}",
     "empty": "No races yet — be the first to top the board.",
     "prev": "Previous",
     "next": "Next",

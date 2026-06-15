@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { LANES, MAX_RUNNER_SPEED } from "@/lib/game/config";
+import { LANES, MAX_RUNNER_SPEED, MATCH_POINTS_MAX } from "@/lib/game/config";
 import {
   MatchControlSchema,
   MatchDiscoverySchema,
@@ -78,6 +78,13 @@ describe("schemas/match RunnerStateSchema", () => {
         ...validRunner,
         speed: MAX_RUNNER_SPEED + 1,
       }).success
+    ).toBe(false);
+  });
+
+  it("rejects absurd points so a forged frame can't inflate standings", () => {
+    expect(
+      RunnerStateSchema.safeParse({ ...validRunner, points: MATCH_POINTS_MAX + 1 })
+        .success
     ).toBe(false);
   });
 });
@@ -175,6 +182,57 @@ describe("schemas/match PersistMatchSchema", () => {
         ],
       }).success
     ).toBe(false);
+  });
+
+  // Anti-forgery bounds (see docs/AUDIT.md): a malicious client can't write
+  // absurd scores, out-of-range placements, or inconsistent standings.
+  it("rejects points beyond the anti-abuse ceiling", () => {
+    const standings = [
+      { pubkey: PK, position: 1, points: MATCH_POINTS_MAX + 1, finishTime: 100 },
+      { pubkey: "c".repeat(64), position: 2, points: 0, finishTime: null },
+    ];
+    expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects a position beyond the lane count", () => {
+    const standings = [
+      { pubkey: PK, position: LANES + 1, points: 100, finishTime: 100 },
+    ];
+    expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects duplicate positions (two winners)", () => {
+    const standings = [
+      { pubkey: PK, position: 1, points: 500, finishTime: 100 },
+      { pubkey: "c".repeat(64), position: 1, points: 400, finishTime: 200 },
+    ];
+    expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects non-contiguous positions (e.g. handing a rival position 99)", () => {
+    const standings = [
+      { pubkey: PK, position: 1, points: 500, finishTime: 100 },
+      { pubkey: "c".repeat(64), position: 3, points: 400, finishTime: null },
+    ];
+    expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects duplicate pubkeys in standings", () => {
+    const standings = [
+      { pubkey: PK, position: 1, points: 500, finishTime: 100 },
+      { pubkey: PK, position: 2, points: 400, finishTime: null },
+    ];
+    expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(
+      false
+    );
   });
 });
 

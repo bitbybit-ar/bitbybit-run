@@ -85,6 +85,17 @@ export const POINTS = {
   placement: [300, 150, 75, 25],
 };
 
+/**
+ * Sane bounds for a single race's score, enforced at every untrusted boundary
+ * (live runner/finish frames *and* the persisted standings). A real race tops
+ * out around ~2k points (finish bonus + placement + all food), so this leaves
+ * generous headroom for legit scores while stopping a forged frame or POST from
+ * writing an absurd value (e.g. a 2-billion "unbeatable" leaderboard record).
+ * Not the gameplay cap — purely an anti-abuse clamp. See docs/AUDIT.md.
+ */
+export const MATCH_POINTS_MAX = 10_000;
+export const MATCH_POINTS_MIN = -10_000;
+
 /** How smoothly the runner slides between lanes (higher = snappier). */
 export const LANE_TWEEN_SPEED = 9;
 

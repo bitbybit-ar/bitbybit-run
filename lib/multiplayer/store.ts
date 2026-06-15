@@ -125,21 +125,35 @@ export interface LeaderboardRow {
   avatar_url: string | null;
 }
 
+/** Which column the leaderboard is ranked by. */
+export type LeaderboardSort = "wins" | "best" | "races";
+
+/** Allowed sort keys (also used to validate the `?sort=` query param). */
+export const LEADERBOARD_SORTS: LeaderboardSort[] = ["wins", "best", "races"];
+
 /**
- * Global leaderboard: wins (1st-place finishes) and each player's personal
- * record (best points in a single match), joined to `users` for display.
- * Ordered by wins, then personal best — so winning ranks first, and a single
- * great race counts more than grinding many mediocre ones. Paginated via
+ * Global leaderboard: wins (1st-place finishes), each player's personal record
+ * (best points in a single match), and races played, joined to `users` for
+ * display. The primary `sort` column is chosen by the caller (the table headers
+ * are sort toggles); each ordering keeps sensible tiebreakers. Paginated via
  * `limit`/`offset` (see `getLeaderboardCount` for total pages).
  */
 export async function getLeaderboard(
-  limit = 10,
-  offset = 0
+  opts: { sort?: LeaderboardSort; limit?: number; offset?: number } = {}
 ): Promise<LeaderboardRow[]> {
+  const { sort = "wins", limit = 10, offset = 0 } = opts;
   const db = getDb();
   const wins = sql<number>`count(*) filter (where ${results.position} = 1)`;
   const bestPoints = sql<number>`coalesce(max(${results.points}), 0)`;
   const races = sql<number>`count(*)`;
+
+  // Each criterion ranks by its column first, then falls back to the others so
+  // ties resolve deterministically.
+  const orderBy = {
+    wins: [desc(wins), desc(bestPoints), desc(races)],
+    best: [desc(bestPoints), desc(wins), desc(races)],
+    races: [desc(races), desc(wins), desc(bestPoints)],
+  }[sort];
 
   const rows = await db
     .select({
@@ -153,7 +167,7 @@ export async function getLeaderboard(
     .from(results)
     .leftJoin(users, eq(users.pubkey, results.pubkey))
     .groupBy(results.pubkey, users.display_name, users.avatar_url)
-    .orderBy(desc(wins), desc(bestPoints))
+    .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
 
