@@ -49,6 +49,8 @@
       "host": "➕ Crear carrera",
       "nameLabel": "Nombre de la carrera",
       "namePlaceholder": "Nombre de la carrera (opcional)",
+      "nameTitle": "Nombrá tu carrera",
+      "nameConfirm": "Crear carrera",
       "openMatches": "Carreras abiertas",
       "players": "{count}/{max} corredores",
       "hostedBy": "por {host} · {count}/{max} corredores",

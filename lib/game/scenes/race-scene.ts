@@ -753,7 +753,14 @@ export class RaceScene extends Phaser.Scene {
     const g = this.bg;
     g.clear();
 
-    // Sky (daylight gradient).
+    // Sky and grass. Each gets a solid base fill first, then the gradient on
+    // top: Phaser's Canvas renderer (the fallback when WebGL is unavailable)
+    // ignores fillGradientStyle, so without the solid base the sky and the
+    // grass "yard" vanish to the canvas backgroundColor — leaving only blue.
+    // The solid fill guarantees colour everywhere; the gradient enriches it
+    // wherever WebGL is active.
+    g.fillStyle(GAME_COLORS.skyTop, 1);
+    g.fillRect(0, 0, width, this.horizonY);
     g.fillGradientStyle(
       GAME_COLORS.skyTop,
       GAME_COLORS.skyTop,
@@ -763,7 +770,8 @@ export class RaceScene extends Phaser.Scene {
     );
     g.fillRect(0, 0, width, this.horizonY);
 
-    // Grass.
+    g.fillStyle(GAME_COLORS.grassTop, 1);
+    g.fillRect(0, this.horizonY, width, height - this.horizonY);
     g.fillGradientStyle(
       GAME_COLORS.grassTop,
       GAME_COLORS.grassTop,
