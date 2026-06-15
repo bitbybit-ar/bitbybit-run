@@ -111,7 +111,10 @@ Players earn **points** during the race (shown live and in the final ranking):
 - Points are tallied per match for the **end-of-race ranking**.
 - The **finishing-position bonus** (`POINTS.placement`) is added into each
   player's points, so where you reach the line counts toward the ranking.
-- Aggregate points/wins feed the **global leaderboard** stored in Neon Postgres.
+- The **global leaderboard** (Neon Postgres) ranks players by total wins, then
+  by their **personal best** — the highest points scored in a single match (a
+  time-trial-style record), not a lifetime sum. So one great race beats grinding
+  many mediocre ones, and winning still comes first.
 
 ## 6. Win condition & ranking
 

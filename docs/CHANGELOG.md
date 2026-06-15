@@ -26,6 +26,12 @@ Dates use `YYYY-MM-DD`.
 
 ### Changed
 
+- **Leaderboard ranks by personal best, not a lifetime sum.** The points column
+  is now each player's **best single match** (a time-trial-style record:
+  `max(points)`) instead of the cumulative total. Wins stay the primary sort, so
+  winning still comes first and the tiebreak rewards one great race over grinding
+  many mediocre ones. (`getLeaderboard` query + `LeaderboardRow.bestPoints`; the
+  column header is now "Best"/"Récord".)
 - **Ranking copy is consistent with practice.** The leaderboard subtitle and the
   how-to-play ranking card now say **multiplayer** races count (and that solo
   practice doesn't), instead of the misleading "every race counts".

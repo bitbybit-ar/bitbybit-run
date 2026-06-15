@@ -44,14 +44,14 @@ export async function LeaderboardTable({
             rankOffset={(page - 1) * pageSize}
             columns={[
               { label: t("wins") },
-              { label: t("points") },
+              { label: t("best") },
               { label: t("races"), collapsible: true },
             ]}
             rows={rows.map((row) => ({
               key: row.pubkey,
               name: row.display_name ?? shortPubkey(row.pubkey),
               avatarUrl: row.avatar_url,
-              values: [row.wins, row.points, row.races],
+              values: [row.wins, row.bestPoints, row.races],
             }))}
           />
 

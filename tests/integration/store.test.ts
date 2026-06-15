@@ -39,7 +39,7 @@ describe.skipIf(!HAS_DB)("store persistence (integration)", () => {
 
     expect(a.wins).toBe(1);
     expect(a.races).toBe(1);
-    expect(a.points).toBe(520);
+    expect(a.bestPoints).toBe(520);
     expect(b.wins).toBe(0);
     expect(b.races).toBe(1);
     expect(lb[0].pubkey).toBe(A); // ordered by wins desc
@@ -62,7 +62,7 @@ describe.skipIf(!HAS_DB)("store persistence (integration)", () => {
     expect(await getMatchResults(id1)).toHaveLength(1);
   });
 
-  it("accumulates wins and points across matches", async () => {
+  it("counts wins across matches but keeps each player's personal best", async () => {
     await persistMatchResult({
       nostrId: "bbr-int-3a",
       trackId: "classic-v1",
@@ -89,7 +89,10 @@ describe.skipIf(!HAS_DB)("store persistence (integration)", () => {
     expect(b.races).toBe(2);
     expect(a.wins).toBe(1);
     expect(b.wins).toBe(1);
-    expect(a.points).toBe(970);
-    expect(b.points).toBe(1010);
+    // bestPoints is the max of a player's matches, not the sum.
+    expect(a.bestPoints).toBe(500); // max(500, 470)
+    expect(b.bestPoints).toBe(530); // max(480, 530)
+    // Wins tie → ordered by personal best, so B (530) ranks above A (500).
+    expect(lb[0].pubkey).toBe(B);
   });
 });
