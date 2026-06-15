@@ -8,6 +8,15 @@ Dates use `YYYY-MM-DD`.
 
 ### Added
 
+- **Engaging "waiting for the others" screen.** A finisher no longer stares at
+  a static "waiting…" — the screen now shows a **live countdown** to the
+  auto-resolve, **progress bars** of the rivals still on the track (off the
+  ~5 Hz frames), **confetti** for whoever's leading, and rotating cheer lines.
+  The goal is to give the leader a reason to stay, since their leaving forces
+  the others to DNF. (`match-waiting.tsx`, `confetti.tsx`, `useCountdown`.)
+- **In-race "time to cross" banner.** Once a rival crosses, runners still on the
+  track see a banner with the shared grace countdown ("{name} crossed! 20s to
+  reach the line"), so being pulled to results is never a surprise.
 - **Zap the winner — no-wallet invoice fallback.** Zapping no longer dead-ends
   when the viewer has no WebLN wallet (e.g. Alby). The flow now fetches the
   winner's BOLT11 invoice (LNURL-pay, independent of having a wallet) for the
@@ -38,6 +47,22 @@ Dates use `YYYY-MM-DD`.
 
 ### Fixed
 
+- **Leaving a match is handled gracefully (no more silent strandings).** A live
+  race is peer-to-peer, so one player bailing used to strand or unfairly DNF the
+  rest. Now: navigating away from an active match is **confirmed** first
+  (`beforeunload` + an in-app link guard); an intentional leave is **announced**
+  (a `left` presence) so the others stop waiting and the leaver shows as "left"
+  rather than DNF; and if the last unfinished player leaves, the race **resolves
+  immediately** instead of waiting out the grace timeout.
+- **A finished match is no longer lost when the host leaves.** Persistence to
+  the leaderboard was host-only, so a host leaving the waiting screen before the
+  match resolved dropped it entirely. Now **any participant** posts the (idempotent)
+  standings, and the API accepts any of the match's players — not just the host.
+- **A timed-out runner is told why.** When the grace window ends the race while
+  someone was still running, the results screen now explains it ("time's up —
+  {winner} crossed first and waited") instead of a bare "DNF". The grace deadline
+  is also shared across clients (`finishGraceUntil`), so everyone's countdown and
+  end instant line up.
 - **Rival no longer changes character mid-race.** The rival sprite was keyed off
   the live racing lane, so a rival swerving into another character's lane briefly
   re-rendered as that character. It's now keyed off the lane they **claimed in

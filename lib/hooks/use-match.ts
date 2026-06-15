@@ -124,6 +124,7 @@ export function useMatch(options: UseMatchOptions): UseMatch {
       runners: {},
       finishes: {},
       standings: [],
+      finishGraceUntil: null,
     }),
     [matchId, trackId, host, isHost, signer.pubkey, players]
   );

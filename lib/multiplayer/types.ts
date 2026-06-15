@@ -22,6 +22,16 @@ export const MAX_PLAYERS = LANES;
 export const MIN_PLAYERS = 2;
 
 /**
+ * Grace window (ms) after the *first* runner crosses the line. The match
+ * normally ends once every roster player has finished (or left), but a
+ * straggler — or someone who quit without announcing it — would otherwise
+ * stall it forever. When this elapses the match ends anyway; runners who
+ * hadn't crossed are ranked "did not finish". Derived deterministically from
+ * the earliest finishTime so every client counts down to the same instant.
+ */
+export const FINISH_GRACE_MS = 20000;
+
+/**
  * Lifecycle of a match from a client's point of view:
  *   waiting   — lobby open, roster filling
  *   countdown — host pressed start, racing soon (`startAt`)
@@ -59,4 +69,8 @@ export interface MatchSnapshot {
   finishes: Record<string, MatchFinish>;
   /** Ordered placements; recomputed whenever a finish lands. */
   standings: FinalStanding[];
+  /** Unix ms the match force-ends after the first finish (earliest finishTime +
+   *  FINISH_GRACE_MS); null until someone finishes. Shared deadline so every
+   *  client shows the same countdown on the waiting / racing screens. */
+  finishGraceUntil: number | null;
 }

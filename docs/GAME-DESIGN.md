@@ -119,9 +119,11 @@ Players earn **points** during the race (shown live and in the final ranking):
 ## 6. Win condition & ranking
 
 - **Winner** = first runner to cross the finish line. The race **continues until
-  every runner crosses** (or a 20s grace window after the first finish elapses);
-  finishers wait on a live-ranking screen meanwhile, and anyone still out when
-  the grace fires is ranked DNF ("No terminó").
+  every runner crosses or leaves** (or a 20s grace window after the first finish
+  elapses); finishers wait on a spectator screen meanwhile (live ranking, rivals'
+  progress bars, a countdown, confetti for the leader), and anyone still out when
+  the grace fires is ranked DNF ("No terminó"). A runner still on the track when
+  the first rival crosses gets a countdown banner so the end isn't a surprise.
 - The winner ranks #1; the remaining players are ordered by **total points**,
   which fold in the placement bonus (further-along players placed higher), so
   finishing position still matters.

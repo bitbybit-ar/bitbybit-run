@@ -6,11 +6,13 @@ import { persistMatchResult } from "@/lib/multiplayer/store";
 /**
  * Persist a finished match's standings for the leaderboard.
  *
- * The live race runs over Nostr with no server; when the host's client sees
- * the match finish it POSTs the final standings here. Client-authoritative
- * (no anti-cheat) — an accepted MVP tradeoff (see ARCHITECTURE §10) — so we
- * only require that the submitter is the signed-in host of the match. Keyed
- * by `nostrId`, the write is idempotent, so a retry never duplicates a match.
+ * The live race runs over Nostr with no server; when a client sees the match
+ * finish it POSTs the final standings here. Client-authoritative (no
+ * anti-cheat) — an accepted MVP tradeoff (see ARCHITECTURE §10) — so we only
+ * require that the submitter is one of the match's players. Any participant may
+ * post (not just the host), so a match isn't lost when the host leaves before
+ * it resolves; keyed by `nostrId` the write is idempotent, so concurrent or
+ * retried posts from several clients never duplicate a match.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const session = await getSession();
@@ -31,8 +33,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const match = parsed.data;
 
-  // Only the host may persist their own match.
-  if (match.host !== session.pubkey) {
+  // The submitter must be one of the match's players (host or any participant).
+  const isParticipant = match.standings.some((s) => s.pubkey === session.pubkey);
+  if (!isParticipant) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

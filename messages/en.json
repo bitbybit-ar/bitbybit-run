@@ -89,6 +89,8 @@
       "time": "Time",
       "points": "Points",
       "dnf": "DNF",
+      "left": "Left",
+      "timedOut": "⏱ Time's up — {winner} crossed first, and the race closed while waiting for you.",
       "toLeaderboard": "View leaderboard",
       "playAgain": "Play again",
       "zapWinner": "⚡️ Zap the winner",
@@ -123,10 +125,25 @@
     "waiting": {
       "leading": "🏆 You are in the lead!",
       "finished": "🏁 You finished!",
-      "subtitle": "Waiting for the others to finish…",
-      "racing": "Racing…"
+      "subtitle": "Stay to see the final podium — the race ends when everyone crosses.",
+      "racing": "Racing…",
+      "resultsIn": "Final results in {seconds}s",
+      "left": "Left",
+      "cheers": [
+        "Hold the crown! 👑",
+        "They're chasing you… 👀",
+        "Don't leave — the podium is almost set 🏁",
+        "Eyes on the track 🔥",
+        "Cheering for a photo finish 📸",
+        "Stay for the standings ⚡"
+      ]
+    },
+    "race": {
+      "firstFinisher": "🏁 {name} crossed! {seconds}s to reach the line",
+      "lastCall": "⏱ {seconds}s left — sprint to the finish!"
     },
     "loading": "Loading…",
+    "leaveConfirm": "Leave the race? You'll drop out of the match and the others will keep going without you.",
     "reconnect": {
       "title": "Reconnect your signer",
       "text": "To play real matches you need to reconnect your signer (nsec or NIP-46). You can also practice solo.",

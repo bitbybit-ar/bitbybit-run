@@ -73,16 +73,6 @@ const REANNOUNCE_DEBOUNCE_MS = 400;
  */
 const STAMP_SKEW_TOLERANCE_MS = 5000;
 
-/**
- * Grace window after the *first* runner crosses the line. The match normally
- * ends only once every roster player has finished (so everyone gets to run
- * their own race), but a straggler — or someone who quit/disconnected — would
- * otherwise stall it forever. When this elapses we end the match anyway; the
- * runners who hadn't crossed are ranked as "did not finish". Every client arms
- * it off the same first finish, so they converge without a server.
- */
-const FINISH_GRACE_MS = 20000;
-
 /** Runner fields the caller supplies; `pubkey` and `t` are stamped here. */
 export type RunnerInput = Omit<RunnerState, "pubkey" | "t">;
 
@@ -182,7 +172,10 @@ export class MatchClient {
   /** This peer's current self-presence payload, from the held seat. The status
    *  can be overridden so we can publish a transition (e.g. "playing") whose
    *  state hasn't been committed to `this.state` yet. */
-  private presencePayload(status = this.state.status): MatchDiscovery {
+  private presencePayload(
+    status = this.state.status,
+    left = false
+  ): MatchDiscovery {
     const seat = this.lastSeat!;
     return {
       matchId: this.matchId,
@@ -195,6 +188,7 @@ export class MatchClient {
       status,
       createdAt: seat.createdAt,
       sessionKey: this.sessionSigner.pubkey,
+      left: left || undefined,
     };
   }
 
@@ -203,6 +197,23 @@ export class MatchClient {
     if (!this.lastSeat) return;
     const event = await this.signer.sign(
       buildDiscoveryEvent(this.presencePayload(status), status)
+    );
+    await this.transport.publish(event);
+  }
+
+  /**
+   * Announce that we're leaving the match — a `left` presence so others stop
+   * waiting on us (they mark us "left" rather than DNF). Best-effort: fired on
+   * teardown, so a hard tab-close may not flush it; the finish-grace timeout is
+   * the backstop. No-op if we never took a seat (e.g. left from the browser).
+   */
+  private async announceLeave(): Promise<void> {
+    if (!this.lastSeat) return;
+    const event = await this.signer.sign(
+      buildDiscoveryEvent(
+        this.presencePayload(this.state.status, true),
+        this.state.status
+      )
     );
     await this.transport.publish(event);
   }
@@ -319,8 +330,15 @@ export class MatchClient {
     await this.transport.publish(event);
   }
 
-  /** Stop receiving and release timers. */
-  leave(): void {
+  /**
+   * Stop receiving and release timers. Unless `announce` is false, fire a
+   * best-effort `left` presence first so others stop waiting on us — skipped
+   * once the match is over (nobody's waiting) or if we never claimed a seat.
+   */
+  leave({ announce = true }: { announce?: boolean } = {}): void {
+    if (announce && this.lastSeat && this.state.status !== "finished") {
+      void this.announceLeave().catch(() => {});
+    }
     this.clearCountdown();
     this.clearFinishGrace();
     this.stopHeartbeat();
@@ -458,12 +476,15 @@ export class MatchClient {
   /**
    * Arm the post-first-finish grace timeout (idempotent). When it fires, end
    * the match even if some runners never crossed — they're ranked as DNF. Skips
-   * if the match is already finished or no one has finished yet.
+   * if the match is already finished or no one has finished yet. Fires at the
+   * snapshot's shared `finishGraceUntil` deadline so it lines up with the
+   * countdown the UI shows (clamped to 0 if that instant already passed).
    */
   private armFinishGrace(): void {
     if (this.finishTimer !== null) return;
     if (this.state.status === "finished") return;
-    if (Object.keys(this.state.finishes).length === 0) return;
+    if (this.state.finishGraceUntil === null) return;
+    const delay = Math.max(0, this.state.finishGraceUntil - Date.now());
     this.finishTimer = setTimeout(() => {
       this.finishTimer = null;
       if (this.state.status === "finished") return;
@@ -471,7 +492,7 @@ export class MatchClient {
       next.standings = resolveStandings(next);
       this.state = next;
       this.emit();
-    }, FINISH_GRACE_MS);
+    }, delay);
   }
 
   private clearFinishGrace(): void {

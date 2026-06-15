@@ -1,0 +1,125 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+
+.waiting {
+  position: relative; // anchors the confetti overlay
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-16;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: $spacing-24 $spacing-16 $spacing-32;
+}
+
+.heading {
+  margin: 0;
+  text-align: center;
+  font-family: $font-display;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-shadow: 3px 3px 0 $pixel-shadow;
+}
+
+.subtitle {
+  margin: 0;
+  text-align: center;
+  font-size: $font-size-body;
+  color: $color-text-secondary;
+}
+
+.countdown {
+  margin: 0;
+  font-family: $font-display;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.spectator {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-8;
+  width: 100%;
+  margin: $spacing-8 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(5rem, 8rem) 1fr auto;
+  align-items: center;
+  gap: $spacing-12;
+  padding: $spacing-8 $spacing-12;
+  background: $color-surface;
+  border: 2px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: 4px 4px 0 0 $arcade-edge;
+}
+
+.me {
+  border-color: $color-primary;
+}
+
+.leftRow {
+  opacity: 0.6;
+}
+
+.rank {
+  font-family: $font-display;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
+  text-align: center;
+}
+
+.name {
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: $color-border;
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: $color-primary;
+  transition: width 0.4s ease-out;
+}
+
+.fillDone {
+  background: $color-success;
+}
+
+.fillLeft {
+  background: $color-text-secondary;
+}
+
+.status {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cheer {
+  margin: $spacing-4 0 0;
+  min-height: 1.4em;
+  text-align: center;
+  font-family: $font-display;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}

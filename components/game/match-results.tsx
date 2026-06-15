@@ -32,9 +32,13 @@ export function MatchResults({
 
   const rows = snapshot.standings.map((s) => {
     const seat = seats.get(s.pubkey);
-    const time =
-      s.finishTime != null && startAt != null
-        ? `${((s.finishTime - startAt) / 1000).toFixed(1)}s`
+    const finished = s.finishTime != null && startAt != null;
+    // A non-finisher who announced they left reads as "left"; otherwise the
+    // grace timeout caught them mid-race → "DNF".
+    const time = finished
+      ? `${((s.finishTime! - startAt!) / 1000).toFixed(1)}s`
+      : seat?.left
+        ? t("left")
         : t("dnf");
     return {
       key: s.pubkey,
@@ -50,11 +54,22 @@ export function MatchResults({
     seats.get(winner?.pubkey ?? "")?.name?.trim() ||
     (winner ? shortPubkey(winner.pubkey) : "");
 
+  // I didn't cross the line and didn't choose to leave → the race force-ended
+  // on the grace timeout while the winner waited. Explain it so the jump to
+  // results doesn't feel like the race "ended unexpectedly".
+  const iFinished = snapshot.finishes[selfPubkey] !== undefined;
+  const iLeft = !!seats.get(selfPubkey)?.left;
+  const timedOut = !iWon && !iFinished && !iLeft && !!winner;
+
   return (
     <section className={styles.results}>
       <h2 className={styles.heading}>
         {iWon ? t("youWon") : t("winner", { name: winnerName })}
       </h2>
+
+      {timedOut && (
+        <p className={styles.timedOut}>{t("timedOut", { winner: winnerName })}</p>
+      )}
 
       <RankingTable
         rankLabel={t("rank")}

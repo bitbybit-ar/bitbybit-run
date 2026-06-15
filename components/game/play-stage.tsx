@@ -17,11 +17,13 @@ import { RunnerLobby, LobbyAlreadyStarted } from "./runner-lobby";
 import { MatchBrowser } from "./match-browser";
 import { MatchResults } from "./match-results";
 import { MatchWaiting } from "./match-waiting";
+import { RaceFinishBanner } from "./race-finish-banner";
 import { MatchProvider, useMatchContext } from "./match-provider";
 import { InterstitialAd } from "./interstitial-ad";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button/button";
 import { useSignerContext } from "@/lib/contexts/signer-context";
+import { useActiveMatch } from "@/lib/contexts/active-match-context";
 import type { SignerHandle } from "@/lib/nostr/signers";
 import { getCharacter, type CharacterId } from "@/lib/game/characters";
 import styles from "./play-stage.module.scss";
@@ -252,6 +254,21 @@ function LobbyAndRace({
   const snap = match.snapshot;
   const status = snap?.status ?? "waiting";
   const selfPubkey = match.selfPubkey;
+  // Have I taken a seat in this match? (Computed before the early returns so the
+  // leave-guard effect below sees it in every branch.)
+  const amInRoster =
+    !!selfPubkey && !!snap?.players.some((p) => p.pubkey === selfPubkey);
+
+  // Warn before navigating away once I'm in an abandonable match (seat taken
+  // and not yet resolved) — leaving strands or DNFs the others. Lifted off once
+  // the match finishes (results are safe to leave) or on unmount.
+  const { setActive } = useActiveMatch();
+  const guardLeave = amInRoster && status !== "finished";
+  useEffect(() => {
+    setActive(guardLeave);
+    return () => setActive(false);
+  }, [guardLeave, setActive]);
+
   if (status === "waiting") {
     return (
       <RunnerLobby
@@ -265,8 +282,6 @@ function LobbyAndRace({
   // Past the lobby. If I never took a seat, I'm a latecomer arriving at a match
   // that already started (or finished) — joining in-progress isn't allowed, and
   // crucially this stops a returning player from re-creating/restarting it.
-  const amInRoster =
-    !!selfPubkey && !!snap?.players.some((p) => p.pubkey === selfPubkey);
   if (!amInRoster) {
     return (
       <LobbyAlreadyStarted
@@ -302,6 +317,12 @@ function LobbyAndRace({
 
   return (
     <div className={styles.wrap}>
+      {/* I'm still racing but a rival already crossed → warn me, with a live
+          countdown, that the match force-ends soon (so the switch to results
+          isn't a surprise). */}
+      {multiplayer && snap && Object.keys(snap.finishes).length > 0 && (
+        <RaceFinishBanner snapshot={snap} />
+      )}
       <GameCanvas
         key={selectedId}
         character={getCharacter(selectedId)}
@@ -314,8 +335,12 @@ function LobbyAndRace({
 }
 
 /**
- * Once a real match (≥2 players) finishes, the host posts the final standings
- * to persist them for the leaderboard — exactly once, best-effort.
+ * Once a real match (≥2 players) finishes, post the final standings to persist
+ * them for the leaderboard — exactly once per client, best-effort. *Any*
+ * remaining participant posts (not just the host): the write is idempotent on
+ * `nostrId`, and the server only requires the submitter to be one of the
+ * players. This is what stops a match from being lost when the host leaves the
+ * waiting screen before it resolves.
  */
 function usePersistOnFinish(match: ReturnType<typeof useMatchContext>) {
   const postedRef = useRef(false);
@@ -325,7 +350,7 @@ function usePersistOnFinish(match: ReturnType<typeof useMatchContext>) {
 
   useEffect(() => {
     if (postedRef.current) return;
-    if (!match.isHost || !finished || !multiplayer || !snap) return;
+    if (!finished || !multiplayer || !snap) return;
     postedRef.current = true;
     void fetch("/api/matches", {
       method: "POST",
@@ -333,12 +358,12 @@ function usePersistOnFinish(match: ReturnType<typeof useMatchContext>) {
       body: JSON.stringify({
         nostrId: snap.matchId,
         trackId: snap.trackId,
-        host: match.selfPubkey,
+        host: snap.host,
         startedAt: snap.startAt,
         standings: snap.standings,
       }),
     }).catch(() => {});
-  }, [match.isHost, match.selfPubkey, finished, multiplayer, snap]);
+  }, [finished, multiplayer, snap]);
 }
 
 /**

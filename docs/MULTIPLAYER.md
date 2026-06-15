@@ -54,12 +54,25 @@ they return to the lobby (not the generic races browser).
 
 **Everyone runs their own line.** A finish records that runner's time but does
 **not** end the match — the rest keep racing. A finisher swaps to a **waiting
-screen with a live ranking** (finishers by time, the rest by track progress)
-until the match resolves. The match ends when **every** roster player has
-crossed, or — as a backstop against a straggler/disconnect — when the
-`FINISH_GRACE_MS` window (20s) after the *first* finish elapses; whoever hasn't
-crossed by then is ranked **DNF** ("No terminó"). Every client arms this grace
-off the same first finish, so they converge without a server.
+screen** that turns the wait into a spectator moment: a live ranking, **progress
+bars** of the rivals still on the track, a **countdown** to the auto-resolve,
+confetti for whoever's leading, and rotating cheers — so the leader has a reason
+to stay (if they leave, the others would be forced to DNF). The match ends when
+**every** roster player has crossed **or left**, or — as a backstop against a
+straggler/disconnect — when the `FINISH_GRACE_MS` window (20s) after the *first*
+finish elapses; whoever hasn't crossed by then is ranked **DNF** ("No terminó").
+The grace deadline is anchored to the earliest `finishTime` (`finishGraceUntil`
+on the snapshot), so every client counts down to — and ends at — the same
+instant without a server.
+
+A runner still racing when a rival crosses sees a **banner with that countdown**
+("{name} crossed! 20s to reach the line"), so the switch to results is never a
+surprise; if the timeout catches them, the results screen explains it ("time's
+up — {winner} crossed first and waited"). Leaving mid-race is **announced** (a
+`left` presence) so the others stop waiting and the leaver is shown as **"left"**
+rather than DNF; a hard tab-close can't always send it, which is why the grace
+timeout still backstops the end. Navigating away from an active match is
+**confirmed** first (a `beforeunload` prompt plus an in-app link guard).
 
 Final order: finishers by earliest `finishTime`, then non-finishers, with an
 **arrival placement bonus** (`POINTS.placement`) folded into each total so where
