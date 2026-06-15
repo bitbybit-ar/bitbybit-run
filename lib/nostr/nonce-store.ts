@@ -9,10 +9,8 @@ import "server-only";
  * We remember each event id we've honored until its window has surely passed,
  * and reject a repeat.
  *
- * Best-effort, like the rate limiter: the set lives in process memory, so on
- * serverless it's per-instance (a replay routed to a different instance within
- * the window could still slip through). It closes the common case without new
- * infrastructure; a hard guarantee needs a shared store — see docs/AUDIT.md §1.
+ * The set lives in process memory (per instance) and is swept on a TTL, so it
+ * stays small and needs no extra infrastructure.
  */
 
 // Keep ids a bit longer than the validation window so a replay can't outlast

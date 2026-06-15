@@ -90,7 +90,7 @@ export const POINTS = {
  * out around ~2k points (finish bonus + placement + all food), so this leaves
  * generous headroom for legit scores while stopping a forged frame or POST from
  * writing an absurd value (e.g. a 2-billion "unbeatable" leaderboard record).
- * Not the gameplay cap — purely an anti-abuse clamp. See docs/AUDIT.md.
+ * Not the gameplay cap — purely an anti-abuse clamp.
  */
 export const MATCH_POINTS_MAX = 10_000;
 export const MATCH_POINTS_MIN = -10_000;

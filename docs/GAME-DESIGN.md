@@ -185,11 +185,3 @@ Create match ──► Lobby fills (1..4 players join via Nostr)
 - **UI chrome:** the `Button` component and palette mirror `bitbybit-cursats`,
   recolored to an orange/green identity to distinguish this project.
 - Everything is drawn (shapes + emoji) — no image assets — to stay lightweight.
-
-## 10. Known design tradeoffs (be honest in the pitch)
-
-- **Client-authoritative runners:** each player's own runner is simulated
-  locally, so the game is trivially cheatable. For a hobby hackathon demo with
-  _manual_ zaps (no in-game money at stake) this is an acceptable tradeoff. A
-  future authoritative server (e.g. Colyseus / Cloudflare Durable Objects) would
-  fix it — documented as future work.

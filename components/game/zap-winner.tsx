@@ -14,9 +14,12 @@ import {
 } from "@/lib/lightning/zap";
 import styles from "./zap-winner.module.scss";
 
-// "invoice" = no wallet (or WebLN pay failed): we show the BOLT11 invoice as a
-// QR / copyable string so the viewer can pay from any Lightning wallet.
-type Status = "idle" | "zapping" | "sent" | "error" | "invoice";
+// "confirm" = WebLN is present but the recipient's LNURL clamped the amount to
+// something other than what the viewer typed — we show the real figure and wait
+// for an explicit OK before paying, so a hostile lud16 can't make the wallet
+// charge more than intended. "invoice" = no wallet (or WebLN pay failed): we
+// show the BOLT11 invoice as a QR / copyable string for any wallet.
+type Status = "idle" | "zapping" | "sent" | "error" | "confirm" | "invoice";
 
 /** Preset amounts (sats) offered in the zap dialog. */
 const PRESETS = [21, 100, 1000, 5000] as const;
@@ -101,6 +104,13 @@ export function ZapWinner({
       setInvoice(inv);
       setInvoiceSats(sats);
       if (hasWebln()) {
+        // The recipient's LNURL can clamp the amount to its own min/max. If it
+        // came back as something other than the viewer asked for, don't pay
+        // silently — confirm the real figure first.
+        if (sats !== amount) {
+          setStatus("confirm");
+          return;
+        }
         try {
           await payWithWebln(inv);
           setStatus("sent");
@@ -115,6 +125,19 @@ export function ZapWinner({
     } catch (err) {
       setErrorCode(err instanceof Error ? err.message : null);
       setStatus("error");
+    }
+  };
+
+  // Pay the already-fetched invoice after the viewer confirmed a clamped amount.
+  const confirmPay = async () => {
+    if (!invoice) return;
+    setStatus("zapping");
+    try {
+      await payWithWebln(invoice);
+      setStatus("sent");
+      setOpen(false);
+    } catch {
+      setStatus("invoice"); // declined/failed → fall back to the QR
     }
   };
 
@@ -152,7 +175,16 @@ export function ZapWinner({
           ariaLabel={t("zapTitle", { name: winnerName })}
           size="sm"
         >
-          {status === "invoice" && invoice ? (
+          {status === "confirm" ? (
+            <div className={styles.dialog}>
+              <p className={styles.note}>
+                {t("zapClampNote", { sats: invoiceSats, requested: amount })}
+              </p>
+              <Button type="button" size="lg" onClick={confirmPay}>
+                {t("zapSend", { sats: invoiceSats })}
+              </Button>
+            </div>
+          ) : status === "invoice" && invoice ? (
             <div className={styles.dialog}>
               <p className={styles.note}>
                 {t("zapScanToPay", { sats: invoiceSats, name: winnerName })}

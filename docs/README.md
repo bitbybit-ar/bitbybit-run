@@ -7,11 +7,9 @@ Welcome to the docs for **Bit by Bit Run**. Start here.
 | [GAME-DESIGN.md](GAME-DESIGN.md)   | The game: concept, rules, mechanics (energy/poison/food), controls, screens, match flow, scoring                    |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How it works for free with no game server: Next.js + Phaser, Nostr transport, event design, Neon DB, Lightning zaps |
 | [MULTIPLAYER.md](MULTIPLAYER.md)   | Live race lobby flow (create → invite → start) and how to test multiplayer locally with two distinct identities      |
-| [ROADMAP.md](ROADMAP.md)           | Phased plan toward the Jun 23 pitch, milestones, risk register                                                      |
 | [CHARACTERS.md](CHARACTERS.md)     | Playable runner characters: PixelLab prompts, settings, sprite pipeline                                             |
 | [AUTH.md](AUTH.md)                 | Nostr login: connection methods, sign-in flow, env setup, users table, tests                                        |
-| [AUDIT.md](AUDIT.md)               | Platform audit (security, responsiveness, consistency, tests) — findings by severity + remediation roadmap          |
-| [CHANGELOG.md](CHANGELOG.md)       | Chronological log of changes to the project & docs                                                                  |
+| [CHANGELOG.md](CHANGELOG.md)       | Release notes — features delivered                                                                                  |
 
 > Looking for the project overview, tech stack, or hackathon scoring map? See the
 > root [`../README.md`](../README.md).

@@ -49,8 +49,6 @@ banner_url, locale, active, created_at, updated_at`.
 `npm test` (vitest) — 55 tests covering NIP-98 validation, the HTTP-auth header
 parser, key/identity creation, JWT session, schemas, and the users helpers.
 
-## TODO
+## Notes
 
-- Production **CSP**: add `connect-src` allowing `wss:` (NIP-46 relays) + `https:`
-  in `next.config.ts` (left as a TODO; dev has no CSP so relays work).
 - i18n strings live under the `login` / `reSignIn` / `errors` namespaces.

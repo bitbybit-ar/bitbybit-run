@@ -108,6 +108,7 @@
       "zapFailed": "Couldn't zap. Try again.",
       "zapNoWebln": "You need a Lightning wallet (e.g. Alby) to zap.",
       "zapNoWallet": "This player has no Lightning wallet to receive zaps.",
+      "zapClampNote": "The recipient's wallet adjusted the amount: you'll send {sats} sats (you asked for {requested}). Confirm to pay.",
       "zapScanToPay": "No wallet connected? Scan or copy this invoice to send {sats} sats to {name} from any Lightning wallet.",
       "zapQrAlt": "Lightning invoice QR code to zap {name}",
       "zapCopyInvoice": "Copy invoice",
