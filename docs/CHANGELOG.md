@@ -74,6 +74,10 @@ Dates use `YYYY-MM-DD`.
   consistent (unique pubkeys, a contiguous `1..N` set), so a POST can't claim
   position 1 twice or hand a rival position 99. Full protection still needs
   multi-participant attestation (documented MVP gap). See [AUDIT.md](AUDIT.md) §1.
+- **Lane count copy corrected (4, not 8).** The how-to-play intro (both locales)
+  said the track has **8 lanes** and the ARCHITECTURE diagram showed "up to 8 …
+  Player H" — leftovers from before the 4-lane reduction. Now reads 4 / Player D,
+  matching `LANES = 4`. (audit consistency finding.)
 - **Leaving a match is handled gracefully (no more silent strandings).** A live
   race is peer-to-peer, so one player bailing used to strand or unfairly DNF the
   rest. Now: navigating away from an active match is **confirmed** first

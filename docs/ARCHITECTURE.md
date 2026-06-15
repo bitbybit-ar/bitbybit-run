@@ -22,7 +22,7 @@ real-time backbone instead of a dedicated game server.**
                    ┌───────────┘              └───────────┐
                    │                                      │
             ┌──────┴───────┐                       ┌──────┴───────┐
-            │  Player A     │   ...up to 8...       │  Player H     │
+            │  Player A     │   ...up to 4...       │  Player D     │
             │  (browser)    │                       │  (browser)    │
             │  Next.js +    │                       │  Next.js +    │
             │  Phaser game  │                       │  Phaser game  │
