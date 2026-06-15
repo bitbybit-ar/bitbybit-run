@@ -25,7 +25,7 @@
   },
   "leaderboard": {
     "title": "Ranking",
-    "subtitle": "Cada carrera cuenta. Ganá carriles, sumá puntos y escalá la tabla.",
+    "subtitle": "Cada carrera multijugador cuenta. Ganá carriles, sumá puntos y escalá la tabla.",
     "rank": "#",
     "player": "Jugador",
     "wins": "Victorias",
@@ -38,6 +38,7 @@
   },
   "play": {
     "phase": "Carrera multijugador",
+    "practicePhase": "Práctica",
     "choose": "Elegí tu corredor",
     "start": "Empezar",
     "change": "Cambiar corredor",
@@ -45,8 +46,11 @@
       "title": "Carreras",
       "subtitle": "Creá una carrera e invitá a tus rivales, o unite a una abierta.",
       "host": "➕ Crear carrera",
+      "nameLabel": "Nombre de la carrera",
+      "namePlaceholder": "Nombre de la carrera (opcional)",
       "openMatches": "Carreras abiertas",
       "players": "{count}/{max} corredores",
+      "hostedBy": "por {host} · {count}/{max} corredores",
       "join": "Unirme",
       "loading": "Buscando carreras…",
       "empty": "No hay carreras abiertas. ¡Creá una!",
@@ -154,6 +158,7 @@
     "go": "¡YA!",
     "finish": "🏁 ¡META!",
     "again": "apretá R para correr de nuevo",
+    "practiceNote": "Carrera de práctica — no cuenta para el ranking",
     "goodPhrases": [
       "¡glup! 😋",
       "energía pura ⚡",
@@ -251,7 +256,7 @@
     "zapTitle": "⚡️ Zap al ganador",
     "zapText": "Cuando termina la carrera, podés mandarle zaps de sats al ganador. Correr rápido se paga en Bitcoin.",
     "rankingTitle": "🏆 Ranking",
-    "rankingText": "Tu posición al cruzar la meta define tu lugar en el ranking. Mejorá tu puesto carrera a carrera.",
+    "rankingText": "Tu posición al cruzar la meta en una carrera multijugador define tu lugar en el ranking — las carreras de práctica solo no cuentan. Mejorá tu puesto carrera a carrera.",
     "demo": "Demo",
     "cta": "Jugar ahora ▶"
   },

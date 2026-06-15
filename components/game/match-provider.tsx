@@ -64,6 +64,8 @@ export interface MatchProviderProps {
   isHost: boolean;
   /** Match creator's pubkey (self when hosting). */
   host: string;
+  /** Optional host-supplied race label, shown in the lobby browser. */
+  raceName?: string;
   children: ReactNode;
 }
 
@@ -73,9 +75,17 @@ export function MatchProvider({
   matchId,
   isHost,
   host,
+  raceName,
   children,
 }: MatchProviderProps) {
-  const match = useMatch({ signer, matchId, trackId: TRACK.id, isHost, host });
+  const match = useMatch({
+    signer,
+    matchId,
+    trackId: TRACK.id,
+    isHost,
+    host,
+    raceName,
+  });
 
   // Build the race seam once the client exists; React owns its lifecycle (the
   // scene no longer disposes it), so tear it down when we unmount.

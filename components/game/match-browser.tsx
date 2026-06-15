@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button/button";
 import { useMatchDiscovery } from "@/lib/hooks/use-match-discovery";
@@ -16,13 +17,15 @@ export function MatchBrowser({
   onJoin,
   onPractice,
 }: {
-  onHost: () => void;
+  /** Host a new match, optionally labelled so players can find it. */
+  onHost: (raceName?: string) => void;
   onJoin: (matchId: string, host: string) => void;
   /** Start a solo practice race (no match, never counts for the ranking). */
   onPractice?: () => void;
 }) {
   const t = useTranslations("play.browser");
   const { matches, loading } = useMatchDiscovery();
+  const [raceName, setRaceName] = useState("");
 
   return (
     <section className={styles.browser}>
@@ -32,19 +35,36 @@ export function MatchBrowser({
       </header>
 
       <div className={styles.cta}>
-        <Button type="button" size="lg" onClick={onHost}>
-          {t("host")}
-        </Button>
-        {onPractice && (
+        <label className={styles.nameField}>
+          <span className={styles.nameLabel}>{t("nameLabel")}</span>
+          <input
+            type="text"
+            className={styles.nameInput}
+            value={raceName}
+            onChange={(e) => setRaceName(e.target.value)}
+            placeholder={t("namePlaceholder")}
+            maxLength={80}
+          />
+        </label>
+        <div className={styles.ctaButtons}>
           <Button
             type="button"
-            variant="outline"
             size="lg"
-            onClick={onPractice}
+            onClick={() => onHost(raceName.trim() || undefined)}
           >
-            {t("practice")}
+            {t("host")}
           </Button>
-        )}
+          {onPractice && (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={onPractice}
+            >
+              {t("practice")}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className={styles.list}>
@@ -60,10 +80,20 @@ export function MatchBrowser({
               <li key={m.matchId} className={styles.match}>
                 <span className={styles.matchInfo}>
                   <span className={styles.hostName}>
-                    {m.hostName?.trim() || shortPubkey(m.host)}
+                    {m.raceName?.trim() ||
+                      m.hostName?.trim() ||
+                      shortPubkey(m.host)}
                   </span>
                   <span className={styles.count}>
-                    {t("players", { count: m.players, max: MAX_PLAYERS })}
+                    {/* When the race is named, attribute the host on the
+                        secondary line; otherwise just show the player count. */}
+                    {m.raceName?.trim()
+                      ? t("hostedBy", {
+                          host: m.hostName?.trim() || shortPubkey(m.host),
+                          count: m.players,
+                          max: MAX_PLAYERS,
+                        })
+                      : t("players", { count: m.players, max: MAX_PLAYERS })}
                   </span>
                 </span>
                 <Button

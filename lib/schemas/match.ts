@@ -70,6 +70,9 @@ export const MatchDiscoverySchema = z.object({
   pubkey: NostrPubkeySchema,
   lane: LaneSchema,
   name: z.string().max(80).optional(),
+  /** Optional human label the host gave the race (only the host announces it),
+   *  shown in the lobby browser so players can find a specific match. */
+  raceName: z.string().max(80).optional(),
   status: MatchLobbyStatusSchema.default("waiting"),
   createdAt: z.number().int().nonnegative(),
   /** Ephemeral signing key for this peer's in-match frames (runner/finish), so

@@ -36,6 +36,10 @@ export interface RemoteRunnerView {
   pubkey: string;
   progress: number; // 0..1, smoothed for display
   lane: number; // fractional, smoothed for display
+  /** The lane this runner *claimed* in the lobby — stable for the whole race,
+   *  so it identifies their character. Distinct from `lane`, which is the live
+   *  racing lane they may swerve across mid-race. */
+  seatLane: number;
   status: RunnerStatus;
   name?: string;
   color: number;
@@ -120,13 +124,15 @@ export class RemoteRunners {
       e.lastFrameMono = nowMono;
 
       const seat = roster.get(pubkey);
+      const seatLane = seat?.lane ?? Math.round(e.baseLane);
       views.push({
         pubkey,
         progress: e.dispProgress,
         lane: e.dispLane,
+        seatLane,
         status: e.status,
         name: seat?.name,
-        color: laneColor(seat?.lane ?? Math.round(e.baseLane)),
+        color: laneColor(seatLane),
       });
     }
 

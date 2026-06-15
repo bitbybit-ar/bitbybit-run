@@ -21,6 +21,7 @@ export function GameCanvas({
   onFinish,
   raceNet,
   matchId,
+  practice = false,
 }: {
   character?: Character;
   onFinish?: (result: { time: number; points: number }) => void;
@@ -28,6 +29,9 @@ export function GameCanvas({
   raceNet?: RaceNet;
   /** Live match id — seeds the per-match track + keys the reconnect resume. */
   matchId?: string;
+  /** Solo practice run — shows a "doesn't count for the ranking" note at the
+   *  finish. Off for matches and the demo. */
+  practice?: boolean;
 }) {
   const t = useTranslations("game");
   const locale = useLocale();
@@ -50,6 +54,8 @@ export function GameCanvas({
   tRef.current = t;
   const characterRef = useRef(character);
   characterRef.current = character;
+  const practiceRef = useRef(practice);
+  practiceRef.current = practice;
 
   useEffect(() => {
     // Guard against React StrictMode double-invoke in dev.
@@ -65,6 +71,7 @@ export function GameCanvas({
       go: tt("go"),
       finish: tt("finish"),
       again: tt("again"),
+      practiceNote: practiceRef.current ? tt("practiceNote") : undefined,
       goodPhrases: tt.raw("goodPhrases") as string[],
       badPhrases: tt.raw("badPhrases") as string[],
       boostPhrases: tt.raw("boostPhrases") as string[],

@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { GameHeader } from "./game-header/game-header";
 import { GameCanvas } from "./game-canvas";
 import { GameControls } from "./game-controls";
 import { RunnerLobby, LobbyAlreadyStarted } from "./runner-lobby";
@@ -19,6 +27,11 @@ import { getCharacter, type CharacterId } from "@/lib/game/characters";
 import styles from "./play-stage.module.scss";
 
 type FinishResult = { time: number; points: number };
+
+// Lets the active solo view (LocalStage) tell the page header it's a practice
+// run, so the title reads "Practice" instead of "Multiplayer race". Everything
+// else (browser, lobby, real race) leaves it false.
+const SetPracticeContext = createContext<(on: boolean) => void>(() => {});
 
 /**
  * Play flow. Normal mode: pick a character, then race. Demo mode: skip the
@@ -47,32 +60,47 @@ function CompetitiveStage({ currentUser }: { currentUser: CurrentUser }) {
   const { signer, session, sessionLoading, signerLoading } =
     useSignerContext();
   const t = useTranslations("play");
+  // Flipped on by LocalStage while a solo practice run is mounted, so the
+  // header swaps "Multiplayer race" → "Practice".
+  const [practice, setPractice] = useState(false);
 
+  let content: ReactNode;
   // The extension signer attaches asynchronously after a reload. Until that
   // settles, don't decide between competitive and the solo fallback — otherwise
   // a logged-in user (or someone opening an invite link) flashes into a lonely
   // practice race before their signer is ready.
   if (sessionLoading || signerLoading) {
-    return <p className={styles.loading}>{t("loading")}</p>;
-  }
-  if (signer && session?.pubkey) {
-    return (
+    content = <p className={styles.loading}>{t("loading")}</p>;
+  } else if (signer && session?.pubkey) {
+    content = (
       <SignedInStage
         currentUser={currentUser}
         signer={signer}
         pubkey={session.pubkey}
       />
     );
+  } else if (session?.pubkey) {
+    // Logged in but no in-memory signer — an nsec/NIP-46 user who reloaded
+    // (their key doesn't survive like an extension does), or an extension
+    // that's gone. Offer to reconnect so they can race, instead of silently
+    // dropping to solo.
+    content = <ReconnectStage currentUser={currentUser} />;
+  } else {
+    // No session at all (the /play page server-guards this, so effectively only
+    // a torn-down session) → plain solo.
+    content = <LocalStage currentUser={currentUser} />;
   }
-  // Logged in but no in-memory signer — an nsec/NIP-46 user who reloaded (their
-  // key doesn't survive like an extension does), or an extension that's gone.
-  // Offer to reconnect so they can race, instead of silently dropping to solo.
-  if (session?.pubkey) {
-    return <ReconnectStage currentUser={currentUser} />;
-  }
-  // No session at all (the /play page server-guards this, so effectively only
-  // a torn-down session) → plain solo.
-  return <LocalStage currentUser={currentUser} />;
+
+  return (
+    <>
+      <GameHeader phase={practice ? t("practicePhase") : t("phase")} />
+      <div className={styles.stage}>
+        <SetPracticeContext.Provider value={setPractice}>
+          {content}
+        </SetPracticeContext.Provider>
+      </div>
+    </>
+  );
 }
 
 /**
@@ -128,7 +156,13 @@ function ReconnectStage({ currentUser }: { currentUser: CurrentUser }) {
   );
 }
 
-type Target = { matchId: string; isHost: boolean; host: string };
+type Target = {
+  matchId: string;
+  isHost: boolean;
+  host: string;
+  /** Optional host-supplied race label (host only). */
+  raceName?: string;
+};
 
 /**
  * Resolve which match to enter. An invite link (`?m=&h=`) jumps straight in;
@@ -147,8 +181,14 @@ function SignedInStage({
   const params = useSearchParams();
   const joinId = params.get("m");
   const joinHost = params.get("h");
+  // The host role follows identity, not the entry path: if the match's host is
+  // me (re-opening my own invite link, or rejoining my own match from the
+  // browser) I'm still the host — otherwise a creator who navigated away and
+  // came back would land as a non-host and nobody could start the race.
   const [target, setTarget] = useState<Target | null>(() =>
-    joinId ? { matchId: joinId, isHost: false, host: joinHost ?? "" } : null
+    joinId
+      ? { matchId: joinId, isHost: joinHost === pubkey, host: joinHost ?? "" }
+      : null
   );
   // Solo practice from the races browser — a real (no-net) single-player race
   // that never persists to the leaderboard. Separate from `target` (a match).
@@ -166,14 +206,17 @@ function SignedInStage({
   if (!target) {
     return (
       <MatchBrowser
-        onHost={() =>
+        onHost={(raceName) =>
           setTarget({
             matchId: `bbr-${pubkey.slice(0, 8)}-${Date.now()}`,
             isHost: true,
             host: pubkey,
+            raceName,
           })
         }
-        onJoin={(matchId, host) => setTarget({ matchId, isHost: false, host })}
+        onJoin={(matchId, host) =>
+          setTarget({ matchId, isHost: host === pubkey, host })
+        }
         onPractice={() => setPractice(true)}
       />
     );
@@ -186,6 +229,7 @@ function SignedInStage({
       matchId={target.matchId}
       isHost={target.isHost}
       host={target.host}
+      raceName={target.raceName}
     >
       <LobbyAndRace currentUser={currentUser} onLeave={() => setTarget(null)} />
     </MatchProvider>
@@ -312,6 +356,13 @@ function LocalStage({
   const [selectedId, setSelectedId] = useState<CharacterId>("default");
   const [started, setStarted] = useState(false);
 
+  // Tell the page header this is a solo practice run (and reset on unmount).
+  const setPractice = useContext(SetPracticeContext);
+  useEffect(() => {
+    setPractice(true);
+    return () => setPractice(false);
+  }, [setPractice]);
+
   if (!started) {
     return (
       <RunnerLobby
@@ -324,7 +375,11 @@ function LocalStage({
   }
   return (
     <div className={styles.wrap}>
-      <GameCanvas key={selectedId} character={getCharacter(selectedId)} />
+      <GameCanvas
+        key={selectedId}
+        character={getCharacter(selectedId)}
+        practice
+      />
       <GameControls />
     </div>
   );

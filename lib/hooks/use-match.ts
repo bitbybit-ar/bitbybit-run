@@ -25,6 +25,8 @@ export interface UseMatchOptions {
   host?: string;
   players?: MatchPlayer[];
   isHost?: boolean;
+  /** Optional host-supplied race label, shown in the lobby browser. */
+  raceName?: string;
   /** Override the realtime transport (defaults to public Nostr relays). */
   transport?: Transport;
 }
@@ -52,6 +54,7 @@ export function useMatch(options: UseMatchOptions): UseMatch {
     host,
     players,
     isHost,
+    raceName,
     transport: injectedTransport,
   } = options;
 
@@ -70,6 +73,7 @@ export function useMatch(options: UseMatchOptions): UseMatch {
       host,
       players,
       isHost,
+      raceName,
     });
     clientRef.current = instance;
     setClient(instance);
@@ -86,7 +90,7 @@ export function useMatch(options: UseMatchOptions): UseMatch {
     // Re-init only on a genuine identity change. `players` is just a seed
     // (a fresh array each render); the roster aggregates from presence, so it
     // is intentionally excluded to avoid tearing down the live client.
-  }, [signer, matchId, trackId, host, isHost, injectedTransport]);
+  }, [signer, matchId, trackId, host, isHost, raceName, injectedTransport]);
 
   const announceSelf = useCallback(
     (seat: { lane: number; name?: string }) =>

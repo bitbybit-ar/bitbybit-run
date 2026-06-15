@@ -62,6 +62,23 @@ describe("discovery selectOpenMatches", () => {
     expect(m.players).toBe(2);
   });
 
+  it("surfaces the host-supplied race name, taken from the host seat", () => {
+    const s = build(
+      presence({ pubkey: A, host: A, name: "Ann", raceName: "Friday Cup" }),
+      presence({ pubkey: B, host: A, name: "Bea" }) // joiner carries no raceName
+    );
+    const [m] = selectOpenMatches(s, NOW + 1000);
+    expect(m.raceName).toBe("Friday Cup");
+  });
+
+  it("leaves raceName undefined when the host didn't name the race", () => {
+    const s = build(
+      presence({ pubkey: A, host: A }),
+      presence({ pubkey: B, host: A })
+    );
+    expect(selectOpenMatches(s, NOW + 1000)[0].raceName).toBeUndefined();
+  });
+
   it("hides full matches", () => {
     const seats = Array.from({ length: LANES }, (_, i) =>
       presence({ pubkey: String(i).repeat(64), host: A, lane: i })

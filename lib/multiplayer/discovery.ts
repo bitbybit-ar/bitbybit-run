@@ -16,6 +16,8 @@ export interface OpenMatch {
   matchId: string;
   host: string;
   hostName?: string;
+  /** Optional label the host gave the race (helps players find a match). */
+  raceName?: string;
   trackId: string;
   players: number;
   /** Newest presence timestamp in the match (unix ms). */
@@ -28,6 +30,8 @@ interface Seat {
   trackId: string;
   status: MatchLobbyStatus;
   createdAt: number;
+  /** Only the host's presence carries this. */
+  raceName?: string;
 }
 
 /** matchId → (pubkey → latest seat). */
@@ -54,6 +58,7 @@ export function addPresence(
         trackId: p.trackId,
         status: p.status,
         createdAt: p.createdAt,
+        raceName: p.raceName,
       },
     },
   };
@@ -84,6 +89,7 @@ export function selectOpenMatches(
       matchId,
       host,
       hostName: seats[host]?.name,
+      raceName: seats[host]?.raceName,
       trackId: entries[0].trackId,
       players: entries.length,
       updatedAt,

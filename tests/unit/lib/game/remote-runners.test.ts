@@ -89,6 +89,22 @@ describe("remote-runners interpolation", () => {
     expect(view.name).toBe("Ann");
     expect(view.color).toBe(RUNNER_PALETTE[2]);
   });
+
+  it("exposes the claimed (roster) lane as seatLane, not the live lane", () => {
+    const rr = new RemoteRunners();
+    // Runner is mid-race in lane 0, but claimed lane 2 in the lobby — the
+    // character must follow the claimed lane so it doesn't flip as they swerve.
+    rr.ingest({ [A]: runner(A, { lane: 0 }) }, SELF, 1000);
+    const view = rr.frame(1000, [{ pubkey: A, lane: 2, name: "Ann" }])[0];
+    expect(view.seatLane).toBe(2);
+    expect(view.lane).toBe(0); // live lane unaffected (drives position)
+  });
+
+  it("falls back to the live lane for seatLane when no roster seat is known", () => {
+    const rr = new RemoteRunners();
+    rr.ingest({ [A]: runner(A, { lane: 3 }) }, SELF, 1000);
+    expect(rr.frame(1000)[0].seatLane).toBe(3);
+  });
 });
 
 describe("remote-runners laneColor", () => {
