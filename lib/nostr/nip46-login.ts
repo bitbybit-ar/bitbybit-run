@@ -18,9 +18,11 @@ import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { bytesToHex, hexToBytes } from "nostr-tools/utils";
 import {
   BunkerSigner,
+  type BunkerPointer,
   parseBunkerInput,
   createNostrConnectURI,
 } from "nostr-tools/nip46";
+import { type SignerHandle, makeNip46Signer } from "@/lib/nostr/signers";
 
 // Mobile signers (Amber over nostrconnect://) round-trip through
 // public relays that can take a while to connect on cellular links;
@@ -51,6 +53,113 @@ const NIP46_CONNECT_RELAYS = [
 ];
 
 const LOCAL_CLIENT_KEY_STORAGE = "bbr-nip46-client-key";
+const BUNKER_POINTER_STORAGE = "bbr-nip46-bunker";
+
+/** How long a silent reload-restore may spend connecting before we give up and
+ *  fall back to the reconnect prompt. Shorter than the login timeout — a reload
+ *  shouldn't block the play surface for two minutes. */
+const RESTORE_TIMEOUT_MS = 12_000;
+
+/**
+ * Remember the remote signer pointer so we can rebuild the bunker connection
+ * after a reload (the session cookie outlives the in-memory `BunkerSigner`).
+ * The pointer is `{ relays, pubkey, secret }` — connection metadata, *not* the
+ * user's private key, which never leaves the remote signer. It lives at the
+ * same trust level as the already-persisted client key.
+ */
+export function persistBunkerPointer(bp: BunkerPointer): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(BUNKER_POINTER_STORAGE, JSON.stringify(bp));
+  } catch {
+    // Storage unavailable — auto-restore just won't be possible.
+  }
+}
+
+export function clearBunkerPointer(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(BUNKER_POINTER_STORAGE);
+  } catch {
+    // Ignore.
+  }
+}
+
+function loadBunkerPointer(): BunkerPointer | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(BUNKER_POINTER_STORAGE);
+    if (!raw) return null;
+    const bp = JSON.parse(raw) as BunkerPointer;
+    if (
+      bp &&
+      typeof bp.pubkey === "string" &&
+      Array.isArray(bp.relays) &&
+      (bp.secret === null || typeof bp.secret === "string")
+    ) {
+      return bp;
+    }
+  } catch {
+    // Malformed — fall through.
+  }
+  return null;
+}
+
+/**
+ * Rebuild a NIP-46 signer after a reload from the persisted pointer + client
+ * key. Amber/nsec.app recognise the reused client key, so this reconnects
+ * silently (no re-approval). Returns null — and clears the stale pointer — if
+ * there's nothing to restore, the connect times out, or the restored identity
+ * doesn't match the session pubkey. The caller then offers a reconnect prompt.
+ */
+export async function restoreNip46Signer(
+  expectedPubkey: string
+): Promise<SignerHandle | null> {
+  const bp = loadBunkerPointer();
+  if (!bp) return null;
+
+  const clientSecretKey = getLocalClientSecret();
+  let bunker: BunkerSigner | null = null;
+  try {
+    bunker = BunkerSigner.fromBunker(clientSecretKey, bp);
+    const pubkey = await withTimeout(
+      (async () => {
+        await bunker!.connect();
+        return bunker!.getPublicKey();
+      })(),
+      RESTORE_TIMEOUT_MS
+    );
+    if (pubkey !== expectedPubkey) {
+      await closeQuietly(bunker);
+      clearBunkerPointer();
+      return null;
+    }
+    return makeNip46Signer(bunker, pubkey);
+  } catch {
+    if (bunker) await closeQuietly(bunker);
+    return null;
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("restore_timeout")), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
+async function closeQuietly(bunker: BunkerSigner): Promise<void> {
+  try {
+    await bunker.close();
+  } catch {
+    // Ignore — we're tearing down anyway.
+  }
+}
 
 /**
  * Get (or lazily create) the persistent client secret key used to

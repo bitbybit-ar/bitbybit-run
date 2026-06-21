@@ -31,6 +31,14 @@
   color: $color-text-primary;
 }
 
+// On light, "BitByBit" is near-black (--color-text-primary), so the inherited
+// dark pixel offset would smear black-on-black. Drop it for this word only —
+// the gradient "RUN" keeps its offset (it's a contrasting fill). On dark the
+// word is near-white, so the inherited dark offset reads fine and stays.
+:global([data-theme="light"]) .primary {
+  text-shadow: none;
+}
+
 .gradient {
   background: linear-gradient(
     90deg,

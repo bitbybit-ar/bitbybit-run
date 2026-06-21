@@ -20,10 +20,17 @@ export const SESSION_COOKIE_NAME =
   process.env.NODE_ENV === "production" ? "__Host-session" : "session";
 
 /**
- * Inactivity timeout for the session cookie, in minutes. Each
- * authenticated request through `proxy.ts` re-mints the cookie with
- * a fresh `SESSION_INACTIVITY_MINUTES` clock — so this is a sliding
- * window, not an absolute lifetime. Idle for this long → cookie
- * expires and the user gets bounced to `/sign-in` on next click.
+ * Session lifetime, in days. The cookie is a rolling window: every page
+ * navigation through `proxy.ts` re-mints the JWT with a fresh
+ * `SESSION_TTL_DAYS` clock (see the re-mint in `proxy.ts`), so an active
+ * user effectively never gets logged out — while an abandoned session
+ * lapses this many days after the last visit and the user is bounced to
+ * `/sign-in` on their next click.
+ *
+ * A week (not an hour) so a long match — including waiting in the lobby
+ * for opponents — can never outlive the session.
  */
-export const SESSION_INACTIVITY_MINUTES = 60;
+export const SESSION_TTL_DAYS = 7;
+
+/** Same lifetime in seconds, for cookie `maxAge`. */
+export const SESSION_TTL_SECONDS = SESSION_TTL_DAYS * 24 * 60 * 60;

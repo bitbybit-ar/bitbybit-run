@@ -9,6 +9,7 @@ import {
   createConnectSession,
   waitForConnection,
   connectWithBunkerURL,
+  persistBunkerPointer,
 } from "@/lib/nostr/nip46-login";
 import { type SignerHandle, makeNip46Signer } from "@/lib/nostr/signers";
 import {
@@ -145,6 +146,9 @@ export function NostrConnectPanel({
         onErrorRef.current?.(reSignInError("mismatch"));
         return;
       }
+      // Remember the pointer so the bunker connection can be rebuilt silently
+      // after a reload (the session cookie outlives the in-memory signer).
+      persistBunkerPointer(bunker.bp);
       await onSignerRef.current(makeNip46Signer(bunker, pubkey));
     } catch {
       try {

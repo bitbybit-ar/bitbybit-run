@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { createSession, verifySessionToken } from "@/lib/auth";
+import { SESSION_TTL_DAYS } from "@/lib/auth-constants";
 import { getAuthSecret } from "@/lib/env";
 
 const HEX_PUBKEY = "a".repeat(64);
@@ -16,6 +17,14 @@ describe("auth/createSession + verifySessionToken", () => {
     expect(session?.pubkey).toBe(HEX_PUBKEY);
     expect(session?.locale).toBe("es");
     expect(session?.signer_type).toBeNull();
+  });
+
+  it("mints a rolling session that lasts SESSION_TTL_DAYS", async () => {
+    const token = await createSession({ pubkey: HEX_PUBKEY, locale: "es" });
+    const { payload } = await jwtVerify(token, getAuthSecret());
+    // exp - iat is the cookie's full lifetime; proxy.ts re-mints it on every
+    // navigation so an active user's window keeps sliding forward.
+    expect(payload.exp! - payload.iat!).toBe(SESSION_TTL_DAYS * 24 * 60 * 60);
   });
 
   it("preserves signer_type when provided", async () => {
