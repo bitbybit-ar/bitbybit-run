@@ -57,6 +57,14 @@ const TRACK_BEND_AMOUNT = -230; // max horizontal shift in px (negative = left)
 
 type Projected = { x: number; y: number; s: number };
 
+/** An on-screen touch control: a circular hit area at (cx, cy) with radius r. */
+type TouchButton = {
+  kind: "left" | "right" | "accel";
+  cx: number;
+  cy: number;
+  r: number;
+};
+
 export type GameStrings = {
   go: string;
   finish: string;
@@ -96,6 +104,7 @@ export class RaceScene extends Phaser.Scene {
   private useSprite = false;
   private spriteKey = RUNNER_SPRITE.path; // texture key for the chosen character
   private hud!: Phaser.GameObjects.Graphics;
+  private controlsG?: Phaser.GameObjects.Graphics; // on-screen touch gamepad
 
   private statusText!: Phaser.GameObjects.Text;
   private toastText!: Phaser.GameObjects.Text;
@@ -135,8 +144,19 @@ export class RaceScene extends Phaser.Scene {
   private startHold = START_HOLD; // "on your marks" pause before the runner moves
   private drunkTimer = 0; // >0 while wobbling after a beer
   private boostTimer = 0; // >0 while a 🚀 speed burst is active
-  private touchSprint = false; // held while a finger is on the centre (sprint) zone
+  private touchSprint = false; // held while a finger is on the accelerate button
   private currentSpeed = SPEED.base; // last frame's forward speed (broadcast in MP)
+
+  // On-screen gamepad (touch only). Left/right buttons under the left thumb
+  // change lane; a big accelerate button under the right thumb holds sprint.
+  // Drawn in-canvas (not HTML) so multitouch, hit-testing and pressed-state all
+  // live in the game loop — two thumbs can steer and accelerate at once.
+  private touchControls = false; // true only on coarse-pointer (touch) devices
+  private touchButtons: TouchButton[] = [];
+  private accelGlyph?: Phaser.GameObjects.Text; // ⚡ centred on the accel button
+  private btnPressed = { left: false, right: false, accel: false };
+  private prevLeft = false; // last frame's left/right press, for tap edge-detect
+  private prevRight = false;
 
   // Multiplayer (absent in single-player). When a RaceNet is in the registry
   // we broadcast our own runner and render everyone else's.
@@ -303,11 +323,26 @@ export class RaceScene extends Phaser.Scene {
       Phaser.Input.Keyboard.Key
     >;
 
-    // Touch input (mobile has no keys): tap the left/right third to change lane,
-    // hold the centre to sprint, tap anywhere to restart once finished.
+    // Touch input: on a touch device we draw an on-screen gamepad (left/right
+    // lane buttons + an accelerate button). A single pointerdown is still used
+    // to restart with a tap once the race is finished.
     this.input.on("pointerdown", this.onPointerDown, this);
-    this.input.on("pointerup", this.onPointerUp, this);
-    this.input.on("pointerupoutside", this.onPointerUp, this);
+
+    // Build the on-screen gamepad on touch devices only (matches the CSS legend
+    // swap in game-controls). Enable extra pointers so two thumbs register at
+    // once — without this Phaser tracks a single touch and you can't steer and
+    // accelerate together.
+    this.touchControls = this.isCoarsePointer();
+    if (this.touchControls) {
+      this.input.addPointer(2);
+      this.controlsG = this.add.graphics().setDepth(9);
+      this.accelGlyph = this.add
+        .text(0, 0, "⚡", { fontSize: "28px" })
+        .setOrigin(0.5)
+        .setDepth(10)
+        .setVisible(false);
+      this.layoutTouchButtons();
+    }
 
     // Responsive: the canvas follows its parent (Scale.RESIZE), so recompute the
     // layout and redraw the static backdrop whenever the viewport changes.
@@ -315,34 +350,90 @@ export class RaceScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.onResize, this);
       this.input.off("pointerdown", this.onPointerDown, this);
-      this.input.off("pointerup", this.onPointerUp, this);
-      this.input.off("pointerupoutside", this.onPointerUp, this);
     });
 
     this.resetRace();
     this.applyResumeOnBoot();
   }
 
-  private onPointerDown(pointer: Phaser.Input.Pointer) {
-    if (this.finished) {
-      // In a match the race is over once you finish — no solo restart.
-      if (!this.net) this.resetRace();
-      return;
-    }
-    const w = this.scale.width;
-    if (pointer.x < w * 0.33) {
-      this.targetLane = Math.max(0, this.targetLane - 1);
-      Sound.lane();
-    } else if (pointer.x > w * 0.67) {
-      this.targetLane = Math.min(LANES - 1, this.targetLane + 1);
-      Sound.lane();
-    } else {
-      this.touchSprint = true; // centre zone → sprint while held
-    }
+  private onPointerDown() {
+    // Once finished, a tap anywhere restarts a solo race (the gamepad is hidden).
+    // In a match the result stands — no restart. While racing, the gamepad
+    // buttons are read every frame in updateTouch(), not here.
+    if (this.finished && !this.net) this.resetRace();
   }
 
-  private onPointerUp() {
-    this.touchSprint = false;
+  /** True on touch-primary devices (coarse pointer) — mirrors the CSS legend
+   *  swap so the on-screen gamepad shows exactly where the tap hints would. */
+  private isCoarsePointer(): boolean {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(pointer: coarse)").matches;
+  }
+
+  /** Place the gamepad buttons: lane ◀ ▶ at the bottom-left (left thumb), a
+   *  larger accelerate button at the bottom-right (right thumb). Recomputed on
+   *  every resize so it tracks rotation and viewport changes. */
+  private layoutTouchButtons(): void {
+    if (!this.touchControls) return;
+    const { width, height } = this.scale;
+    const r = Phaser.Math.Clamp(width * 0.07, 34, 56); // lane button radius
+    const ar = r * 1.3; // accelerate button is bigger (primary action)
+    const margin = Math.max(14, width * 0.045);
+    const bottom = height - margin; // align every button's lower edge here
+    const laneCy = bottom - r;
+    const leftCx = margin + r;
+    const rightCx = leftCx + 2 * r + r * 0.55; // small gap between lane buttons
+    const accelCx = width - margin - ar;
+    const accelCy = bottom - ar;
+
+    this.touchButtons = [
+      { kind: "left", cx: leftCx, cy: laneCy, r },
+      { kind: "right", cx: rightCx, cy: laneCy, r },
+      { kind: "accel", cx: accelCx, cy: accelCy, r: ar },
+    ];
+    this.accelGlyph?.setPosition(accelCx, accelCy).setScale(ar / 26);
+  }
+
+  /** Read the on-screen gamepad from the live pointers each frame. Acceleration
+   *  is held while any finger sits on the accel button; lane changes fire once
+   *  per fresh press (edge-detected) so a held finger doesn't keep shifting.
+   *  Reading raw pointers (rather than per-button events) makes multitouch — two
+   *  thumbs at once — work without any stuck-button bookkeeping. */
+  private updateTouch(racing: boolean): void {
+    if (!this.touchControls) return;
+    let accel = false;
+    let left = false;
+    let right = false;
+    for (const p of this.input.manager.pointers) {
+      if (!p.isDown) continue;
+      for (const b of this.touchButtons) {
+        const dx = p.x - b.cx;
+        const dy = p.y - b.cy;
+        if (dx * dx + dy * dy > b.r * b.r) continue;
+        if (b.kind === "accel") accel = true;
+        else if (b.kind === "left") left = true;
+        else right = true;
+      }
+    }
+    this.btnPressed = { left, right, accel };
+
+    if (!racing) {
+      this.touchSprint = false;
+      this.prevLeft = left;
+      this.prevRight = right;
+      return;
+    }
+    this.touchSprint = accel;
+    if (left && !this.prevLeft) {
+      this.targetLane = Math.max(0, this.targetLane - 1);
+      Sound.lane();
+    }
+    if (right && !this.prevRight) {
+      this.targetLane = Math.min(LANES - 1, this.targetLane + 1);
+      Sound.lane();
+    }
+    this.prevLeft = left;
+    this.prevRight = right;
   }
 
   /** (Re)compute viewport-dependent layout. Lane width is fixed (LANE_WIDTH),
@@ -360,6 +451,7 @@ export class RaceScene extends Phaser.Scene {
   private onResize() {
     if (!this.bg) return; // resize can fire before create() finishes
     this.layout();
+    this.layoutTouchButtons();
     this.drawBackground();
     this.toastText.setPosition(this.scale.width / 2, this.scale.height * 0.4);
   }
@@ -426,6 +518,9 @@ export class RaceScene extends Phaser.Scene {
     this.drunkTimer = 0;
     this.boostTimer = 0;
     this.touchSprint = false;
+    this.btnPressed = { left: false, right: false, accel: false };
+    this.prevLeft = false;
+    this.prevRight = false;
     this.currentSpeed = SPEED.base;
     this.status = "running";
     this.finishReported = false;
@@ -522,6 +617,10 @@ export class RaceScene extends Phaser.Scene {
     const dt = delta / 1000;
     this.now = time;
 
+    // Read the on-screen gamepad before movement (it sets touchSprint/targetLane).
+    // Lane/accel only take effect while actually racing.
+    this.updateTouch(!this.finished && this.startHold <= 0);
+
     if (this.finished) {
       // R restarts a solo race; in a match the result stands.
       if (!this.net && Phaser.Input.Keyboard.JustDown(this.keys.R)) {
@@ -566,6 +665,65 @@ export class RaceScene extends Phaser.Scene {
     this.drawRunner();
     if (this.net) this.drawMinimap();
     this.drawHud();
+    this.drawTouchControls();
+  }
+
+  /** Render the on-screen gamepad: translucent circular buttons with chevron
+   *  arrows for the lanes and a ⚡ for accelerate. Pressed buttons brighten (the
+   *  accel button glows green) for clear touch feedback. Hidden once finished so
+   *  the "tap to restart" overlay reads cleanly. */
+  private drawTouchControls(): void {
+    const g = this.controlsG;
+    if (!g) return;
+    g.clear();
+    if (!this.touchControls || this.finished) {
+      this.accelGlyph?.setVisible(false);
+      return;
+    }
+    for (const b of this.touchButtons) {
+      const pressed =
+        b.kind === "accel"
+          ? this.btnPressed.accel
+          : b.kind === "left"
+            ? this.btnPressed.left
+            : this.btnPressed.right;
+
+      g.fillStyle(GAME_COLORS.hudPanel, pressed ? 0.22 : 0.4);
+      g.fillCircle(b.cx, b.cy, b.r);
+      if (b.kind === "accel" && pressed) {
+        g.fillStyle(GAME_COLORS.energy, 0.45); // glow green while sprinting
+        g.fillCircle(b.cx, b.cy, b.r);
+      }
+      g.lineStyle(3, 0xffffff, pressed ? 0.95 : 0.55);
+      g.strokeCircle(b.cx, b.cy, b.r);
+
+      if (b.kind === "accel") {
+        this.accelGlyph?.setVisible(true);
+      } else {
+        // Chevron triangle pointing toward the lane the button moves to.
+        const s = b.r * 0.42;
+        g.fillStyle(0xffffff, pressed ? 1 : 0.9);
+        if (b.kind === "left") {
+          g.fillTriangle(
+            b.cx + s * 0.5,
+            b.cy - s,
+            b.cx + s * 0.5,
+            b.cy + s,
+            b.cx - s * 0.7,
+            b.cy
+          );
+        } else {
+          g.fillTriangle(
+            b.cx - s * 0.5,
+            b.cy - s,
+            b.cx - s * 0.5,
+            b.cy + s,
+            b.cx + s * 0.7,
+            b.cy
+          );
+        }
+      }
+    }
   }
 
   /** Broadcast the local runner over the match (no-op without a RaceNet). */

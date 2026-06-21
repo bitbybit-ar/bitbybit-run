@@ -104,6 +104,24 @@
   font-weight: $font-weight-bold;
 }
 
+// Sub-heading separating the keyboard and touch control lists.
+.controlsLabel {
+  margin: 0;
+  font-family: $font-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+
+  // Space the touch heading from the keyboard list above it.
+  & + .controls {
+    margin-top: $spacing-4;
+  }
+
+  &:not(:first-of-type) {
+    margin-top: $spacing-12;
+  }
+}
+
 // Controls list with arrow-key icons.
 .controls {
   display: flex;
@@ -144,6 +162,32 @@
   font-family: $font-body;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
+}
+
+// On-screen gamepad glyphs — round buttons, mirroring the in-game controls.
+.touchKeys {
+  display: inline-flex;
+  gap: $spacing-4;
+  flex-shrink: 0;
+}
+
+.touchKey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid $arcade-edge;
+  border-radius: $border-radius-full;
+  background: $color-surface;
+  box-shadow: 2px 2px 0 0 $arcade-edge;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  line-height: 1;
+
+  svg {
+    display: block;
+  }
 }
 
 .actions {

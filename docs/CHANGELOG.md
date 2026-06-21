@@ -11,9 +11,12 @@ The features that make up **Bit by Bit Run**, grouped by area.
   timed speed burst.
 - **Four animated characters** (Sprinter, Barbie, T-Rex, Bitcoin), each on its
   own lane with a full run-cycle sprite.
-- **Keyboard and touch controls** — arrows/WASD on desktop, tap-the-sides /
-  hold-to-sprint on mobile, with the canvas tuned so taps never trigger page
-  scroll or zoom.
+- **Keyboard and touch controls** — arrows/WASD on desktop, and on mobile an
+  **on-screen gamepad** drawn in-canvas: ◀ ▶ lane buttons under the left thumb
+  and a held ⚡ accelerate button under the right, so you can **steer and
+  accelerate at once** (multitouch). The pad shows only on touch devices and in
+  every mode (demo, practice, multiplayer); the canvas is tuned so taps never
+  trigger page scroll or zoom.
 - **Per-match seeded tracks:** obstacle/food layout is derived from the match id,
   so every player in a race shares the exact same course.
 - **Free demo** (no login) and a **solo practice** mode for warming up.

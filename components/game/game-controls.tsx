@@ -74,8 +74,8 @@ export function GameControls() {
           {t("touchLanes")}
         </span>
         <span className={styles.touchHint}>
-          <span className={styles.touchGlyph}>
-            <ArrowIcon dir="up" size={18} />
+          <span className={styles.touchGlyph} aria-hidden>
+            ⚡
           </span>
           {t("touchSprint")}
         </span>
