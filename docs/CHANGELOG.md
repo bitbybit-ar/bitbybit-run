@@ -53,6 +53,13 @@ The features that make up **Bit by Bit Run**, grouped by area.
 
 - **Nostr login** via browser extension (NIP-07), pasted nsec, or NIP-46 bunker,
   using **NIP-98** signed HTTP auth with single-use replay protection.
+- **Rolling 7-day session:** the JWT cookie is re-minted on every navigation, so
+  an active player never gets logged out — a long match (even waiting in the
+  lobby for opponents) can't outlive the session.
+- **Signer survives reloads:** extension and NIP-46 (Amber, nsec.app…) signers
+  re-attach silently after a reload, so a logged-in user isn't left "logged in
+  but unable to sign." The NIP-46 bunker connection is rebuilt from a persisted
+  pointer (connection metadata, never the private key).
 - **Profile sync** pulls display name, avatar, and Lightning address from the
   user's Nostr kind:0 metadata.
 - **⚡ Zap the winner:** tip over Lightning with WebLN, or — with no wallet — a

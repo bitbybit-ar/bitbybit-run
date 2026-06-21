@@ -9,7 +9,7 @@ import {
   type Locale,
   type SignerType,
 } from "@/lib/schemas/auth";
-import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
+import { SESSION_TTL_SECONDS } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import { ensureUserForPubkey, refreshUserFromKind0 } from "@/lib/creator/users";
 import { enforceRateLimit } from "@/lib/rate-limit";
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: SESSION_INACTIVITY_MINUTES * 60,
+    maxAge: SESSION_TTL_SECONDS,
     path: "/",
   });
 

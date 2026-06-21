@@ -30,6 +30,10 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { type SignerHandle, makeExtensionSigner } from "@/lib/nostr/signers";
+import {
+  restoreNip46Signer,
+  clearBunkerPointer,
+} from "@/lib/nostr/nip46-login";
 import type { NostrEvent, UnsignedNostrEvent } from "@/lib/nostr/types";
 import { LocaleSchema, type SignerType, type Locale } from "@/lib/schemas/auth";
 
@@ -168,12 +172,15 @@ export function SignerProvider({
     initialSession === undefined
   );
   const [signer, setSignerState] = useState<SignerHandle | null>(null);
-  // Whether an extension-signer auto-restore is still in flight. Seeded true
-  // for a logged-in extension user so the very first render doesn't briefly
-  // look signed-out (see `signerLoading`).
-  const [signerRestoring, setSignerRestoring] = useState(
-    (initialSession ?? null)?.signer_type === "extension"
-  );
+  // Whether a signer auto-restore is still in flight. Seeded true for a
+  // logged-in extension or NIP-46 user so the very first render doesn't briefly
+  // look signed-out (see `signerLoading`). Both can survive a reload — the
+  // extension holds the key, NIP-46 rebuilds the bunker from the persisted
+  // pointer; nsec can't, so it isn't seeded.
+  const [signerRestoring, setSignerRestoring] = useState(() => {
+    const t = (initialSession ?? null)?.signer_type;
+    return t === "extension" || t === "nip46";
+  });
   // Mirror of `signer` state. signWithPrompt reads from this ref so a
   // handler that called `requestReSignIn()` and THEN falls through to
   // `signWithPrompt` can see the freshly-attached signer instead of a
@@ -215,20 +222,44 @@ export function SignerProvider({
     });
   }, []);
 
-  // Auto-restore extension signer when the session is valid and
-  // window.nostr is present. The extension is the only signer that
-  // survives reloads — the key lives in the extension itself, not
-  // in our app memory.
+  // Auto-restore the signer when the session is valid but no signer is in
+  // memory yet (the common case right after a reload). Two signer types can be
+  // restored: an extension (the key lives in the extension) and NIP-46 (the
+  // bunker connection is rebuilt from the persisted pointer + client key, which
+  // Amber/nsec.app recognise, so it's silent). nsec can't survive a reload —
+  // its key is never persisted — so it falls through to the reconnect prompt.
   useEffect(() => {
-    // Nothing to restore (no session, already attached, or a non-extension
-    // signer that can't survive a reload) → we're definitively done loading.
-    if (!session || signer || session.signer_type !== "extension") {
+    const type = session?.signer_type;
+    if (!session || signer || (type !== "extension" && type !== "nip46")) {
       setSignerRestoring(false);
       return;
     }
 
     setSignerRestoring(true);
     let cancelled = false;
+
+    if (type === "nip46") {
+      // Rebuild the bunker connection over relays — async and slower than the
+      // extension path, so it owns its own done-signal (no fixed timer here;
+      // restoreNip46Signer has its own connect timeout).
+      void (async () => {
+        try {
+          const restored = await restoreNip46Signer(session.pubkey);
+          if (cancelled) return;
+          if (restored) setSigner(restored);
+        } catch {
+          // Bunker unreachable / revoked — leave signer null; the play surface
+          // offers a reconnect prompt.
+        } finally {
+          if (!cancelled) setSignerRestoring(false);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Extension path.
     const tryAttach = async () => {
       if (typeof window === "undefined" || !window.nostr) return;
       try {
@@ -336,6 +367,9 @@ export function SignerProvider({
       prev?.close?.();
       return null;
     });
+    // Drop the persisted NIP-46 pointer so a signed-out browser can't silently
+    // rebuild the bunker connection on next load.
+    clearBunkerPointer();
     setSession(null);
   }, []);
 

@@ -75,7 +75,7 @@ lib/contexts/         ThemeProvider (next-themes wrapper)
 i18n/                 next-intl routing.ts + request.ts
 messages/             en.json, es.json
 styles/               SCSS token system (_theme, _colors, _typography, _spacing)
-proxy.ts              Next 16 middleware (next-intl locale routing)
+proxy.ts              Next 16 middleware (locale routing + rolling session re-mint)
 ```
 
 ## 3. The deterministic, per-match track model

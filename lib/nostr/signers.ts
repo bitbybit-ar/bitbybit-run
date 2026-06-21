@@ -71,15 +71,54 @@ export function makeSessionSigner(): SignerHandle {
   return makeNsecSigner(secretKey, getPublicKey(secretKey));
 }
 
+/**
+ * Keep-alive cadence for the NIP-46 relay tunnel. Public relays drop idle
+ * connections after a few minutes; a periodic `ping` keeps the channel warm so
+ * the bunker is still reachable when the next signature is needed (e.g. after a
+ * long lobby wait, or post-race when no presence heartbeat is exercising it).
+ */
+const NIP46_KEEPALIVE_MS = 150_000;
+
 export function makeNip46Signer(
   bunker: BunkerSigner,
   pubkey: string
 ): SignerHandle {
+  // Ping the bunker on a timer; if the ping fails the tunnel went cold, so try
+  // to reconnect now rather than discovering it at sign time. Silent — the
+  // reused client key means the remote signer doesn't re-prompt. Guarded for
+  // non-browser contexts (SSR/tests without timers).
+  const keepalive =
+    typeof setInterval !== "undefined"
+      ? setInterval(() => {
+          void (async () => {
+            try {
+              await bunker.ping();
+            } catch {
+              try {
+                await bunker.connect();
+              } catch {
+                // Still down — sign() will retry-with-reconnect on demand.
+              }
+            }
+          })();
+        }, NIP46_KEEPALIVE_MS)
+      : null;
+
   return {
     type: "nip46",
     pubkey,
     sign: async (event) => {
-      const signed = await bunker.signEvent(event);
+      let signed;
+      try {
+        signed = await bunker.signEvent(event);
+      } catch {
+        // The relay tunnel can drop during a long wait. Reconnect once and
+        // retry — the persisted client key makes the reconnect silent. If the
+        // reconnect itself fails it propagates, and the caller (e.g. presence
+        // heartbeat) handles it.
+        await bunker.connect();
+        signed = await bunker.signEvent(event);
+      }
       return {
         id: signed.id,
         pubkey: signed.pubkey,
@@ -91,6 +130,7 @@ export function makeNip46Signer(
       };
     },
     close: async () => {
+      if (keepalive) clearInterval(keepalive);
       try {
         await bunker.close();
       } catch {
