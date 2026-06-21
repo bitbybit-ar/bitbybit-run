@@ -11,7 +11,8 @@ the start.
 - **Players:** 1–4 per match (4 lanes = 4 runners)
 - **Session length:** ~60–120 seconds per race
 - **Platform:** web, **mobile-friendly by design** (4 lanes read clearly in a
-  narrow portrait viewport; desktop keyboard first, touch controls in Phase 3)
+  narrow portrait viewport; desktop keyboard plus an on-screen touch gamepad on
+  mobile — see §3)
 - **View:** 2.5D "behind the runner" (the track recedes toward a horizon)
 
 ## 2. Core loop
@@ -35,15 +36,35 @@ Within a single race there is a second, moment-to-moment loop:
 
 ## 3. Controls
 
-Keyboard (default):
+Keyboard (desktop, default):
 
 | Key                | Action                              |
 | ------------------ | ----------------------------------- |
 | ⬅️ / ➡️ (or A / D) | Move sideways — change lane         |
 | ⬆️ (or W)          | Accelerate / sprint (spends energy) |
 | ⬇️ (or S)          | Brake / slow down                   |
+| R                  | Restart (solo runs only)            |
 
-Design rule: controls must be **dead simple** and readable at a glance. No combos.
+Touch (mobile) — an **on-screen gamepad**, shown only on coarse-pointer (touch)
+devices and drawn inside the Phaser canvas so it works identically in every mode
+(demo, practice, multiplayer):
+
+| Button                          | Action                              |
+| ------------------------------- | ----------------------------------- |
+| ◀ ▶ (bottom-left, left thumb)   | Tap to change lane (one per tap)    |
+| ⚡ (bottom-right, right thumb)   | Hold to accelerate / sprint         |
+
+Design rules:
+
+- Controls must be **dead simple** and readable at a glance. No combos.
+- The touch layout puts steering under the **left thumb** and acceleration under
+  the **right** so you can **steer and accelerate at the same time**. Multitouch
+  is explicitly enabled (Phaser tracks a single pointer by default), and input is
+  read from the live pointers each frame — taps change lanes on the rising edge,
+  the accelerate button holds while any finger rests on it.
+- The on-screen gamepad mirrors the CSS legend swap: it appears under the same
+  `(pointer: coarse)` condition that hides the keyboard legend, so desktop is
+  unaffected (no buttons, keyboard only).
 
 ## 4. Mechanics
 

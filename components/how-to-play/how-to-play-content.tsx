@@ -55,41 +55,69 @@ function FoodChips({
 function Controls() {
   const t = useTranslations("howToPlay");
   return (
-    <ul className={styles.controls}>
-      <li>
-        <span className={styles.keys}>
-          <Key label="←">
-            <ArrowIcon dir="left" />
-          </Key>
-          <Key label="→">
-            <ArrowIcon dir="right" />
-          </Key>
-        </span>
-        {t("controlsLanes")}
-      </li>
-      <li>
-        <span className={styles.keys}>
-          <Key label="↑">
-            <ArrowIcon dir="up" />
-          </Key>
-        </span>
-        {t("controlsSprint")}
-      </li>
-      <li>
-        <span className={styles.keys}>
-          <Key label="↓">
-            <ArrowIcon dir="down" />
-          </Key>
-        </span>
-        {t("controlsBrake")}
-      </li>
-      <li>
-        <span className={styles.keys}>
-          <Key>R</Key>
-        </span>
-        {t("controlsRestart")}
-      </li>
-    </ul>
+    <>
+      <p className={styles.controlsLabel}>{t("controlsKeyboard")}</p>
+      <ul className={styles.controls}>
+        <li>
+          <span className={styles.keys}>
+            <Key label="←">
+              <ArrowIcon dir="left" />
+            </Key>
+            <Key label="→">
+              <ArrowIcon dir="right" />
+            </Key>
+          </span>
+          {t("controlsLanes")}
+        </li>
+        <li>
+          <span className={styles.keys}>
+            <Key label="↑">
+              <ArrowIcon dir="up" />
+            </Key>
+          </span>
+          {t("controlsSprint")}
+        </li>
+        <li>
+          <span className={styles.keys}>
+            <Key label="↓">
+              <ArrowIcon dir="down" />
+            </Key>
+          </span>
+          {t("controlsBrake")}
+        </li>
+        <li>
+          <span className={styles.keys}>
+            <Key>R</Key>
+          </span>
+          {t("controlsRestart")}
+        </li>
+      </ul>
+
+      {/* On-screen gamepad (touch devices): mirrors the buttons drawn in-game —
+          ◀ ▶ under the left thumb, a held ⚡ accelerate button under the right. */}
+      <p className={styles.controlsLabel}>{t("controlsTouch")}</p>
+      <ul className={styles.controls}>
+        <li>
+          <span className={styles.touchKeys}>
+            <span className={styles.touchKey} aria-label="left">
+              <ArrowIcon dir="left" />
+            </span>
+            <span className={styles.touchKey} aria-label="right">
+              <ArrowIcon dir="right" />
+            </span>
+          </span>
+          {t("controlsTouchLanes")}
+        </li>
+        <li>
+          <span className={styles.touchKeys}>
+            <span className={styles.touchKey} aria-hidden>
+              ⚡
+            </span>
+          </span>
+          {t("controlsTouchSprint")}
+        </li>
+      </ul>
+    </>
   );
 }
 
