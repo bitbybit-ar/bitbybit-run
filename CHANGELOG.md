@@ -1,8 +1,23 @@
-# 📝 Release Notes — Bit by Bit Run
+# 📝 Changelog
 
-The features that make up **Bit by Bit Run**, grouped by area.
+All notable changes to **Bit by Bit Run** are documented here.
 
-## Gameplay
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+> Design and gameplay details live in [`docs/`](docs/README.md). This file is the
+> release-facing log — each tagged release maps to a version section below.
+
+## [Unreleased]
+
+Everything below ships in the upcoming **1.0.0** — the full game, serverless
+multiplayer, leaderboard, Nostr identity with Lightning zaps, and the fake-ads
+scam museum. At release time this heading becomes `## [1.0.0] — <date>` and the
+compare links at the bottom are pointed at the `v1.0.0` tag.
+
+### Added
+
+#### Gameplay
 
 - **2.5D runner race** down a perspective athletics track, drawn entirely from
   shapes + emoji (no image assets) for a fast, lightweight load.
@@ -22,7 +37,7 @@ The features that make up **Bit by Bit Run**, grouped by area.
 - **Free demo** (no login) and a **solo practice** mode for warming up.
 - Sound effects, light/dark theme, and a responsive layout from phone to desktop.
 
-## Multiplayer (serverless, over Nostr)
+#### Multiplayer (serverless, over Nostr)
 
 - **Lobby flow:** create a race (with an optional race name), share an invite
   link, or join an open race from the browser; pick your runner/lane; the host
@@ -43,7 +58,7 @@ The features that make up **Bit by Bit Run**, grouped by area.
   cheers. A runner still on the track gets a countdown banner once a rival
   crosses. Leaving a match is confirmed first and announced to the others.
 
-## Leaderboard
+#### Leaderboard
 
 - **Global ranking** by total wins, then by each player's **personal best**
   (their highest-scoring single race).
@@ -54,7 +69,22 @@ The features that make up **Bit by Bit Run**, grouped by area.
   transient network/5xx blip, so a race you played isn't dropped from the
   ranking by a single failed request.
 
-## Identity, auth & Lightning
+#### Fake ads (Bitcoin literacy, played for laughs) 🎣
+
+- **A built-in scam museum:** ~18 deliberately fake crypto-spam banners line the
+  desktop margins (sticky bottom banner on mobile), reproducing real-world bait
+  — "You won 1 BTC!", "Send 1 BTC get 2 back", "Elon giveaway", "50% APY",
+  "browser miner" — so players practice _not_ clicking it.
+- **Fake "watch an ad to keep playing" interstitial** with a bogus "Skip in 5…"
+  countdown that gates the close button — a knowing parody of the mobile-game
+  dark pattern.
+- **Every click lands on a "Gotcha" page** with a scam-specific punchline and a
+  friendly "This was a fake ad. No sats were harmed." disclaimer (`noindex`).
+- **Spam respawns when dismissed** (per-session), and clearing the whole pool
+  earns a cheeky "You cleared the spam 🧹" reward. Full write-up in
+  [docs/GAME-DESIGN.md §10](docs/GAME-DESIGN.md).
+
+#### Identity, auth & Lightning
 
 - **Nostr login** via browser extension (NIP-07), pasted nsec, or NIP-46 bunker,
   using **NIP-98** signed HTTP auth with single-use replay protection.
@@ -71,11 +101,22 @@ The features that make up **Bit by Bit Run**, grouped by area.
   **BOLT11 QR + copyable invoice + `lightning:` deep link**, with the amount
   confirmed before payment.
 
-## Platform
+#### Platform
 
 - **English / Spanish** throughout (next-intl), with locale-aware routing.
 - **SEO + social previews:** favicon, per-locale Open Graph / Twitter images.
 - **Security:** rate limiting on sensitive API routes and framing/MIME/referrer
   response headers.
+- **Automated tests + CI:** Vitest unit suite (Nostr auth, schemas, multiplayer
+  state, game logic, leaderboard) plus a Neon-backed integration test, run on
+  every push/PR alongside lint and typecheck — see
+  [docs/TESTING.md](docs/TESTING.md).
 - **$0 infrastructure** — Vercel + free public relays + Neon free tier +
   peer-to-peer Lightning.
+
+<!--
+  At release time, replace the line below with:
+  [1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0
+  and add an [Unreleased] compare link once a newer tag exists.
+-->
+[Unreleased]: https://github.com/bitbybit-ar/bitbybit-run/commits/main

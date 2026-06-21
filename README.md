@@ -60,7 +60,7 @@ Everything runs on free tiers — Vercel (hosting), public Nostr relays
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how it works, free & serverless
 - [`docs/AUTH.md`](docs/AUTH.md) — the Nostr login flow
 - [`docs/CHARACTERS.md`](docs/CHARACTERS.md) — the character/sprite pipeline
-- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — release notes
+- [`CHANGELOG.md`](CHANGELOG.md) — release notes (per version)
 
 ## 👯 Sister projects
 
