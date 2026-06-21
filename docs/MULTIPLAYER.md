@@ -85,6 +85,12 @@ match. A real match also requires **at least 2 players** to start (`MIN_PLAYERS`
 — a lone player should use **Practice** (a solo race that never counts for the
 ranking).
 
+When the match resolves, every remaining participant POSTs the final standings
+to `/api/matches` (idempotent on `nostrId`, so duplicates collapse). The post
+**retries** a network/5xx failure with backoff (`postMatchResult`), so a race
+that was actually played isn't dropped from the leaderboard by a single transient
+request.
+
 ### Amber / NIP-46 signing without per-frame prompts
 
 Runner frames broadcast ~5 Hz. Prompting a remote signer (Amber) for every frame

@@ -24,6 +24,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button/button";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import { useActiveMatch } from "@/lib/contexts/active-match-context";
+import { postMatchResult } from "@/lib/multiplayer/persist-result";
 import type { SignerHandle } from "@/lib/nostr/signers";
 import { getCharacter, type CharacterId } from "@/lib/game/characters";
 import styles from "./play-stage.module.scss";
@@ -209,6 +210,14 @@ function SignedInStage({
   signer: SignerHandle;
   pubkey: string;
 }) {
+  // Freeze the signer for this stage's lifetime. `useMatch` re-inits the live
+  // MatchClient whenever the signer identity changes, so a later context swap
+  // (e.g. an auto-reattach producing a fresh handle) would tear down and reset
+  // a running match. The first captured handle keeps signing — extension,
+  // bunker, and nsec all stay valid in memory for the session.
+  const signerRef = useRef(signer);
+  const stableSigner = signerRef.current;
+
   const params = useSearchParams();
   const joinId = params.get("m");
   const joinHost = params.get("h");
@@ -259,7 +268,7 @@ function SignedInStage({
 
   return (
     <MatchProvider
-      signer={signer}
+      signer={stableSigner}
       pubkey={pubkey}
       matchId={target.matchId}
       isHost={target.isHost}
@@ -402,17 +411,17 @@ function usePersistOnFinish(match: ReturnType<typeof useMatchContext>) {
     if (postedRef.current) return;
     if (!finished || !multiplayer || !snap) return;
     postedRef.current = true;
-    void fetch("/api/matches", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        nostrId: snap.matchId,
-        trackId: snap.trackId,
-        host: snap.host,
-        startedAt: snap.startAt,
-        standings: snap.standings,
-      }),
-    }).catch(() => {});
+    // Retry network/5xx failures with backoff so a race you actually played
+    // isn't silently dropped from the leaderboard by a transient blip.
+    void postMatchResult({
+      nostrId: snap.matchId,
+      trackId: snap.trackId,
+      host: snap.host,
+      startedAt: snap.startAt,
+      standings: snap.standings,
+    }).then((ok) => {
+      if (!ok) console.warn("[matches] result not persisted after retries");
+    });
   }, [finished, multiplayer, snap]);
 }
 

@@ -38,8 +38,14 @@
   --color-accent: #e63b56;
   --color-accent-alt: #16a06b;
 
-  // Hard pixel shadow color (for blocky borders/shadows + title text-shadows).
+  // Hard pixel shadow color (for blocky borders/shadows + colored title
+  // text-shadows like the hero gradient and 404).
   --pixel-shadow: #1a1230;
+  // Offset shadow for *primary-text* display titles. On light the title text is
+  // already near-black (--color-text-primary #1a1230), so a dark offset would
+  // smear black-on-black — drop it. On dark (below) the title is near-white, so
+  // the dark arcade offset reads correctly.
+  --title-shadow: transparent;
   // Arcade block edge (hard border + offset shadow): contrasts the background,
   // so it's dark on light and light on dark (see dark theme below).
   --arcade-edge: #1a1230;
@@ -85,6 +91,9 @@
   --color-accent-alt: #34d399;
 
   --pixel-shadow: #0c0a18;
+  // Primary-text titles are near-white on dark, so the dark arcade offset reads
+  // correctly here (mirrors --pixel-shadow).
+  --title-shadow: #0c0a18;
   // Light edge so the arcade border + offset block stay visible on the dark bg
   // (neon-sticker look) instead of vanishing into it. A muted lavender-white
   // rather than pure white, so the contrast pops without feeling harsh.

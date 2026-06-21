@@ -47,7 +47,9 @@ The features that make up **Bit by Bit Run**, grouped by area.
 - **Sortable columns** — Wins / Best / Races toggle the ranking — with
   pagination, podium styling, and the same table shared by the end-of-match
   results screen.
-- Standings persist to **Neon Postgres** when a match finishes.
+- Standings persist to **Neon Postgres** when a match finishes — with retry on a
+  transient network/5xx blip, so a race you played isn't dropped from the
+  ranking by a single failed request.
 
 ## Identity, auth & Lightning
 
