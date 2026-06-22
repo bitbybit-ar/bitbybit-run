@@ -14,6 +14,8 @@ import { Navbar } from "@/components/layout/navbar/navbar";
 import { SiteFooter } from "@/components/layout/footer/site-footer";
 import { FakeAds } from "@/components/layout/fake-ads/fake-ads";
 import { InstallApp } from "@/components/layout/install-app/install-app";
+import { OfflineBanner } from "@/components/layout/offline-banner/offline-banner";
+import { ServiceWorkerRegistrar } from "@/components/layout/service-worker-registrar/service-worker-registrar";
 import { SignerProviderClient } from "@/components/auth/signer-provider-client";
 import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/creator/users";
@@ -170,9 +172,11 @@ export default async function LocaleLayout({
                   {t("skipToContent")}
                 </a>
                 <Navbar />
+                <OfflineBanner />
                 <main id="main">{children}</main>
                 <FakeAds />
                 <InstallApp />
+                <ServiceWorkerRegistrar />
                 <SiteFooter />
               </ActiveMatchProvider>
             </SignerProviderClient>

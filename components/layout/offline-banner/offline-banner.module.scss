@@ -1,0 +1,52 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/z-index" as *;
+
+// Sticks just below the (sticky) navbar so the notice stays visible while the
+// page scrolls. It's in normal flow, so it pushes content down only while
+// present — appropriate for a connectivity warning.
+.banner {
+  position: sticky;
+  top: $navbar-height;
+  z-index: $z-index-navbar - 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-8;
+  padding: $spacing-8 $spacing-16;
+  background: $color-warning;
+  color: #1a1230;
+  border-bottom: 2px solid $arcade-edge;
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: $border-radius-full;
+  background: currentcolor;
+  animation: offline-pulse 1.4s ease-in-out infinite;
+}
+
+.text {
+  margin: 0;
+  font-size: $font-size-sm;
+  text-align: center;
+}
+
+@keyframes offline-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}

@@ -6,11 +6,18 @@
 // Fixed install bar pinned to the bottom of the viewport. It's rendered only on
 // mobile (the component bails out on desktop), so there are no width media
 // queries here — this layout always targets a narrow screen.
+//
+// `--app-bottom-inset` is published by the fake-ads sticky banner (see
+// fake-ads.module.scss) whenever that banner is on screen, so we stack above it
+// instead of overlapping. When no banner is present the var is unset and we
+// fall back to the safe-area inset, dropping the bar back to the bottom edge.
 .wrapper {
   position: fixed;
   left: $spacing-12;
   right: $spacing-12;
-  bottom: calc(#{$spacing-12} + env(safe-area-inset-bottom, 0px));
+  bottom: calc(
+    var(--app-bottom-inset, env(safe-area-inset-bottom, 0px)) + #{$spacing-12}
+  );
   z-index: $z-index-overlay; // above page content, below modals
   display: flex;
   flex-direction: column;

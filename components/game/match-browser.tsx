@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button/button";
 import { Modal } from "@/components/ui/modal";
 import { useMatchDiscovery } from "@/lib/hooks/use-match-discovery";
+import { useOnlineStatus } from "@/lib/hooks/useOnlineStatus";
 import { MAX_PLAYERS } from "@/lib/multiplayer/types";
 import { shortPubkey } from "@/lib/utils";
 import styles from "./match-browser.module.scss";
@@ -26,6 +27,9 @@ export function MatchBrowser({
 }) {
   const t = useTranslations("play.browser");
   const { matches, loading } = useMatchDiscovery();
+  // Multiplayer needs the Nostr relays; offline we disable hosting/joining and
+  // steer the player to practice (which runs entirely client-side).
+  const online = useOnlineStatus();
   // The race name is asked for in a prompt opened by "Create race" — not shown
   // inline upfront — so the browser stays focused on choosing what to play.
   const [naming, setNaming] = useState(false);
@@ -45,7 +49,13 @@ export function MatchBrowser({
 
       <div className={styles.cta}>
         <div className={styles.ctaButtons}>
-          <Button type="button" size="lg" onClick={() => setNaming(true)}>
+          <Button
+            type="button"
+            size="lg"
+            onClick={() => setNaming(true)}
+            disabled={!online}
+            title={!online ? t("offlineNote") : undefined}
+          >
             {t("host")}
           </Button>
           {onPractice && (
@@ -59,10 +69,15 @@ export function MatchBrowser({
             </Button>
           )}
         </div>
+        {!online && <p className={styles.note}>{t("offlineNote")}</p>}
       </div>
 
       {naming && (
-        <Modal title={t("nameTitle")} onClose={() => setNaming(false)} size="sm">
+        <Modal
+          title={t("nameTitle")}
+          onClose={() => setNaming(false)}
+          size="sm"
+        >
           <form
             className={styles.nameForm}
             onSubmit={(e) => {
@@ -92,7 +107,9 @@ export function MatchBrowser({
       <div className={styles.list}>
         <h3 className={styles.listTitle}>{t("openMatches")}</h3>
 
-        {loading ? (
+        {!online ? (
+          <p className={styles.note}>{t("offlineEmpty")}</p>
+        ) : loading ? (
           <p className={styles.note}>{t("loading")}</p>
         ) : matches.length === 0 ? (
           <p className={styles.note}>{t("empty")}</p>
