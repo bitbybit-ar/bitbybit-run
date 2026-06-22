@@ -109,11 +109,12 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   code-generated app icons (any + maskable), theme-color, and a **mobile-only
   "Install app" prompt** (native install on Android, _Add to Home Screen_ hint
   on iOS) that stays invisible on desktop.
-- **Offline practice:** a service worker precaches the single-player game so
-  **practice works with no connection**, while multiplayer stays online-only —
+- **Offline practice:** a **Serwist** service worker precaches the single-player
+  game (revisioned, at install) so **practice works with no connection from the
+  first load**, while multiplayer stays online-only (`/api` is never cached) —
   the races browser disables hosting/joining offline and a banner tells the
-  player practice still works. Network-only routes fall back to an offline page.
-  See [docs/PWA.md](docs/PWA.md).
+  player practice still works. Network-only routes fall back to a localized
+  offline page. See [docs/PWA.md](docs/PWA.md).
 - **Security:** rate limiting on sensitive API routes and framing/MIME/referrer
   response headers.
 - **Automated tests + CI:** Vitest unit suite (Nostr auth, schemas, multiplayer

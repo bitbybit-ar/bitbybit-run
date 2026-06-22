@@ -7,9 +7,9 @@ import type { MetadataRoute } from "next";
  * (see the `app/icon-*.png` routes), so there are no static image assets.
  *
  * `start_url: "/"` lets the next-intl middleware redirect the installed app to
- * the user's locale. The service worker (`public/sw.js`) precaches the practice
- * game so single-player works offline; the multiplayer lobby stays online-only
- * (see `docs/PWA.md`).
+ * the user's locale. The Serwist service worker (`app/sw.ts`) precaches the
+ * practice game so single-player works offline; the multiplayer lobby stays
+ * online-only (see `docs/PWA.md`).
  *
  * Shortcut/label strings are intentionally English: the manifest is a single
  * static document with no locale, so we keep one canonical language (`lang`)

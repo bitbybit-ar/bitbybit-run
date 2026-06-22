@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /**
  * Offline fallback. The service worker serves this precached page when a
- * navigation can't reach the network (see `public/sw.js`). It points the player
+ * navigation can't reach the network (see `app/sw.ts`). It points the player
  * at practice — the one mode that runs fully client-side — and explains that
  * multiplayer needs a connection.
  */
