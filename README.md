@@ -1,16 +1,26 @@
 # 🏃 Bit by Bit Run
 
-> A free, lightweight, web-based multiplayer **runner race**.
+> A free, web-based multiplayer **runner race** where what you eat decides who
+> wins — and the champion gets paid in Bitcoin. ⚡
 
-Up to **4 runners** line up on an athletics track and sprint for the finish
-line. Fuel up at the stations along the way to keep your pace — but choose
-wisely, because not everything on the track is good for you. First across the
-line wins, and the winner can get **zapped** ⚡ in sats.
+Four runners line up on an athletics track and sprint for the finish. Fuel up at
+the stations along the way, but choose wisely: good food keeps your pace, while
+**junk sends you straight back to the start**. First across the line wins — and
+rivals can **zap** the winner real sats over Lightning.
 
-The whole game runs **for free, with no game server**: real-time multiplayer is
-powered by **Nostr relays**, and persistent data lives in a serverless
-**Postgres** database. Sign in with your **Nostr** identity — no email, no
-password.
+The twist under the hood: **there's no game server**. Real-time multiplayer runs
+entirely over public **Nostr relays**, and you sign in with your **Nostr**
+identity — no email, no password.
+
+## 🌱 Mission
+
+Bit by Bit Run is fun first — the learning rides along for free. The same race
+you're playing to win quietly builds **healthier eating instincts**, teaches
+**Bitcoin & Lightning by doing**, and sharpens your eye for **crypto scams**
+through a playful "scam museum" of fake ads where the only thing you can lose is
+a click. Learning through play, one bit at a time.
+
+→ Read the full [`docs/MISSION.md`](docs/MISSION.md).
 
 ## 🧱 Stack
 
@@ -32,6 +42,9 @@ npm run dev      # http://localhost:3000  (ES default; /en for English)
 ```
 
 Open **`/play`** to jump into the prototype.
+
+> 🧭 **New here, or judging?** Follow the [Guided Tour](docs/TOUR.md) to try every
+> feature in ~10 minutes.
 
 Common scripts:
 
@@ -56,11 +69,15 @@ Everything runs on free tiers — Vercel (hosting), public Nostr relays
 
 ## 📚 Documentation
 
+- [`docs/MISSION.md`](docs/MISSION.md) — why this exists: learning through play
+- [`docs/TOUR.md`](docs/TOUR.md) — guided tour: try every feature in ~10 minutes
 - [`docs/GAME-DESIGN.md`](docs/GAME-DESIGN.md) — rules, mechanics, screens
+- [`docs/MULTIPLAYER.md`](docs/MULTIPLAYER.md) — live race flow & local two-player testing
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how it works, free & serverless
 - [`docs/AUTH.md`](docs/AUTH.md) — the Nostr login flow
 - [`docs/CHARACTERS.md`](docs/CHARACTERS.md) — the character/sprite pipeline
-- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — release notes
+- [`docs/TESTING.md`](docs/TESTING.md) — automated tests & CI
+- [`CHANGELOG.md`](CHANGELOG.md) — release notes (per version)
 
 ## 👯 Sister projects
 

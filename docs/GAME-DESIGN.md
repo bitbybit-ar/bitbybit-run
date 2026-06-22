@@ -206,3 +206,55 @@ Create match ──► Lobby fills (1..4 players join via Nostr)
 - **UI chrome:** the `Button` component and palette mirror `bitbybit-cursats`,
   recolored to an orange/green identity to distinguish this project.
 - Everything is drawn (shapes + emoji) — no image assets — to stay lightweight.
+
+## 10. Fake ads (yes, they're fake — that's the whole joke) 🎣
+
+Those spammy banners stuck to the desktop margins, the sticky mobile bottom
+banner, and the "watch an ad to keep playing" full-screen interstitial? **None
+of them are real.** There is no ad network, no tracker, no money changing hands,
+and absolutely no Bitcoin to claim. They are a built-in, self-aware **scam
+museum** — the kind of bait that infests crypto corners of the web, reproduced
+on purpose so you can practice _not_ clicking it. (And if you do click, the worst
+that happens is you learn something.)
+
+### Why they exist (the serious bit, told cheerfully)
+
+Bit by Bit Run is, at heart, a Bitcoin literacy toy. The single most useful
+self-custody skill isn't memorizing a seed phrase — it's **smelling a scam from
+across the room**. So we lined the walls with the greatest hits: "You won 1 BTC!
+🎉", "Send 1 BTC, get 2 back 🚀", "Elon is giving away BTC LIVE 🔴", "50% APY on
+your Lightning channel ⚡", "Quantum is coming for your BTC! 🛡️", "Mine BTC in
+your browser ⛏️". Every one is a real-world scam template, defanged. Fall for
+any of them and we'll happily tell you so.
+
+### How they work
+
+- **Where they live:** rendered once from the shared layout
+  (`components/layout/fake-ads`) so the spam follows you everywhere. On desktop
+  they pin to the left/right margins; on a narrow screen they collapse to one
+  classic sticky bottom banner. The visual catalog of ~18 ads lives in
+  `lib/fake-ads/ads.ts` (emoji "creative", corner sticker, accent color); all the
+  copy is i18n (`fakeAds` namespace, EN + ES), so the jokes are localized.
+- **The interstitial:** when you tap "keep playing" in the demo, a fake
+  full-screen ad drops in with a bogus **"Skip in 5…4…3…"** countdown that gates
+  the ✕ — the exact dark pattern mobile games use to make you watch ads. The
+  close button only unlocks when the timer hits zero
+  (`components/game/interstitial-ad.tsx`). It's annoying _on purpose_.
+- **Click anything → the "Gotcha" page:** every banner links to `/gotcha/<slug>`,
+  a pre-rendered gag page (`app/[locale]/gotcha/[slug]/page.tsx`). It throws up a
+  🎣, a punchline tailored to that scam ("Spoiler: nobody doubles your BTC 💸",
+  "Elon doesn't know you 🚀", "The JPG is still free with right-click 🖱️"), and a
+  gentle disclaimer: _"This was a fake ad. No sats were harmed."_ Then it points
+  you back home or to the rules. These pages are `robots: noindex` so the gags
+  never leak into real search results.
+- **They respawn (because spam always does):** closing a banner plays a slide-out,
+  and after a beat a fresh ad from the pool slides into the empty slot. Dismissals
+  are remembered per session (`sessionStorage`). The spam only truly dies once
+  you've cleared **every** ad in the pool — at which point you earn a tiny reward:
+  _"You cleared the spam 🧹 — Thanks for not buying shitcoins 🫡."_
+
+### The lesson, in one line
+
+If a banner promises free Bitcoin, doubled Bitcoin, urgent Bitcoin, or
+Elon-flavored Bitcoin — **it's a scam.** Here you get to learn that the funny
+way, where the only thing you lose is the click.

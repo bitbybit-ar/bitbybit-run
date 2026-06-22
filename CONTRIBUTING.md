@@ -60,7 +60,7 @@ or auth. See [`docs/AUTH.md`](docs/AUTH.md) for the env wiring.
   anything DB-backed).
 - For any doc you add or remove, update the
   [docs index](docs/README.md). Record notable changes — product- or
-  docs-visible — in [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+  docs-visible — in the root [`CHANGELOG.md`](CHANGELOG.md), under `[Unreleased]`.
 
 ## Commit messages
 
