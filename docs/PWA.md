@@ -9,17 +9,18 @@ This document covers the install prompt, the icons, and the offline behavior
 
 ## What's included
 
-| Piece                        | File                                                                      | Purpose                                                                            |
-| ---------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Web App Manifest             | `app/manifest.ts`                                                         | `/manifest.webmanifest`: name, colors, icons, `display: standalone`, shortcuts.    |
-| App icons (any + maskable)   | `app/icon-192.png/`, `icon-512.png/`, `icon-maskable.png/`                | Generated from the brand mark — no static PNG assets.                              |
-| Service worker               | `public/sw.js`                                                            | Caching SW: precache + offline strategy (see below).                               |
-| SW registration              | `components/layout/service-worker-registrar/service-worker-registrar.tsx` | Registers the SW for every visitor after `load`.                                   |
-| Install prompt (mobile-only) | `components/layout/install-app/install-app.tsx`                           | The "Install app" bar. Renders nothing on desktop or once installed.               |
-| Offline banner               | `components/layout/offline-banner/offline-banner.tsx`                     | Tells the player practice works offline but multiplayer needs a connection.        |
-| Online-status hook           | `lib/hooks/useOnlineStatus.ts`                                            | `navigator.onLine` + online/offline events, SSR-safe.                              |
-| Offline fallback page        | `app/[locale]/offline/page.tsx`                                           | Precached page the SW serves when a navigation can't reach the network.            |
-| Theme color / Apple meta     | `app/[locale]/layout.tsx`                                                 | `viewport.themeColor` (light/dark) + `appleWebApp` so iOS treats it as standalone. |
+| Piece                        | File                                                          | Purpose                                                                            |
+| ---------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Web App Manifest             | `app/manifest.ts`                                             | `/manifest.webmanifest`: name, colors, icons, `display: standalone`, shortcuts.    |
+| App icons (any + maskable)   | `app/icon-192.png/`, `icon-512.png/`, `icon-maskable.png/`    | Generated from the brand mark — no static PNG assets.                              |
+| Service worker (Serwist)     | `app/sw.ts`                                                   | Precache + runtime caching + offline fallback (see below).                         |
+| SW route (Turbopack)         | `app/serwist/[path]/route.ts`                                 | Compiles `app/sw.ts` with esbuild, serves it at `/serwist/sw.js`.                  |
+| SW registration              | `SerwistProvider` (`@serwist/turbopack/react`, in the layout) | Registers `/serwist/sw.js` for every visitor.                                      |
+| Install prompt (mobile-only) | `components/layout/install-app/install-app.tsx`               | The "Install app" bar. Renders nothing on desktop or once installed.               |
+| Offline banner               | `components/layout/offline-banner/offline-banner.tsx`         | Tells the player practice works offline but multiplayer needs a connection.        |
+| Online-status hook           | `lib/hooks/useOnlineStatus.ts`                                | `navigator.onLine` + online/offline events, SSR-safe.                              |
+| Offline fallback page        | `app/[locale]/offline/page.tsx`                               | Precached page the SW serves when a navigation can't reach the network.            |
+| Theme color / Apple meta     | `app/[locale]/layout.tsx`                                     | `viewport.themeColor` (light/dark) + `appleWebApp` so iOS treats it as standalone. |
 
 The manifest `<link>` and the favicon/apple-touch-icon links are injected
 automatically by Next from the `app/manifest.ts`, `app/icon.tsx`, and
@@ -58,34 +59,30 @@ but the install **button** stays mobile-only, so desktop sees no install UI.
 ## Offline support
 
 The goal is simple: **practice works offline, multiplayer doesn't** — and the
-player is told which is which.
+player is told which is which. Built on **Serwist** (`@serwist/turbopack`), which
+keeps our Turbopack build (`next build --turbopack`).
 
-### Service worker strategy (`public/sw.js`)
+### Service worker (`app/sw.ts`)
 
-Hand-rolled (no build-time precache manifest, so it's independent of the
-bundler). On a same-origin `GET`:
+The worker is compiled by `app/serwist/[path]/route.ts` (esbuild) and served at
+`/serwist/sw.js` with `Service-Worker-Allowed: /` so it controls the whole app.
+It:
 
-- **Static assets** (`/_next/static`, `/sprites`, icons, fonts) →
-  _stale-while-revalidate_. Safe because Next fingerprints the filenames.
-- **Page navigations** → _network-first_: fresh HTML when online, the last-seen
-  copy when not, and finally the precached offline page.
-- **`/api/*` and cross-origin** → never intercepted. Auth and the Nostr relays
-  (which use `wss://` and never surface as fetch events) always hit the network,
-  so multiplayer fails loudly offline instead of serving something stale.
+- **Precaches** the build manifest (`self.__SW_MANIFEST` — every hashed static
+  asset, revisioned) plus `additionalPrecacheEntries` for the offline page and
+  the practice game in both locales (Spanish prefix-free, English under `/en`):
+  `/offline`, `/en/offline`, `/demo`, `/en/demo`. **So practice works offline
+  from the very first load**, not just after visiting it online once.
+- **Runtime caching** via Serwist's `defaultCache` (stale-while-revalidate for
+  assets, network-first for pages), with one rule prepended: **`/api/*` →
+  `NetworkOnly`**, so auth and multiplayer never serve a stale response. The
+  Nostr relays use `wss://` and never surface as fetch events.
+- **Offline fallback**: a document navigation that can't be served falls back to
+  the localized offline page (`/en/offline` for English, `/offline` otherwise).
 
-On install it precaches the offline page and the practice game for both locales
-(Spanish is prefix-free, English under `/en`), plus the manifest and icons:
-
-```
-/offline   /en/offline   /demo   /en/demo
-/manifest.webmanifest   /icon-192.png   /icon-512.png   /icon-maskable.png
-```
-
-The hashed JS/CSS chunks those pages need are cached lazily on the first online
-visit (stale-while-revalidate), so the practice game is fully offline-capable
-once it has been opened at least once online. A brand-new install that goes
-offline before ever loading the game still gets the offline page, which explains
-the situation and links to practice.
+This is the upgrade over the previous hand-rolled SW: the precache is build-time
+and revisioned (busts per deploy), so the practice game survives cache eviction
+and is offline-capable immediately.
 
 ### How the player is told
 
@@ -120,12 +117,8 @@ covers them.
 
 ## Future work
 
-- **Precache manifest with revisioning** (e.g. **Serwist**) so the game is
-  offline-capable on the very first load, before any online visit warms the
-  cache. The current hand-rolled SW deliberately trades that for zero bundler
-  coupling and full control over the caching policy.
 - **Cache App Router RSC navigations** so client-side (soft) navigations to the
-  practice game also work offline, not just full page loads.
+  practice game also work offline, not just full page loads / hard navigations.
 - **iOS splash screens** (`apple-touch-startup-image`) to avoid the white flash
   when launching the installed app.
 
@@ -140,11 +133,12 @@ covers them.
 3. iOS Safari: the bar's **Install app** button reveals the _Share → Add to Home
    Screen_ hint.
 
-### Offline (needs a production build — the SW isn't active in dev)
+### Offline (test against a production build)
 
 1. `npm run build && npm run start`.
-2. Load the site, open **practice** (`/demo`) once so it's cached.
-3. DevTools → _Network → Offline_ (or stop the server), then reload `/demo` — it
-   still plays, and the offline banner appears.
+2. Load the site once so the service worker installs and precaches (the practice
+   game is precached at install — you don't need to open it first).
+3. DevTools → _Network → Offline_ (or stop the server), then open `/demo` — it
+   plays offline and the offline banner appears.
 4. Navigate to a network-only route (e.g. `/leaderboard`) while offline — you
    land on the offline page.

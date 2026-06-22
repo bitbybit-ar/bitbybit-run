@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { withSerwist } from "@serwist/turbopack";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -34,4 +35,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// Serwist (Turbopack-native) compiles the service worker served from
+// `/serwist/sw.js` (see app/serwist/[path]/route.ts) and injects the precache
+// manifest. Wrapped outermost so it composes with the next-intl plugin.
+export default withSerwist(withNextIntl(nextConfig));
