@@ -14,7 +14,7 @@ type ButtonBaseProps = {
     | "outline"
     | "ghost"
     | "link";
-  size?: "sm" | "default" | "lg";
+  size?: "xs" | "sm" | "default" | "lg";
   fullWidth?: boolean;
   className?: string;
   children?: React.ReactNode;

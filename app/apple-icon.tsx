@@ -21,7 +21,7 @@ export default function AppleIcon() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: 12,
+          gap: 10,
           background: EDGE,
         }}
       >
@@ -29,8 +29,8 @@ export default function AppleIcon() {
           <div
             key={color}
             style={{
-              width: 86,
-              height: 44,
+              width: 47,
+              height: 47,
               background: color,
               border: `3px solid ${EDGE}`,
               borderRadius: 4,

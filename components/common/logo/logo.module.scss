@@ -1,13 +1,26 @@
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
 
 .logo {
   display: inline-flex;
   align-items: center;
   gap: $spacing-12;
   text-decoration: none;
+
+  // Tighten the blocks/wordmark gap on phones so the brand leaves more room
+  // for the right-hand controls.
+  @include mobile {
+    gap: $spacing-8;
+  }
 }
 
 .wordmark {
   font-size: $font-size-lg;
+
+  // Smaller wordmark on phones — the navbar can't fit the full-size brand plus
+  // the action cluster on a ~360px screen.
+  @include mobile {
+    font-size: $font-size-base;
+  }
 }

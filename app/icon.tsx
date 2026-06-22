@@ -24,14 +24,15 @@ export default function Icon() {
           justifyContent: "center",
           gap: 2,
           background: EDGE,
+          // 3 * 9 + 2 * 2 = 31 ≤ 32, so the squares stay centered in the tile.
         }}
       >
         {BLOCKS.map((color) => (
           <div
             key={color}
             style={{
-              width: 15,
-              height: 8,
+              width: 9,
+              height: 9,
               background: color,
               border: `1px solid ${EDGE}`,
             }}

@@ -122,6 +122,26 @@
   }
 }
 
+// Compact arcade button — tighter padding and a lighter offset shadow. Used in
+// the navbar so the right-hand cluster fits on narrow phones.
+.size-xs {
+  padding: $spacing-4 $spacing-8;
+  font-size: $font-size-xs;
+  box-shadow: 2px 2px 0 0 $arcade-edge;
+
+  &:hover:not(:disabled) {
+    box-shadow: 3px 3px 0 0 $arcade-edge;
+  }
+
+  &:active:not(:disabled) {
+    box-shadow: 0 0 0 0 $arcade-edge;
+  }
+
+  @include mobile {
+    min-height: 40px;
+  }
+}
+
 .size-sm {
   padding: $spacing-8 $spacing-16;
   font-size: $font-size-sm;

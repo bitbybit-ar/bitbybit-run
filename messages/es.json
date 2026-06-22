@@ -550,8 +550,7 @@
     }
   },
   "installApp": {
-    "title": "Instalá Bit by Bit Run",
-    "subtitle": "Agregala a tu pantalla de inicio",
+    "title": "Agregá Bit by Bit Run a tu pantalla de inicio",
     "cta": "Instalar app",
     "dismiss": "Descartar",
     "ariaLabel": "Instalar Bit by Bit Run",

@@ -49,22 +49,15 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  min-width: 0; // let long strings ellipsize instead of pushing the button out
+  min-width: 0; // let the title wrap instead of pushing the button out of the bar
 }
 
 .title {
   font-family: $font-display;
   font-size: $font-size-body;
   font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
   color: $color-text-primary;
-}
-
-.subtitle {
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .close {
