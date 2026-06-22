@@ -1,6 +1,6 @@
 # 📱 Progressive Web App (PWA)
 
-**Bit by Bit Run** is an installable Progressive Web App. On a phone, players can
+**BitByBit RUN** is an installable Progressive Web App. On a phone, players can
 add it to their home screen and launch it full screen like a native app — and
 the single-player **practice** game keeps working with no connection.
 

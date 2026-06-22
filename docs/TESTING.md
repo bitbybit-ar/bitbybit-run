@@ -1,4 +1,4 @@
-# 🧪 Automated tests — Bit by Bit Run
+# 🧪 Automated tests — BitByBit RUN
 
 How the test suite is organized, how to run it, and what it covers. The runner is
 [Vitest](https://vitest.dev) (v4); tests are TypeScript and live under

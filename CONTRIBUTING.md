@@ -134,7 +134,7 @@ mitigation within a reasonable window depending on severity.
 
 In scope:
 
-- The Bit by Bit Run source code in this repository.
+- The BitByBit RUN source code in this repository.
 - The default deployment at `run.bitbybit.com.ar`.
 
 Out of scope:

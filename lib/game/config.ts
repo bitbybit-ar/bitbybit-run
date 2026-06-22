@@ -1,5 +1,5 @@
 /**
- * Tunable game constants for Bit by Bit Run (Phase 1, single-player).
+ * Tunable game constants for BitByBit RUN (Phase 1, single-player).
  * Keep all "feel" numbers here so they're easy to balance.
  */
 

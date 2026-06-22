@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "siteName": "Bit by Bit Run",
-    "siteTitle": "Bit by Bit Run — race, eat, sprint, win sats",
+    "siteName": "BitByBit RUN",
+    "siteTitle": "BitByBit RUN — race, eat, sprint, win sats",
     "description": "A free, lightweight, web-based multiplayer runner race. Grab the good food to sprint, dodge the junk, and be first to the finish line.",
     "skipToContent": "Skip to content"
   },
@@ -17,7 +17,7 @@
     "leaderboard": "Leaderboard"
   },
   "landing": {
-    "title": "Bit by Bit Run",
+    "title": "BitByBit RUN",
     "subtitle": "Race down the track. Grab the good food to sprint, dodge the junk or you'll be sent back to the start. First to the finish wins.",
     "tagline": "Run, Eat, Win 🏃💨\nCardio never paid this well.",
     "play": "Play",
@@ -550,10 +550,10 @@
     }
   },
   "installApp": {
-    "title": "Add Bit by Bit Run to your home screen",
+    "title": "Add BitByBit RUN to your home screen",
     "cta": "Install app",
     "dismiss": "Dismiss",
-    "ariaLabel": "Install Bit by Bit Run",
+    "ariaLabel": "Install BitByBit RUN",
     "iosHint": "Tap the Share button, then “Add to Home Screen”."
   },
   "offline": {

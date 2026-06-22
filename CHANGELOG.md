@@ -1,6 +1,6 @@
 # 📝 Changelog
 
-All notable changes to **Bit by Bit Run** are documented here.
+All notable changes to **BitByBit RUN** are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -136,8 +136,8 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   to a 👤 icon on phones (full label kept as its accessible name), mirroring the
   🏆 leaderboard button.
 - **Install prompt copy fits in one line:** replaced the truncated
-  title + subtitle with a single wrapping line ("Agregá Bit by Bit Run a tu
-  pantalla de inicio" / "Add Bit by Bit Run to your home screen") and a compact
+  title + subtitle with a single wrapping line ("Agregá BitByBit RUN a tu
+  pantalla de inicio" / "Add BitByBit RUN to your home screen") and a compact
   CTA, so the text is no longer cut off.
 - **Square brand blocks:** the favicon and generated app icons now draw three
   squares instead of three half-height rectangles.

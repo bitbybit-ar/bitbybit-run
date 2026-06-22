@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 /**
- * Favicon — the brand mark (three stacked "bit by bit" blocks: pink / green /
+ * Favicon — the brand mark (three stacked "BitByBit" blocks: pink / green /
  * yellow) on a dark arcade tile. Generated so it stays in sync with the
  * palette in `styles/_theme.scss` and needs no static asset. Font-independent.
  */

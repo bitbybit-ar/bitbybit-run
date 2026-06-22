@@ -1,4 +1,4 @@
-# 🏃 Bit by Bit Run
+# 🏃 BitByBit RUN
 
 > A free, web-based multiplayer **runner race** where what you eat decides who
 > wins — and the champion gets paid in Bitcoin. ⚡
@@ -14,7 +14,7 @@ identity — no email, no password.
 
 ## 🌱 Mission
 
-Bit by Bit Run is fun first — the learning rides along for free. The same race
+BitByBit RUN is fun first — the learning rides along for free. The same race
 you're playing to win quietly builds **healthier eating instincts**, teaches
 **Bitcoin & Lightning by doing**, and sharpens your eye for **crypto scams**
 through a playful "scam museum" of fake ads where the only thing you can lose is

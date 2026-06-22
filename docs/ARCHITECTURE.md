@@ -1,4 +1,4 @@
-# 🏗️ Architecture — Bit by Bit Run
+# 🏗️ Architecture — BitByBit RUN
 
 ## 0. Guiding constraints
 
