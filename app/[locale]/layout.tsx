@@ -13,6 +13,7 @@ import { ActiveMatchProvider } from "@/lib/contexts/active-match-context";
 import { Navbar } from "@/components/layout/navbar/navbar";
 import { SiteFooter } from "@/components/layout/footer/site-footer";
 import { FakeAds } from "@/components/layout/fake-ads/fake-ads";
+import { InstallApp } from "@/components/layout/install-app/install-app";
 import { SignerProviderClient } from "@/components/auth/signer-provider-client";
 import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/creator/users";
@@ -78,6 +79,12 @@ const nunitoSans = Nunito_Sans({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Tints the mobile browser/standalone UI to match the theme. Kept in sync
+  // with --color-bg in styles/_theme.scss for each scheme.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3eefe" },
+    { media: "(prefers-color-scheme: dark)", color: "#17132b" },
+  ],
 };
 
 export async function generateMetadata({
@@ -96,6 +103,14 @@ export async function generateMetadata({
       template: `%s · ${t("siteName")}`,
     },
     description,
+    applicationName: t("siteName"),
+    // Lets iOS Safari treat the app as standalone when added to the home screen
+    // (the manifest covers Android). Next links the manifest automatically.
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: t("siteName"),
+    },
     // The og/twitter images come from the opengraph-image.tsx / twitter-image.tsx
     // file conventions; here we set the accompanying text + card type.
     openGraph: {
@@ -157,6 +172,7 @@ export default async function LocaleLayout({
                 <Navbar />
                 <main id="main">{children}</main>
                 <FakeAds />
+                <InstallApp />
                 <SiteFooter />
               </ActiveMatchProvider>
             </SignerProviderClient>

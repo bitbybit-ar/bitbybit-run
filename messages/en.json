@@ -546,5 +546,13 @@
       "signRequiredTitle": "Confirm with your signature",
       "signRequiredBody": "This action requires an additional signature from your Nostr signer."
     }
+  },
+  "installApp": {
+    "title": "Install Bit by Bit Run",
+    "subtitle": "Add it to your home screen",
+    "cta": "Install app",
+    "dismiss": "Dismiss",
+    "ariaLabel": "Install Bit by Bit Run",
+    "iosHint": "Tap the Share button, then “Add to Home Screen”."
   }
 }

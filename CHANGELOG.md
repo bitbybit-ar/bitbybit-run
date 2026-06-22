@@ -105,6 +105,10 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 
 - **English / Spanish** throughout (next-intl), with locale-aware routing.
 - **SEO + social previews:** favicon, per-locale Open Graph / Twitter images.
+- **Installable PWA:** web app manifest, code-generated app icons (any +
+  maskable), theme-color, and a **mobile-only "Install app" prompt** (native
+  install on Android, _Add to Home Screen_ hint on iOS) that stays invisible on
+  desktop. See [docs/PWA.md](docs/PWA.md).
 - **Security:** rate limiting on sensitive API routes and framing/MIME/referrer
   response headers.
 - **Automated tests + CI:** Vitest unit suite (Nostr auth, schemas, multiplayer
@@ -119,4 +123,5 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   [1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0
   and add an [Unreleased] compare link once a newer tag exists.
 -->
+
 [Unreleased]: https://github.com/bitbybit-ar/bitbybit-run/commits/main

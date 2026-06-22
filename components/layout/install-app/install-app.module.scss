@@ -1,0 +1,119 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/z-index" as *;
+
+// Fixed install bar pinned to the bottom of the viewport. It's rendered only on
+// mobile (the component bails out on desktop), so there are no width media
+// queries here — this layout always targets a narrow screen.
+.wrapper {
+  position: fixed;
+  left: $spacing-12;
+  right: $spacing-12;
+  bottom: calc(#{$spacing-12} + env(safe-area-inset-bottom, 0px));
+  z-index: $z-index-overlay; // above page content, below modals
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-8;
+  animation: install-slide-up 280ms ease-out;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-12;
+  padding: $spacing-12;
+  background: $color-surface;
+  border: 2px solid $arcade-edge;
+  border-radius: $border-radius-md;
+  box-shadow: $card-shadow;
+}
+
+.mark {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-sm;
+  // Reuse the generated PWA icon so the bar shows the real app mark.
+  background: url("/icon-192.png") center / cover no-repeat;
+}
+
+.text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // let long strings ellipsize instead of pushing the button out
+}
+
+.title {
+  font-family: $font-display;
+  font-size: $font-size-body;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.subtitle {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: $border-radius-full;
+  color: $color-text-secondary;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-bg-2;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.hint {
+  margin: 0;
+  padding: $spacing-12;
+  background: $color-surface;
+  border: 2px solid $arcade-edge;
+  border-radius: $border-radius-md;
+  box-shadow: $card-shadow;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.hintOpen {
+  animation: install-slide-up 200ms ease-out;
+}
+
+@keyframes install-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapper,
+  .hintOpen {
+    animation: none;
+  }
+}
