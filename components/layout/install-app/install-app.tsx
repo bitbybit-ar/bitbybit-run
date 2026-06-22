@@ -125,11 +125,10 @@ export function InstallApp() {
         <span className={styles.mark} aria-hidden="true" />
         <div className={styles.text}>
           <strong className={styles.title}>{t("title")}</strong>
-          <span className={styles.subtitle}>{t("subtitle")}</span>
         </div>
         <Button
           variant="primary"
-          size="sm"
+          size="xs"
           onClick={handleInstall}
           aria-expanded={ios ? showIosHint : undefined}
         >

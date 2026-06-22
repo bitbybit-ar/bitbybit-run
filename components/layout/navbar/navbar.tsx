@@ -20,7 +20,7 @@ export function Navbar() {
           <Button
             href="/leaderboard"
             variant="ghost"
-            size="sm"
+            size="xs"
             aria-label={t("leaderboard")}
           >
             <span aria-hidden="true">🏆</span>
@@ -28,8 +28,14 @@ export function Navbar() {
           </Button>
           <LocaleThemeToggle />
           {session === null ? (
-            <Button href="/sign-in" variant="primary" size="sm">
-              {t("login")}
+            <Button
+              href="/sign-in"
+              variant="primary"
+              size="xs"
+              aria-label={t("login")}
+            >
+              <span aria-hidden="true">👤</span>
+              <span className={styles.navLabel}>{t("login")}</span>
             </Button>
           ) : (
             <AccountMenu />

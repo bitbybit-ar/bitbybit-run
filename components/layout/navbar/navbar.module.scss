@@ -32,6 +32,10 @@
   display: flex;
   align-items: center;
   gap: $spacing-12;
+
+  @include mobile {
+    gap: $spacing-8;
+  }
 }
 
 // On phones the leaderboard button collapses to its 🏆 icon to free up room

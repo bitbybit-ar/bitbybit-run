@@ -123,6 +123,24 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 - **$0 infrastructure** — Vercel + free public relays + Neon free tier +
   peer-to-peer Lightning.
 
+### Fixed
+
+#### Responsive / mobile
+
+- **Navbar no longer overflows on phones:** added a compact `xs` button size
+  (tighter padding, lighter offset shadow), shrank the locale/theme toggle and
+  the brand wordmark on mobile, and tightened the action-cluster gap so the
+  whole bar fits a ~360px screen.
+- **Icon-only login on mobile:** the "Entrar" / "Login" navbar button collapses
+  to a 👤 icon on phones (full label kept as its accessible name), mirroring the
+  🏆 leaderboard button.
+- **Install prompt copy fits in one line:** replaced the truncated
+  title + subtitle with a single wrapping line ("Agregá Bit by Bit Run a tu
+  pantalla de inicio" / "Add Bit by Bit Run to your home screen") and a compact
+  CTA, so the text is no longer cut off.
+- **Square brand blocks:** the favicon and generated app icons now draw three
+  squares instead of three half-height rectangles.
+
 <!--
   At release time, replace the line below with:
   [1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0

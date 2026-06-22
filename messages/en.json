@@ -550,8 +550,7 @@
     }
   },
   "installApp": {
-    "title": "Install Bit by Bit Run",
-    "subtitle": "Add it to your home screen",
+    "title": "Add Bit by Bit Run to your home screen",
     "cta": "Install app",
     "dismiss": "Dismiss",
     "ariaLabel": "Install Bit by Bit Run",

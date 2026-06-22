@@ -1,6 +1,7 @@
 @use "@/styles/colors" as *;
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
 
 // Arcade pixel block (same hard border + offset shadow as <Button>), but always
 // white so it reads as a neutral control next to the pink CTA.
@@ -17,6 +18,11 @@
   transition:
     transform 0.1s ease,
     box-shadow 0.1s ease;
+
+  // Lighter shadow on phones so the navbar cluster fits without overflowing.
+  @include mobile {
+    box-shadow: 2px 2px 0 0 $arcade-edge;
+  }
 
   &:hover {
     transform: translate(-2px, -2px);
@@ -36,6 +42,11 @@
   min-width: 40px;
   padding: $spacing-8 $spacing-12;
   background: transparent;
+
+  @include mobile {
+    min-width: 36px;
+    padding: $spacing-8;
+  }
   border: none;
   color: $static-navy;
   cursor: pointer;
