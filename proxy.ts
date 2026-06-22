@@ -1,10 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import type { NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
-import {
-  SESSION_COOKIE_NAME,
-  SESSION_TTL_SECONDS,
-} from "@/lib/auth-constants";
+import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@/lib/auth-constants";
 import { createSessionToken, verifySessionToken } from "@/lib/session-jwt";
 
 // Next.js 16 middleware (renamed `proxy.ts`). Handles locale negotiation and
@@ -50,5 +47,10 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   // Run on everything except API routes, Next internals, and static files.
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // `icon`/`apple-icon` are root-level metadata routes Next serves WITHOUT a
+  // file extension, so the `.*\..*` rule below doesn't catch them — without an
+  // explicit exclusion the intl middleware rewrites `/icon` to `/es/icon`
+  // (which 404s) and the favicon never loads. The PWA manifest and `*.png`
+  // icons already contain a dot, so they're covered by `.*\..*`.
+  matcher: ["/((?!api|_next|_vercel|icon$|apple-icon$|.*\\..*).*)"],
 };
