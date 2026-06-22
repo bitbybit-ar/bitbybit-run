@@ -1,0 +1,52 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.page {
+  flex: 1;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: $spacing-32 $container-padding;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: $spacing-12;
+
+  @include mobile {
+    justify-content: flex-start;
+    padding-top: $spacing-40;
+  }
+}
+
+.icon {
+  font-size: clamp(2.5rem, 9vw, 4rem);
+  line-height: 1;
+}
+
+.title {
+  margin: 0;
+  font-family: $font-family-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.body {
+  margin: 0;
+  font-family: $font-family-base;
+  font-size: $font-size-subtitle;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.actions {
+  margin-top: $spacing-12;
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-12;
+  justify-content: center;
+}

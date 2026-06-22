@@ -7,16 +7,25 @@ import type { MetadataRoute } from "next";
  * (see the `app/icon-*.png` routes), so there are no static image assets.
  *
  * `start_url: "/"` lets the next-intl middleware redirect the installed app to
- * the user's locale. Today the registered service worker (`public/sw.js`) is a
- * bare pass-through that only satisfies installability — offline caching is a
- * planned follow-up (see `docs/PWA.md`).
+ * the user's locale. The service worker (`public/sw.js`) precaches the practice
+ * game so single-player works offline; the multiplayer lobby stays online-only
+ * (see `docs/PWA.md`).
+ *
+ * Shortcut/label strings are intentionally English: the manifest is a single
+ * static document with no locale, so we keep one canonical language (`lang`)
+ * rather than guessing the user's.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    // Stable identity so the browser treats updates as the same installed app
+    // even if start_url ever changes.
+    id: "/",
     name: "Bit by Bit Run",
     short_name: "Bit by Bit",
     description:
       "A free, lightweight, web-based multiplayer runner race. Grab the good food to sprint, dodge the junk, and be first to the finish line.",
+    lang: "en",
+    dir: "ltr",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -24,6 +33,28 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#17132b",
     theme_color: "#17132b",
     categories: ["games", "entertainment"],
+    // Long-press / right-click the installed icon to jump straight in. Practice
+    // is listed because it's the one mode that works offline.
+    shortcuts: [
+      {
+        name: "Play multiplayer",
+        short_name: "Play",
+        url: "/play",
+        icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+      {
+        name: "Practice (offline)",
+        short_name: "Practice",
+        url: "/demo",
+        icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+      {
+        name: "Leaderboard",
+        short_name: "Ranking",
+        url: "/leaderboard",
+        icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+    ],
     icons: [
       {
         src: "/icon-192.png",

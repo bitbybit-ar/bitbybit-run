@@ -57,7 +57,9 @@
       "join": "Unirme",
       "loading": "Buscando carreras…",
       "empty": "No hay carreras abiertas. ¡Creá una!",
-      "practice": "🏃 Practicar"
+      "practice": "🏃 Practicar",
+      "offlineNote": "El multijugador necesita conexión. Podés practicar sin conexión igual.",
+      "offlineEmpty": "Estás sin conexión: las carreras abiertas aparecen acá cuando te reconectes."
     },
     "lobby": {
       "players": "{count}/4 corredores",
@@ -554,5 +556,13 @@
     "dismiss": "Descartar",
     "ariaLabel": "Instalar Bit by Bit Run",
     "iosHint": "Tocá el botón Compartir y luego «Agregar a inicio»."
+  },
+  "offline": {
+    "title": "Estás sin conexión.",
+    "body": "El modo práctica sigue funcionando; el multijugador necesita conexión.",
+    "pageTitle": "Estás sin conexión",
+    "pageBody": "No hay conexión ahora. El lobby multijugador necesita red, pero podés jugar una práctica en solitario igual.",
+    "pagePractice": "🏃 Jugar práctica",
+    "pageHome": "Inicio"
   }
 }

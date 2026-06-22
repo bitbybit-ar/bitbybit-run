@@ -73,6 +73,9 @@ $ads-breakpoint: 1280px;
   @media (max-width: #{$ads-breakpoint - 1px}) {
     :global(body):has(&) {
       padding-bottom: calc(#{$spacing-80} + env(safe-area-inset-bottom));
+      // Tell other bottom-pinned UI (the PWA install bar) how much space the
+      // banner occupies so it can stack above instead of overlapping.
+      --app-bottom-inset: calc(#{$spacing-80} + env(safe-area-inset-bottom));
     }
   }
 

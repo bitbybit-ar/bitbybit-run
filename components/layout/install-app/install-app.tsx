@@ -92,17 +92,6 @@ export function InstallApp() {
     };
   }, []);
 
-  // Register the pass-through service worker only on mobile and only when not
-  // already installed — desktop never gets a service worker, so its behaviour
-  // is untouched. The SW exists solely to make the app installable.
-  useEffect(() => {
-    if (!mounted || !isMobile || installed) return;
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // A failed registration just means no install prompt — never fatal.
-    });
-  }, [mounted, isMobile, installed]);
-
   const handleInstall = useCallback(async () => {
     if (ios) {
       setShowIosHint((open) => !open);

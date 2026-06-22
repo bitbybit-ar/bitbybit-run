@@ -57,7 +57,9 @@
       "join": "Join",
       "loading": "Looking for races…",
       "empty": "No open races. Start one!",
-      "practice": "🏃 Practice"
+      "practice": "🏃 Practice",
+      "offlineNote": "Multiplayer needs a connection. You can still practice offline.",
+      "offlineEmpty": "You're offline — open races appear here once you reconnect."
     },
     "lobby": {
       "players": "{count}/4 runners",
@@ -554,5 +556,13 @@
     "dismiss": "Dismiss",
     "ariaLabel": "Install Bit by Bit Run",
     "iosHint": "Tap the Share button, then “Add to Home Screen”."
+  },
+  "offline": {
+    "title": "You're offline.",
+    "body": "Practice still works — multiplayer needs a connection.",
+    "pageTitle": "You're offline",
+    "pageBody": "No connection right now. The multiplayer lobby needs the network, but you can still play a solo practice run.",
+    "pagePractice": "🏃 Play practice",
+    "pageHome": "Home"
   }
 }
