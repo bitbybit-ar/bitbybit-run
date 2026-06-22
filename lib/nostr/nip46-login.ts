@@ -215,7 +215,7 @@ export function createConnectSession(): NostrConnectSession {
     clientPubkey,
     relays: NIP46_CONNECT_RELAYS,
     secret,
-    name: "Bit by Bit Run",
+    name: "BitByBit RUN",
     url:
       typeof window !== "undefined"
         ? window.location.origin

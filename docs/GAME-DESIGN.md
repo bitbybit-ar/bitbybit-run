@@ -1,8 +1,8 @@
-# 🎮 Game Design Document — Bit by Bit Run
+# 🎮 Game Design Document — BitByBit RUN
 
 ## 1. Concept
 
-**Bit by Bit Run** is a real-time, multiplayer arcade **runner race** on a
+**BitByBit RUN** is a real-time, multiplayer arcade **runner race** on a
 4-lane athletics track. Up to **4 players** race to the finish line. The twist is
 a risk/reward food system: eat well to sprint, eat badly and you're sent back to
 the start.
@@ -219,7 +219,7 @@ that happens is you learn something.)
 
 ### Why they exist (the serious bit, told cheerfully)
 
-Bit by Bit Run is, at heart, a Bitcoin literacy toy. The single most useful
+BitByBit RUN is, at heart, a Bitcoin literacy toy. The single most useful
 self-custody skill isn't memorizing a seed phrase — it's **smelling a scam from
 across the room**. So we lined the walls with the greatest hits: "You won 1 BTC!
 🎉", "Send 1 BTC, get 2 back 🚀", "Elon is giving away BTC LIVE 🔴", "50% APY on

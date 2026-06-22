@@ -20,8 +20,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // Stable identity so the browser treats updates as the same installed app
     // even if start_url ever changes.
     id: "/",
-    name: "Bit by Bit Run",
-    short_name: "Bit by Bit",
+    name: "BitByBit RUN",
+    short_name: "BitByBit",
     description:
       "A free, lightweight, web-based multiplayer runner race. Grab the good food to sprint, dodge the junk, and be first to the finish line.",
     lang: "en",

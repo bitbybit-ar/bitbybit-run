@@ -1,4 +1,4 @@
-# 🌱 Mission — Bit by Bit Run
+# 🌱 Mission — BitByBit RUN
 
 **A 60-second race that leaves you a little healthier, a little smarter about
 money, and a lot harder to scam — one bit at a time.**
@@ -10,7 +10,7 @@ reward, they repeat, they stick. So we hid real lessons inside a runner race you
 actually want to play again: every sprint, every dodged trap, every tip to the
 winner teaches something without ever feeling like a lesson.
 
-Bit by Bit Run is fun first. The learning rides along for free.
+BitByBit RUN is fun first. The learning rides along for free.
 
 ## What we believe
 

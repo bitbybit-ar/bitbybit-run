@@ -10,7 +10,7 @@ import enMessages from "@/messages/en.json";
  */
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Bit by Bit Run";
+export const alt = "BitByBit RUN";
 
 const EDGE = "#1a1230";
 const BG = "#17132b"; // deep indigo (dark-theme background)
@@ -64,10 +64,10 @@ export default async function OpengraphImage({
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 22 }}>
             <span style={{ fontSize: 104, fontWeight: 800, color: "#ffffff" }}>
-              Bit by Bit
+              BitByBit
             </span>
             <span style={{ fontSize: 104, fontWeight: 800, color: "#ff5d8f" }}>
-              Run
+              RUN
             </span>
           </div>
           <span

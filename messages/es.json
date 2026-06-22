@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "siteName": "Bit by Bit Run",
-    "siteTitle": "Bit by Bit Run — corré, comé, acelerá, ganá sats",
+    "siteName": "BitByBit RUN",
+    "siteTitle": "BitByBit RUN — corré, comé, acelerá, ganá sats",
     "description": "Un juego web de carreras multijugador, liviano y gratis. Agarrá la comida buena para acelerar, esquivá la chatarra y llegá primero a la meta.",
     "skipToContent": "Saltar al contenido"
   },
@@ -17,7 +17,7 @@
     "leaderboard": "Ranking"
   },
   "landing": {
-    "title": "Bit by Bit Run",
+    "title": "BitByBit RUN",
     "subtitle": "Corré por la pista. Agarrá la comida buena para acelerar, esquivá la chatarra o volvés al principio. El primero en llegar gana.",
     "tagline": "Corré, Comé, Ganá 🏃💨\nEl cardio nunca pagó tan bien.",
     "play": "Jugar",
@@ -550,10 +550,10 @@
     }
   },
   "installApp": {
-    "title": "Agregá Bit by Bit Run a tu pantalla de inicio",
+    "title": "Agregá BitByBit RUN a tu pantalla de inicio",
     "cta": "Instalar app",
     "dismiss": "Descartar",
-    "ariaLabel": "Instalar Bit by Bit Run",
+    "ariaLabel": "Instalar BitByBit RUN",
     "iosHint": "Tocá el botón Compartir y luego «Agregar a inicio»."
   },
   "offline": {

@@ -1,7 +1,7 @@
 # 🧭 Guided Tour — try everything in ~10 minutes
 
 Hello, judges (and curious players)! This is the fastest path through **every**
-feature Bit by Bit Run offers. Follow the stops in order, or jump to whatever
+feature BitByBit RUN offers. Follow the stops in order, or jump to whatever
 catches your eye — each stop says **what to do** and **what to notice**.
 
 **Before you start**

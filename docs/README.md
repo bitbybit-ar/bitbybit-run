@@ -1,6 +1,6 @@
-# 📚 Documentation Index — Bit by Bit Run
+# 📚 Documentation Index — BitByBit RUN
 
-Welcome to the docs for **Bit by Bit Run**. Start here.
+Welcome to the docs for **BitByBit RUN**. Start here.
 
 | Document                           | What's inside                                                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
