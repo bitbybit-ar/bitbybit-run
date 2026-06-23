@@ -55,69 +55,75 @@ function FoodChips({
 function Controls() {
   const t = useTranslations("howToPlay");
   return (
-    <>
-      <p className={styles.controlsLabel}>{t("controlsKeyboard")}</p>
-      <ul className={styles.controls}>
-        <li>
-          <span className={styles.keys}>
-            <Key label="←">
-              <ArrowIcon dir="left" />
-            </Key>
-            <Key label="→">
-              <ArrowIcon dir="right" />
-            </Key>
-          </span>
-          {t("controlsLanes")}
-        </li>
-        <li>
-          <span className={styles.keys}>
-            <Key label="↑">
-              <ArrowIcon dir="up" />
-            </Key>
-          </span>
-          {t("controlsSprint")}
-        </li>
-        <li>
-          <span className={styles.keys}>
-            <Key label="↓">
-              <ArrowIcon dir="down" />
-            </Key>
-          </span>
-          {t("controlsBrake")}
-        </li>
-        <li>
-          <span className={styles.keys}>
-            <Key>R</Key>
-          </span>
-          {t("controlsRestart")}
-        </li>
-      </ul>
+    <div className={styles.controlsGrid}>
+      {/* Keyboard (desktop) — left column. */}
+      <div className={styles.controlsCol}>
+        <p className={styles.controlsLabel}>{t("controlsKeyboard")}</p>
+        <ul className={styles.controls}>
+          <li>
+            <span className={styles.keys}>
+              <Key label="←">
+                <ArrowIcon dir="left" />
+              </Key>
+              <Key label="→">
+                <ArrowIcon dir="right" />
+              </Key>
+            </span>
+            {t("controlsLanes")}
+          </li>
+          <li>
+            <span className={styles.keys}>
+              <Key label="↑">
+                <ArrowIcon dir="up" />
+              </Key>
+            </span>
+            {t("controlsSprint")}
+          </li>
+          <li>
+            <span className={styles.keys}>
+              <Key label="↓">
+                <ArrowIcon dir="down" />
+              </Key>
+            </span>
+            {t("controlsBrake")}
+          </li>
+          <li>
+            <span className={styles.keys}>
+              <Key>R</Key>
+            </span>
+            {t("controlsRestart")}
+          </li>
+        </ul>
+      </div>
 
       {/* On-screen gamepad (touch devices): mirrors the buttons drawn in-game —
-          ◀ ▶ under the left thumb, a held ⚡ accelerate button under the right. */}
-      <p className={styles.controlsLabel}>{t("controlsTouch")}</p>
-      <ul className={styles.controls}>
-        <li>
-          <span className={styles.touchKeys}>
-            <span className={styles.touchKey} aria-label="left">
-              <ArrowIcon dir="left" />
+          ◀ ▶ under the left thumb, a held ⚡ accelerate button under the right.
+          Right column. */}
+      <div className={styles.controlsCol}>
+        <p className={styles.controlsLabel}>{t("controlsTouch")}</p>
+        <ul className={styles.controls}>
+          <li>
+            <span className={styles.touchKeys}>
+              <span className={styles.touchKey} aria-label="left">
+                <ArrowIcon dir="left" />
+              </span>
+              <span className={styles.touchKey} aria-label="right">
+                <ArrowIcon dir="right" />
+              </span>
             </span>
-            <span className={styles.touchKey} aria-label="right">
-              <ArrowIcon dir="right" />
+            {t("controlsTouchLanes")}
+          </li>
+          <li>
+            <span className={styles.touchKeys}>
+              <span className={styles.touchKey} aria-hidden>
+                ⚡
+              </span>
             </span>
-          </span>
-          {t("controlsTouchLanes")}
-        </li>
-        <li>
-          <span className={styles.touchKeys}>
-            <span className={styles.touchKey} aria-hidden>
-              ⚡
-            </span>
-          </span>
-          {t("controlsTouchSprint")}
-        </li>
-      </ul>
-    </>
+            {t("controlsTouchSprint")}
+          </li>
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -156,12 +162,14 @@ export function HowToPlayContent() {
         {t("intro")}
       </motion.p>
 
-      <div className={styles.grid}>
-        <motion.article className={styles.card} {...card(0)}>
-          <h2 className={styles.cardTitle}>{t("goalTitle")}</h2>
-          <p className={styles.cardText}>{t("goalText")}</p>
-        </motion.article>
+      {/* Goal — highlighted full-width banner that opens the guide. */}
+      <motion.article className={styles.goal} {...card(0)}>
+        <h2 className={styles.cardTitle}>{t("goalTitle")}</h2>
+        <p className={styles.cardText}>{t("goalText")}</p>
+      </motion.article>
 
+      {/* Pickups — the three food types side by side. */}
+      <div className={styles.foodGrid}>
         <motion.article className={styles.card} {...card(1)}>
           <h2 className={styles.cardTitle}>{t("energyTitle")}</h2>
           <p className={styles.cardText}>{t("energyText")}</p>
@@ -179,12 +187,16 @@ export function HowToPlayContent() {
           <p className={styles.cardText}>{t("boostText")}</p>
           <FoodChips ids={BOOST_IDS} kind="boost" />
         </motion.article>
+      </div>
 
-        <motion.article className={styles.card} {...card(4)}>
-          <h2 className={styles.cardTitle}>{t("controlsTitle")}</h2>
-          <Controls />
-        </motion.article>
+      {/* Controls — full-width card with keyboard and touch layouts. */}
+      <motion.article className={styles.card} {...card(4)}>
+        <h2 className={styles.cardTitle}>{t("controlsTitle")}</h2>
+        <Controls />
+      </motion.article>
 
+      {/* Outcome — what happens after the race. */}
+      <div className={styles.outcomeGrid}>
         <motion.article className={styles.card} {...card(5)}>
           <h2 className={styles.cardTitle}>{t("zapTitle")}</h2>
           <p className={styles.cardText}>{t("zapText")}</p>

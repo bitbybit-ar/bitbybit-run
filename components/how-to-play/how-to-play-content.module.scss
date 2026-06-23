@@ -29,9 +29,17 @@
   line-height: $line-height-base;
 }
 
-.grid {
+// Pickups row — the three food types side by side; stacks on mobile.
+.foodGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-20;
+}
+
+// Outcome row — zap + ranking; stacks on mobile.
+.outcomeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: $spacing-20;
 }
 
@@ -47,10 +55,32 @@
   box-shadow: 4px 4px 0 0 $arcade-edge;
 }
 
+// Goal — highlighted full-width banner opening the guide: same arcade panel but
+// with a primary accent border and a centered, slightly larger pitch.
+.goal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-12;
+  padding: $spacing-24 $spacing-20;
+  text-align: center;
+  background: $color-surface;
+  border: 2px solid $color-primary;
+  border-radius: $border-radius-lg;
+  box-shadow: 6px 6px 0 0 $color-primary;
+
+  .cardText {
+    max-width: 540px;
+    font-size: $font-size-md;
+  }
+}
+
 .cardTitle {
   margin: 0;
-  font-family: $font-display;
-  font-size: $font-size-md;
+  // Body font — the pixel display font isn't legible at heading-in-card size.
+  font-family: $font-body;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-black;
   color: $color-text-primary;
 }
 
@@ -104,22 +134,26 @@
   font-weight: $font-weight-bold;
 }
 
-// Sub-heading separating the keyboard and touch control lists.
+// Keyboard (left) and touch (right) controls side by side; stacks on mobile.
+.controlsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-24;
+}
+
+.controlsCol {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+}
+
+// Sub-heading labelling each control column.
 .controlsLabel {
   margin: 0;
   font-family: $font-body;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
   color: $color-text-primary;
-
-  // Space the touch heading from the keyboard list above it.
-  & + .controls {
-    margin-top: $spacing-4;
-  }
-
-  &:not(:first-of-type) {
-    margin-top: $spacing-12;
-  }
 }
 
 // Controls list with arrow-key icons.
@@ -199,6 +233,12 @@
 }
 
 @include mobile {
+  .foodGrid,
+  .outcomeGrid,
+  .controlsGrid {
+    grid-template-columns: 1fr;
+  }
+
   .actions {
     flex-direction: column;
     align-items: stretch;
