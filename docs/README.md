@@ -6,7 +6,7 @@ Welcome to the docs for **BitByBit RUN**. Start here.
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | [MISSION.md](MISSION.md)           | Why this exists: learning through play — healthy habits, Bitcoin/Lightning literacy, scam awareness, accessibility   |
 | [TOUR.md](TOUR.md)                 | Guided tour for judges & curious players: try every feature in ~10 minutes, with a route reference                   |
-| [GAME-DESIGN.md](GAME-DESIGN.md)   | The game: concept, rules, mechanics (energy/poison/food), controls, screens, match flow, scoring                     |
+| [GAME-DESIGN.md](GAME-DESIGN.md)   | The game: concept, rules, mechanics (energy/poison/food), controls, screens, match flow, scoring, audio              |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How it works for free with no game server: Next.js + Phaser, Nostr transport, event design, Neon DB, Lightning zaps  |
 | [MULTIPLAYER.md](MULTIPLAYER.md)   | Live race lobby flow (create → invite → start) and how to test multiplayer locally with two distinct identities      |
 | [CHARACTERS.md](CHARACTERS.md)     | Playable runner characters: PixelLab prompts, settings, sprite pipeline                                              |

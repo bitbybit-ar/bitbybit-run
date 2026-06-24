@@ -40,7 +40,11 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   roadside room) each sign instead hangs from an **overhead gantry arch** the
   runner drives under — one at a time, kept in a readable size band.
 - **Free demo** (no login) and a **solo practice** mode for warming up.
-- Sound effects, light/dark theme, and a responsive layout from phone to desktop.
+- **Sound effects** synthesized at runtime via the Web Audio API (no audio
+  assets) for every cue — start, eating, lane changes, bathroom break, finish —
+  with a persisted 🔊/🔇 mute toggle. Eating a **rocket booster** (🚀) plays a
+  short music clip (the one sampled sound). See `docs/GAME-DESIGN.md` → "Audio".
+- Light/dark theme and a responsive layout from phone to desktop.
 
 #### Multiplayer (serverless, over Nostr)
 
