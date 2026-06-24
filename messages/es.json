@@ -182,6 +182,7 @@
     "go": "¡YA!",
     "finish": "🏁 ¡META!",
     "again": "apretá R para correr de nuevo",
+    "againTouch": "tocá para correr de nuevo",
     "practiceNote": "Carrera de práctica — no cuenta para el ranking",
     "goodPhrases": [
       "¡glup! 😋",
@@ -282,6 +283,7 @@
     "controlsTouch": "📱 Táctil (móvil)",
     "controlsTouchLanes": "tocá para cambiar carril",
     "controlsTouchSprint": "mantené para acelerar (gasta energía)",
+    "controlsTouchRestart": "tocá para reiniciar",
     "zapTitle": "⚡️ Zap al ganador",
     "zapText": "Cuando termina la carrera, podés mandarle zaps de sats al ganador. Correr rápido se paga en Bitcoin.",
     "rankingTitle": "🏆 Ranking",

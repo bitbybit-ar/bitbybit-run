@@ -121,6 +121,14 @@ function Controls() {
             </span>
             {t("controlsTouchSprint")}
           </li>
+          <li>
+            <span className={styles.touchKeys}>
+              <span className={styles.touchKey} aria-hidden>
+                👆
+              </span>
+            </span>
+            {t("controlsTouchRestart")}
+          </li>
         </ul>
       </div>
     </div>

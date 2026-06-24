@@ -86,6 +86,8 @@ export type GameStrings = {
   go: string;
   finish: string;
   again: string;
+  /** Touch variant of `again` — restart is a screen tap, not the R key. */
+  againTouch: string;
   /** Shown on the finish overlay of a solo practice run, to make clear it
    *  doesn't persist to the leaderboard. Absent for matches and the demo. */
   practiceNote?: string;
@@ -100,6 +102,7 @@ const DEFAULT_STRINGS: GameStrings = {
   go: "GO!",
   finish: "🏁 FINISH!",
   again: "press R to race again",
+  againTouch: "tap to race again",
   goodPhrases: ["yum! 😋", "pure energy ⚡"],
   badPhrases: ["ugh, bad idea 🤢"],
   boostPhrases: ["full speed! 🚀", "turbo on ⚡"],
@@ -916,8 +919,11 @@ export class RaceScene extends Phaser.Scene {
       const note = this.strings.practiceNote
         ? `\n${this.strings.practiceNote}`
         : "";
-      // In a match, "press R to race again" doesn't apply — the result stands.
-      const tail = this.net ? "" : `\n${this.strings.again}`;
+      // In a match, "race again" doesn't apply — the result stands. On touch
+      // devices restart is a screen tap (onPointerDown), so swap the R hint.
+      const tail = this.net
+        ? ""
+        : `\n${this.touchControls ? this.strings.againTouch : this.strings.again}`;
       this.showToast(
         `${this.strings.finish}\n${this.elapsed.toFixed(1)}s   ${this.points} pts${note}${tail}`,
         9999

@@ -53,6 +53,7 @@ devices and drawn inside the Phaser canvas so it works identically in every mode
 | ------------------------------ | -------------------------------- |
 | ◀ ▶ (bottom-left, left thumb)  | Tap to change lane (one per tap) |
 | ⚡ (bottom-right, right thumb) | Hold to accelerate / sprint      |
+| Tap anywhere (after finish)    | Restart a solo run               |
 
 Design rules:
 

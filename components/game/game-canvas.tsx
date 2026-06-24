@@ -71,6 +71,7 @@ export function GameCanvas({
       go: tt("go"),
       finish: tt("finish"),
       again: tt("again"),
+      againTouch: tt("againTouch"),
       practiceNote: practiceRef.current ? tt("practiceNote") : undefined,
       goodPhrases: tt.raw("goodPhrases") as string[],
       badPhrases: tt.raw("badPhrases") as string[],
