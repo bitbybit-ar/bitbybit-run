@@ -1,6 +1,6 @@
 {
   "name": "bitbybit-run",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "A free, lightweight, web-based multiplayer runner race for the La Crypta Gaming hackathon.",
   "license": "MIT",

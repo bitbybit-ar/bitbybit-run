@@ -8,12 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Design and gameplay details live in [`docs/`](docs/README.md). This file is the
 > release-facing log — each tagged release maps to a version section below.
 
-## [Unreleased]
+## [1.0.0] — 2026-06-24
 
-Everything below ships in the upcoming **1.0.0** — the full game, serverless
-multiplayer, leaderboard, Nostr identity with Lightning zaps, and the fake-ads
-scam museum. At release time this heading becomes `## [1.0.0] — <date>` and the
-compare links at the bottom are pointed at the `v1.0.0` tag.
+The first public release of **BitByBit RUN** — the full game, serverless
+multiplayer, a global leaderboard, Nostr identity with Lightning zaps, and the
+fake-ads scam museum. As an initial release, everything below is part of what
+ships in 1.0.0.
 
 ### Added
 
@@ -39,7 +39,12 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   wide screens the signs sit beside it; on narrow **portrait** phones (no
   roadside room) each sign instead hangs from an **overhead gantry arch** the
   runner drives under — one at a time, kept in a readable size band.
-- **Free demo** (no login) and a **solo practice** mode for warming up.
+- **Free demo** (no login) and a **solo practice** mode for warming up. The solo
+  finish overlay restarts on a screen **tap** on touch devices ("tap to race
+  again") and on the **R** key on desktop.
+- **Lane-accurate food pickups:** food resolves strictly against the runner's
+  nearest lane, so sliding toward a booster never accidentally eats the junk in
+  the lane you're leaving — booster gauntlets stay dodgeable by design.
 - **Sound effects** synthesized at runtime via the Web Audio API (no audio
   assets) for every cue — start, eating, lane changes, bathroom break, finish —
   with a persisted 🔊/🔇 mute toggle. Eating a **rocket booster** (🚀) plays a
@@ -50,7 +55,11 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 
 - **Lobby flow:** create a race (with an optional race name), share an invite
   link, or join an open race from the browser; pick your runner/lane; the host
-  starts (or it auto-starts when full).
+  starts (or it auto-starts when full). The host and track are read from the
+  host's own presence, so the lobby is stable regardless of seat arrival order.
+- **Host-only race start:** the `control` (start) event is verified against the
+  match host (signed by the host's identity), so a rogue peer subscribed to the
+  channel can't force-start the race for everyone.
 - **Realtime racing** at ~5 Hz straight over public Nostr relays — no game
   server — with rivals shown as their **actual animated characters** plus a
   minimap.
@@ -96,7 +105,10 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 #### Identity, auth & Lightning
 
 - **Nostr login** via browser extension (NIP-07), pasted nsec, or NIP-46 bunker,
-  using **NIP-98** signed HTTP auth with single-use replay protection.
+  using **NIP-98** signed HTTP auth with **durable single-use replay
+  protection** — login nonces live in a Postgres `auth_nonces` table, so a
+  captured `Authorization` header can't be replayed by landing on a different
+  serverless instance.
 - **Rolling 7-day session:** the JWT cookie is re-minted on every navigation, so
   an active player never gets logged out — a long match (even waiting in the
   lobby for opponents) can't outlive the session.
@@ -127,82 +139,28 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 - **Security:** rate limiting on sensitive API routes and framing/MIME/referrer
   response headers.
 - **Automated tests + CI:** Vitest unit suite (Nostr auth, schemas, multiplayer
-  state, game logic, leaderboard) plus a Neon-backed integration test, run on
-  every push/PR alongside lint and typecheck — see
-  [docs/TESTING.md](docs/TESTING.md).
+  state, game logic, leaderboard) plus Neon-backed integration tests — including
+  the durable `auth_nonces` replay guard — run on every push/PR alongside lint,
+  typecheck, and a Prettier `format:check` (with a `.prettierignore` for build
+  output and generated migration metadata). See [docs/TESTING.md](docs/TESTING.md).
 - **$0 infrastructure** — Vercel + free public relays + Neon free tier +
   peer-to-peer Lightning.
 
-### Fixed
+#### Responsive & mobile UX
 
-#### Responsive / mobile
-
-- **Navbar no longer overflows on phones:** added a compact `xs` button size
-  (tighter padding, lighter offset shadow), shrank the locale/theme toggle and
-  the brand wordmark on mobile, and tightened the action-cluster gap so the
-  whole bar fits a ~360px screen.
+- **Phone-fit navbar:** a compact `xs` button size (tighter padding, lighter
+  offset shadow), shrunk locale/theme toggle and brand wordmark, and a tightened
+  action-cluster gap keep the whole bar on a ~360px screen.
 - **Icon-only login on mobile:** the "Entrar" / "Login" navbar button collapses
   to a 👤 icon on phones (full label kept as its accessible name), mirroring the
   🏆 leaderboard button.
-- **Install prompt copy fits in one line:** replaced the truncated
-  title + subtitle with a single wrapping line ("Agregá BitByBit RUN a tu
-  pantalla de inicio" / "Add BitByBit RUN to your home screen") and a compact
-  CTA, so the text is no longer cut off.
-- **Square brand blocks:** the favicon and generated app icons now draw three
-  squares instead of three half-height rectangles.
-- **Food messages no longer overflow or hide behind signs on phones:** in
-  portrait the in-canvas food toast drops below the overhead crowd signs and
-  wraps long lines onto a second line, so both stay fully readable (desktop is
-  unchanged).
+- **Single-line install prompt** ("Agregá BitByBit RUN a tu pantalla de inicio" /
+  "Add BitByBit RUN to your home screen") with a compact CTA, so the copy never
+  gets cut off.
+- **Square brand blocks** in the favicon and generated app icons (three squares,
+  not three half-height rectangles).
+- **Readable food toast on phones:** in portrait the in-canvas food toast drops
+  below the overhead crowd signs and wraps long lines onto a second line, so both
+  stay fully readable (desktop is unchanged).
 
-#### Gameplay
-
-- **Food is no longer clipped from an adjacent lane mid-merge:** food now
-  resolves strictly against the runner's nearest lane, so sliding toward a
-  booster can't accidentally eat the junk in the lane you're leaving — booster
-  gauntlets stay dodgeable as designed.
-- **Touch restart hint no longer mentions a missing key:** the solo finish
-  overlay said "press R to race again" even on mobile, where there's no R key.
-  It now reads "tap to race again" on touch devices (restart is a screen tap);
-  desktop keeps the R hint. The how-to-play touch column and `GAME-DESIGN`
-  document the tap-to-restart gesture.
-
-#### Internals
-
-- **Per-match track length** is read from the active track instead of the
-  shared default, removing a latent mismatch if a future seed changes length.
-- **Lobby host/track** are read from the host's own presence rather than
-  whichever seat happened to arrive first.
-
-#### Tooling & docs
-
-- **Repo is Prettier-clean** and CI now runs `format:check` (added a
-  `.prettierignore` for build output and generated migration metadata), so
-  formatting drift can't land again.
-- **Integration tests run locally and in CI:** `test:integration` auto-loads
-  `.env.test` (via `--env-file-if-exists`), and a new
-  `tests/integration/nonce-store.test.ts` covers the durable `auth_nonces`
-  replay guard against a real Neon test branch.
-- **Docs corrected to match the implementation:** rolling 7-day session (not a
-  60-minute timeout), auth methods are NIP-07 / NIP-46 / nsec (not `nostr-login`),
-  `.env.local` setup, the scoring table (booster bonus added, the unimplemented
-  sprint/overtake row removed), the ±10s NIP-98 window, and the junk-food copy
-  (bounded bathroom setback, not "back to the start").
-
-### Security
-
-- **Host-only race start:** the `control` (start) event is now verified against
-  the match host (signed by the host's identity), so a rogue peer subscribed to
-  the channel can no longer force-start the race for everyone.
-- **Durable NIP-98 replay protection:** single-use login nonces moved from
-  in-process memory to a Postgres `auth_nonces` table, so a captured
-  `Authorization` header can't be replayed by landing on a different Vercel
-  serverless instance.
-
-<!--
-  At release time, replace the line below with:
-  [1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0
-  and add an [Unreleased] compare link once a newer tag exists.
--->
-
-[Unreleased]: https://github.com/bitbybit-ar/bitbybit-run/commits/main
+[1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0
