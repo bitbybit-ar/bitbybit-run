@@ -50,7 +50,7 @@ routes; the realtime layer is Nostr; persistence is Neon.
 | Game rendering            | **Phaser**                                         | Batteries-included 2D engine; fake-2.5D via sprite scaling; ~500 KB |
 | Realtime transport        | **Nostr ephemeral events** (`nostr-tools`)         | Free, serverless, on-theme                                          |
 | Match discovery (lobby)   | **Nostr kind 30078** (NIP-33)                      | Reuses La Crypta's `gorilator-rpg` pattern                          |
-| Auth / identity           | **`nostr-login`** (NIP-07)                         | No passwords; players already have npubs                            |
+| Auth / identity           | Custom signer layer (NIP-07 / NIP-46 / nsec)       | No passwords; players already have npubs                            |
 | Database                  | **Neon Postgres + Drizzle ORM**                    | Free serverless Postgres; native Vercel integration                 |
 | Payments                  | **Manual zap** via `lud16` + WebLN                 | Simplest reliable Lightning reward                                  |
 
@@ -67,15 +67,21 @@ great for everything around it. So we split:
 ### Project structure (root-level, no `src/`)
 
 ```
-app/[locale]/        Localized routes (layout, landing page, play/)
-components/game/      GameCanvas — mounts Phaser client-side only
-components/ui/        Shared UI (e.g. ThemeToggle)
-lib/game/             Game logic: config.ts, track.ts, scenes/race-scene.ts
-lib/contexts/         ThemeProvider (next-themes wrapper)
-i18n/                 next-intl routing.ts + request.ts
-messages/             en.json, es.json
-styles/               SCSS token system (_theme, _colors, _typography, _spacing)
-proxy.ts              Next 16 middleware (locale routing + rolling session re-mint)
+app/[locale]/   Localized routes (landing, play, leaderboard, sign-in, demo,
+                how-to-play, gotcha/[slug] fake ads, offline)
+app/api/        Stateless route handlers (auth, matches, lud16)
+app/sw.ts, app/serwist/, app/manifest.ts   PWA service worker + manifest + icons
+components/game/        GameCanvas (mounts Phaser client-side) + match UI
+components/auth/, components/layout/, components/leaderboard/   React UI
+lib/game/       Game logic: config.ts, track.ts, foods.ts, scenes/race-scene.ts
+lib/multiplayer/  Nostr transport, match state machine, discovery, persistence
+lib/nostr/      Signers (NIP-07/46/nsec), NIP-98 verify, profile, nonce store
+lib/lightning/  Zap (WebLN + LNURL-pay)
+lib/db/         Drizzle schema + Neon client
+lib/contexts/, lib/hooks/, lib/schemas/, lib/fake-ads/, lib/pwa/
+i18n/, messages/   next-intl routing + en.json/es.json
+styles/         SCSS token system (_theme, _colors, _typography, _spacing)
+proxy.ts        Next 16 middleware (locale routing + rolling session re-mint)
 ```
 
 ## 3. The deterministic, per-match track model
@@ -86,7 +92,7 @@ data derived from a seed** — built once per match from the `matchId` via
 
 ```ts
 // lib/game/track.ts (illustrative)
-export function buildTrack(seed: string | number): Track // seeded layout
+export function buildTrack(seed: string | number): Track; // seeded layout
 export const TRACK = buildTrack("classic-v1"); // single-player / demo default
 ```
 
@@ -146,6 +152,13 @@ Sent by the host to start the race. `startAt` gives everyone a synced countdown.
   "content": "{ type:'start', matchId, trackId, startAt:<unixMs> }",
 }
 ```
+
+**Host-only.** The control event is signed by the host's real identity, and the
+reducer honors a start only when the event's signer matches the match host
+(`applyEvent` `case "control"`, `match-state.ts`) — so a rogue peer can't
+force-start the race for everyone. If the host's presence hasn't propagated yet
+(host still unknown), it accepts best-effort, matching the no-authoritative-
+server scope (§0).
 
 ### 4.3 Realtime runner state — kind `21000` (ephemeral), ~5 Hz
 
@@ -214,6 +227,8 @@ each client validates before merging (`lib/multiplayer`):
   ephemeral session key (§4.3), and their `content` claims a real `pubkey`. A
   frame is accepted only if that pubkey announced this exact session key in its
   presence (§4.1); otherwise it's a spoof and dropped.
+- **Host-only start** — a `control` (start) event is honored only when its
+  signer is the match host (§4.2), so a rogue peer can't force-start the race.
 
 The reducer (`match-state.ts`) stays pure/clock-free; the clock-dependent checks
 live in the orchestrator.
@@ -227,21 +242,31 @@ redundancy/fallback. Publishes resolve on the first relay to accept and inbound
 events dedupe by id, so the fastest relay to deliver sets perceived latency.
 **Throttle** broadcasts to ~5 Hz and keep payloads small to respect rate limits.
 
+Profile/auth reads use a **separate** relay list (`lib/nostr/relays.ts` —
+`purplepag.es`, `nos.lol`, `relay.nostr.band`, `relay.damus.io`,
+`relay.primal.net`), tuned for finding a user's kind:0 metadata + `lud16` rather
+than low-latency game traffic.
+
 ## 5. Persistence — Neon Postgres + Drizzle ORM
 
 Used for everything that must **survive** and be **queryable** across matches.
 (Drizzle is the ORM used across the `bitbybit-*` projects.)
 
-Suggested tables (Drizzle schema):
+Tables (Drizzle schema, `lib/db/schema.ts`):
 
-- `players` — `pubkey` (pk), `name`, `avatar`, cached profile, totals.
-- `matches` — `id`, `trackId`, `hostPubkey`, `startedAt`, `finishedAt`.
-- `results` — `matchId`, `pubkey`, `position`, `points` (one row per player/match).
-- `leaderboard` (view or query) — per `pubkey`: wins (1st places) and the
-  player's personal best (max points in a single match). Ordered by wins, then
-  personal best — peak performance, not a lifetime sum.
+- `users` — `pubkey`, `slug`, `display_name`, cached kind:0 profile, `locale`.
+- `matches` — `id`, `nostr_id`, `track_id`, `host_pubkey`, `started_at`,
+  `finished_at`.
+- `results` — `match_id`, `pubkey`, `position`, `points` (one row per
+  player/match; unique on `(match_id, pubkey)` so saving is idempotent).
+- `auth_nonces` — `id`, `expires_at`: the durable single-use guard for NIP-98
+  login events (anti-replay across serverless instances; see [`AUTH.md`](AUTH.md)).
+- The **leaderboard** is a query over `results` (joined to `users`), not a
+  table: per `pubkey`, wins (1st places) and personal best (max points in a
+  single match), ordered by wins then personal best — peak performance, not a
+  lifetime sum.
 
-Written via **Next.js API routes** (Vercel serverless) when a match ends. *Any*
+Written via **Next.js API routes** (Vercel serverless) when a match ends. _Any_
 participant's client posts the final standings (not just the host's), so a match
 isn't lost if the host leaves before it resolves; the route validates basic
 shape, checks the submitter is one of the players, and upserts idempotently by
@@ -252,25 +277,30 @@ native Vercel integration.
 > queries. Aggregating/ranking from scattered Nostr events is fiddly; Postgres is
 > the right tool. (Publishing results to Nostr too, as a bonus, is optional.)
 
-## 6. Auth — Nostr login (NIP-07)
+## 6. Auth — Nostr login (NIP-07 / NIP-46 / nsec)
 
-- Use `nostr-login` to connect a NIP-07 signer (Alby, nos2x, etc.).
+- Connect a NIP-07 browser signer (Alby, nos2x, etc.), a NIP-46 remote signer
+  (Amber/bunker), or paste an `nsec` — see [`AUTH.md`](AUTH.md) for the full flow.
 - Identity = the user's **npub/pubkey**. Fetch their profile (kind 0) for name &
   avatar, and their `lud16` Lightning address for zaps.
 - No passwords, no email, no session DB needed for auth.
+- Login is a signed **NIP-98** event (kind 27235), valid in a ±10s window and
+  honored **once** — a durable `auth_nonces` record rejects a replayed header
+  even across serverless instances (see [`AUTH.md`](AUTH.md)).
 
 ## 7. Lightning rewards — manual zap
 
-- On the results screen, show the winner's `lud16` Lightning address (from their
-  Nostr profile) and a **⚡ Zap winner** button.
+- On the results screen, show the winner's `lud16` Lightning address (fetched by
+  pubkey via `GET /api/lud16`, which reads it from their stored/Nostr profile)
+  and a **⚡ Zap winner** button.
 - Since players are already logged in with Nostr, the button triggers a zap via
   **WebLN** (e.g. Alby) / LNURL-pay to the winner's address.
 - **No-wallet fallback.** Resolving the winner's address to a BOLT11 invoice
   (LNURL-pay) is independent of having a wallet. So when the viewer has no WebLN
   provider — or the WebLN payment is declined/errors — we still fetch the invoice
-  for the chosen amount + message and present it as a **QR code + copyable string
-  + `lightning:` deep link**, payable from any mobile/desktop Lightning wallet.
-  (`getZapInvoice` / `payWithWebln` in `lib/lightning/zap.ts`.)
+  for the chosen amount + message and present it as a \*\*QR code + copyable string
+  - `lightning:` deep link\*\*, payable from any mobile/desktop Lightning wallet.
+    (`getZapInvoice` / `payWithWebln` in `lib/lightning/zap.ts`.)
 - No custody, no backend secrets — payments are peer-to-peer.
 
 ## 8. Why this is robust despite public-relay latency

@@ -14,8 +14,12 @@ describe("buildTrack (seeded per-match layout)", () => {
     const a = buildTrack("match-abc");
     const b = buildTrack("match-xyz");
     // Food positions should differ across seeds (not the same fixed track).
-    const posA = a.goodFood.map((f) => `${f.lane}:${Math.round(f.at)}`).join(",");
-    const posB = b.goodFood.map((f) => `${f.lane}:${Math.round(f.at)}`).join(",");
+    const posA = a.goodFood
+      .map((f) => `${f.lane}:${Math.round(f.at)}`)
+      .join(",");
+    const posB = b.goodFood
+      .map((f) => `${f.lane}:${Math.round(f.at)}`)
+      .join(",");
     expect(posA).not.toBe(posB);
   });
 

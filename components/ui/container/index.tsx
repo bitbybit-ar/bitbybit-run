@@ -11,7 +11,12 @@ interface ContainerProps {
   fill?: boolean;
 }
 
-export function Container({ children, className, center, fill }: ContainerProps) {
+export function Container({
+  children,
+  className,
+  center,
+  fill,
+}: ContainerProps) {
   return (
     <div
       className={cn(

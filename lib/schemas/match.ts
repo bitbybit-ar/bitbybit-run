@@ -21,7 +21,11 @@ import {
 
 /** Per-race score, bounded to a sane range so a forged frame/POST can't write
  *  an absurd value (anti-abuse clamp, not the gameplay cap). */
-const PointsSchema = z.number().int().min(MATCH_POINTS_MIN).max(MATCH_POINTS_MAX);
+const PointsSchema = z
+  .number()
+  .int()
+  .min(MATCH_POINTS_MIN)
+  .max(MATCH_POINTS_MAX);
 
 /** Finishing place — 1-based, never beyond the lane (player) count. */
 const PositionSchema = z.number().int().min(1).max(LANES);

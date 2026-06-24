@@ -1,0 +1,12 @@
+# Build output & caches
+.next/
+out/
+coverage/
+
+# Dependency lockfiles & generated TS artifacts
+package-lock.json
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Drizzle-generated migration metadata (machine-written; not hand-edited)
+drizzle/meta/

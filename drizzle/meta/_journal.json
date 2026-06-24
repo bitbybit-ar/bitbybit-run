@@ -29,6 +29,13 @@
       "when": 1780803281720,
       "tag": "0003_solid_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782333986254,
+      "tag": "0004_furry_hex",
+      "breakpoints": true
     }
   ]
 }

@@ -155,6 +155,45 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   wraps long lines onto a second line, so both stay fully readable (desktop is
   unchanged).
 
+#### Gameplay
+
+- **Food is no longer clipped from an adjacent lane mid-merge:** food now
+  resolves strictly against the runner's nearest lane, so sliding toward a
+  booster can't accidentally eat the junk in the lane you're leaving — booster
+  gauntlets stay dodgeable as designed.
+
+#### Internals
+
+- **Per-match track length** is read from the active track instead of the
+  shared default, removing a latent mismatch if a future seed changes length.
+- **Lobby host/track** are read from the host's own presence rather than
+  whichever seat happened to arrive first.
+
+#### Tooling & docs
+
+- **Repo is Prettier-clean** and CI now runs `format:check` (added a
+  `.prettierignore` for build output and generated migration metadata), so
+  formatting drift can't land again.
+- **Integration tests run locally and in CI:** `test:integration` auto-loads
+  `.env.test` (via `--env-file-if-exists`), and a new
+  `tests/integration/nonce-store.test.ts` covers the durable `auth_nonces`
+  replay guard against a real Neon test branch.
+- **Docs corrected to match the implementation:** rolling 7-day session (not a
+  60-minute timeout), auth methods are NIP-07 / NIP-46 / nsec (not `nostr-login`),
+  `.env.local` setup, the scoring table (booster bonus added, the unimplemented
+  sprint/overtake row removed), the ±10s NIP-98 window, and the junk-food copy
+  (bounded bathroom setback, not "back to the start").
+
+### Security
+
+- **Host-only race start:** the `control` (start) event is now verified against
+  the match host (signed by the host's identity), so a rogue peer subscribed to
+  the channel can no longer force-start the race for everyone.
+- **Durable NIP-98 replay protection:** single-use login nonces moved from
+  in-process memory to a Postgres `auth_nonces` table, so a captured
+  `Authorization` header can't be replayed by landing on a different Vercel
+  serverless instance.
+
 <!--
   At release time, replace the line below with:
   [1.0.0]: https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0

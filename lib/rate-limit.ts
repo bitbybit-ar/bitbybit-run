@@ -59,7 +59,10 @@ export function rateLimit(
     w.count += 1;
     return { ok: true, retryAfter: 0 };
   }
-  return { ok: false, retryAfter: Math.max(1, Math.ceil((w.resetAt - now) / 1000)) };
+  return {
+    ok: false,
+    retryAfter: Math.max(1, Math.ceil((w.resetAt - now) / 1000)),
+  };
 }
 
 /** Best-effort client IP from the proxy headers (Vercel sets these). */
@@ -80,7 +83,11 @@ export function enforceRateLimit(
   limit: number,
   windowMs: number
 ): NextResponse | null {
-  const { ok, retryAfter } = rateLimit(`${scope}:${clientIp(req)}`, limit, windowMs);
+  const { ok, retryAfter } = rateLimit(
+    `${scope}:${clientIp(req)}`,
+    limit,
+    windowMs
+  );
   if (ok) return null;
   return NextResponse.json(
     { error: "rate_limited" },

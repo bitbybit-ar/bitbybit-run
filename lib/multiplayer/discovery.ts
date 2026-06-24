@@ -84,13 +84,19 @@ export function selectOpenMatches(
     const updatedAt = Math.max(...entries.map((s) => s.createdAt));
     if (now - updatedAt > FRESH_WINDOW_MS) continue; // stale / abandoned
 
-    const host = entries[0].host;
+    // The host is the peer whose own presence names itself as host (every seat
+    // echoes the same host pubkey, but reading it from the host's own seat is
+    // robust to a joiner's presence arriving first or echoing a stale value).
+    const host =
+      Object.keys(seats).find((pk) => seats[pk]!.host === pk) ??
+      entries[0].host;
+    const hostSeat = seats[host];
     matches.push({
       matchId,
       host,
-      hostName: seats[host]?.name,
-      raceName: seats[host]?.raceName,
-      trackId: entries[0].trackId,
+      hostName: hostSeat?.name,
+      raceName: hostSeat?.raceName,
+      trackId: hostSeat?.trackId ?? entries[0].trackId,
       players: entries.length,
       updatedAt,
     });

@@ -19,7 +19,8 @@ All four are client-side and produce a `SignerHandle` (`lib/nostr/signers.ts`):
 2. The client builds a **NIP-98** auth event (kind 27235) with `bbr_signer` and
    `bbr_locale` tags and signs it.
 3. `POST /api/auth/nostr` validates the event (`lib/nostr/verify.ts` +
-   `http-auth.ts`), fetches the kind:0 profile, **upserts the `users` row**
+   `http-auth.ts`), **claims the event id as single-use** (anti-replay, see
+   below), fetches the kind:0 profile, **upserts the `users` row**
    (`lib/creator/users.ts`), and sets a **JWT session cookie** (`lib/auth.ts`,
    via `jose`). Payload: `{ pubkey, locale, signer_type }`.
 4. `GET /api/auth/session` returns the session (+ slim user) for the client;
@@ -28,6 +29,17 @@ All four are client-side and produce a `SignerHandle` (`lib/nostr/signers.ts`):
 The in-memory signer + session state are owned by `SignerContext`
 (`lib/contexts/signer-context.tsx`), mounted in the locale layout via
 `SignerProviderClient`. The navbar is signer-aware (Login ↔ account + sign out).
+
+## After sign-in: the account menu
+
+The navbar's account dropdown (`components/layout/account-menu/`) shows the
+signed-in player's name + Lightning address and offers:
+
+- **Sync profile from Nostr** → `POST /api/auth/sync-profile` (auth'd,
+  rate-limited): re-fetches the latest kind:0 metadata from the relays and
+  refreshes the stored `display_name` / `avatar_url` / `lud16`, so editing your
+  profile in any Nostr client reflects here without re-signing in.
+- **Sign out** → `POST /api/auth/signout`.
 
 ## Session lifetime (rolling 7-day window)
 
@@ -40,6 +52,20 @@ an abandoned session lapses a week after the last visit.
 
 A week (not an hour) is deliberate: a long match — including waiting in the
 lobby for opponents — can never outlive the session and strand the player.
+
+## Replay protection (single-use auth events)
+
+A NIP-98 event is valid only within a **±10s** `created_at` window
+(`CLOCK_SKEW_SECONDS`, `lib/nostr/verify.ts`). To stop a captured
+`Authorization: Nostr …` header from being replayed within that window to mint a
+second session, the login route records each honored event id and rejects a
+repeat (`claimNonce`, `lib/nostr/nonce-store.ts`).
+
+The record is **durable** — a Postgres `auth_nonces` table, not process memory —
+so the guard holds across Vercel's serverless instances and cold starts (an
+in-memory `Set` would only protect a single lambda, letting a replay slip
+through on a different instance). Rows carry an `expires_at` and the login path
+sweeps expired ones, so the table stays tiny without a cron.
 
 ## Signer persistence across reloads
 
@@ -67,8 +93,8 @@ treated as signed-out):
 ## Setup (required to complete a login)
 
 ```bash
-cp .env.example .env            # then fill DATABASE_URL (Neon) + AUTH_SECRET
-npm run db:migrate              # creates the users table
+cp .env.example .env.local      # then fill DATABASE_URL (Neon) + AUTH_SECRET
+npm run db:migrate              # creates the users + auth_nonces tables
 ```
 
 - **`DATABASE_URL`** — Neon Postgres. Without it the page still renders and the
@@ -77,7 +103,8 @@ npm run db:migrate              # creates the users table
 
 The `users` table (Drizzle, `lib/db/schema.ts`) was trimmed from cursats to the
 auth-relevant columns: `id, pubkey, slug, display_name, bio, avatar_url,
-banner_url, locale, active, created_at, updated_at`.
+banner_url, locale, active, created_at, updated_at`. A small `auth_nonces` table
+(`id, expires_at`) backs the single-use replay guard above.
 
 ## Tests
 

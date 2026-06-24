@@ -226,6 +226,11 @@ export function applyEvent(
 
     case "control": {
       if (event.data.matchId !== state.matchId) return state;
+      // Only the host may drive the lifecycle: the start event is signed by the
+      // host's real identity, so reject one signed by anyone else. If we don't
+      // yet know the host (their presence hasn't propagated), accept best-effort
+      // — matching the no-authoritative-server scope (ARCHITECTURE §0).
+      if (state.host && event.signer !== state.host) return state;
       // Only ever advance the lifecycle forward.
       if (state.status !== "waiting") {
         return { ...state, startAt: event.data.startAt };
@@ -250,7 +255,9 @@ export function applyEvent(
       const finishes = { ...state.finishes, [event.data.pubkey]: event.data };
       // The grace deadline is anchored to the *earliest* finish, so every
       // client converges on the same countdown end without a server clock.
-      const earliest = Math.min(...Object.values(finishes).map((f) => f.finishTime));
+      const earliest = Math.min(
+        ...Object.values(finishes).map((f) => f.finishTime)
+      );
       const next: MatchSnapshot = {
         ...state,
         finishes,

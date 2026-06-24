@@ -46,6 +46,24 @@ export const users = pgTable(
   ]
 );
 
+// --- Auth nonces ---
+// Single-use guard for NIP-98 login events (anti-replay). Each accepted auth
+// event's id is recorded here so a captured `Authorization: Nostr …` header
+// can't be replayed within its freshness window to mint a second session.
+// Durable (not in-process memory) so it holds across Vercel's serverless
+// instances and cold starts. Rows are short-lived: `expires_at` is ~the
+// validation window, and the login path sweeps expired rows so the table
+// stays tiny without a cron.
+export const authNonces = pgTable(
+  "auth_nonces",
+  {
+    // The Nostr event id (sha256 hex) — the natural idempotency key.
+    id: varchar("id", { length: 64 }).primaryKey(),
+    expires_at: timestamp("expires_at").notNull(),
+  },
+  (table) => [index("auth_nonces_expires_idx").on(table.expires_at)]
+);
+
 // --- Matches ---
 // One row per *completed* race that gets persisted. The live match runs
 // entirely over Nostr (no server); we only write to the DB when a match

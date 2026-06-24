@@ -87,12 +87,7 @@ export function InterstitialAd({ onDone }: { onDone: () => void }) {
           <span className={styles.title}>{t(`ads.${ad.id}.title`)}</span>
         </Link>
 
-        <Button
-          href={`/gotcha/${ad.id}`}
-          variant="primary"
-          size="lg"
-          fullWidth
-        >
+        <Button href={`/gotcha/${ad.id}`} variant="primary" size="lg" fullWidth>
           {t(`ads.${ad.id}.cta`)}
         </Button>
       </div>

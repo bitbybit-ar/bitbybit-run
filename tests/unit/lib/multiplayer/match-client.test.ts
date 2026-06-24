@@ -242,10 +242,13 @@ describe("MatchClient plausibility guard (anti-cheat)", () => {
     await guest.announceSelf({ lane: 1, name: "Guest" });
 
     // A legit frame (signed by guest's session key) is accepted.
-    await guest.broadcastRunner({ ...moving, lane: 1, progress: 0.5 }, { force: true });
-    expect(host.getSnapshot().runners[guestSigner.pubkey]?.progress).toBeCloseTo(
-      0.5
+    await guest.broadcastRunner(
+      { ...moving, lane: 1, progress: 0.5 },
+      { force: true }
     );
+    expect(
+      host.getSnapshot().runners[guestSigner.pubkey]?.progress
+    ).toBeCloseTo(0.5);
 
     // An impostor forges a frame *claiming* to be the guest, signed by a foreign
     // key. The binding check drops it, so the guest's state is unchanged.
@@ -262,9 +265,9 @@ describe("MatchClient plausibility guard (anti-cheat)", () => {
         })
       )
     );
-    expect(host.getSnapshot().runners[guestSigner.pubkey]?.progress).toBeCloseTo(
-      0.5
-    );
+    expect(
+      host.getSnapshot().runners[guestSigner.pubkey]?.progress
+    ).toBeCloseTo(0.5);
 
     host.leave();
     guest.leave();

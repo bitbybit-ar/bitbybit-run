@@ -99,11 +99,13 @@ export function buildFinishEvent(
  * event's outer Nostr author (the key that actually signed it) — which is the
  * sender's ephemeral session key, *not* the real identity in `data.pubkey`.
  * Clients verify it matches the `sessionKey` that identity announced in its
- * presence, so a peer can't spoof frames as someone else.
+ * presence, so a peer can't spoof frames as someone else. For `control`,
+ * `signer` is the real identity that signed the start event; the reducer
+ * checks it against the match host so only the host can drive the lifecycle.
  */
 export type ParsedEvent =
   | { type: "discovery"; data: MatchDiscovery }
-  | { type: "control"; data: MatchControl }
+  | { type: "control"; data: MatchControl; signer: string }
   | { type: "runner"; data: RunnerState; signer: string }
   | { type: "finish"; data: MatchFinish; signer: string };
 
@@ -127,7 +129,9 @@ export function parseEvent(event: NostrEvent): ParsedEvent | null {
     }
     case KIND.CONTROL: {
       const r = MatchControlSchema.safeParse(content);
-      return r.success ? { type: "control", data: r.data } : null;
+      return r.success
+        ? { type: "control", data: r.data, signer: event.pubkey }
+        : null;
     }
     case KIND.RUNNER: {
       const r = RunnerStateSchema.safeParse(content);

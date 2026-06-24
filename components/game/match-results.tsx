@@ -68,7 +68,9 @@ export function MatchResults({
       </h2>
 
       {timedOut && (
-        <p className={styles.timedOut}>{t("timedOut", { winner: winnerName })}</p>
+        <p className={styles.timedOut}>
+          {t("timedOut", { winner: winnerName })}
+        </p>
       )}
 
       <RankingTable

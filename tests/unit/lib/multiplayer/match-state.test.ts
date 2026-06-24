@@ -149,6 +149,7 @@ describe("match-state control + countdown", () => {
         trackId: "classic-v1",
         startAt: 999,
       },
+      signer: A,
     };
     const s = applyEvent(base(), event);
     expect(s.status).toBe("countdown");
@@ -161,9 +162,35 @@ describe("match-state control + countdown", () => {
     const countdown = { ...waiting, status: "countdown" as const, startAt: 1 };
     expect(beginPlaying(countdown).status).toBe("playing");
   });
+
+  it("only the host can start: a non-host control event is ignored", () => {
+    const hosted = { ...base(), host: A };
+    const control = (signer: string): ParsedEvent => ({
+      type: "control",
+      data: { type: "start", matchId: "m1", trackId: "classic-v1", startAt: 5 },
+      signer,
+    });
+    // A rogue peer (B) cannot force-start the race.
+    expect(applyEvent(hosted, control(B))).toBe(hosted);
+    // The host (A) can.
+    expect(applyEvent(hosted, control(A)).status).toBe("countdown");
+  });
+
+  it("accepts control best-effort when the host is not yet known", () => {
+    // host === "" (presence still propagating) → can't verify, so accept.
+    const s = applyEvent(base(), {
+      type: "control",
+      data: { type: "start", matchId: "m1", trackId: "classic-v1", startAt: 5 },
+      signer: B,
+    });
+    expect(s.status).toBe("countdown");
+  });
 });
 
-function runnerEvent(pubkey: string, over: Partial<RunnerState> = {}): ParsedEvent {
+function runnerEvent(
+  pubkey: string,
+  over: Partial<RunnerState> = {}
+): ParsedEvent {
   return { type: "runner", data: runner(pubkey, over), signer: pubkey };
 }
 
@@ -293,6 +320,7 @@ describe("match-state leaving a match", () => {
     const started: ParsedEvent = {
       type: "control",
       data: { type: "start", matchId: "m1", trackId: "classic-v1", startAt: 1 },
+      signer: A,
     };
     let s = base();
     s = applyEvent(s, started);

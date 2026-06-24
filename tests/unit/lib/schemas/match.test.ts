@@ -83,8 +83,10 @@ describe("schemas/match RunnerStateSchema", () => {
 
   it("rejects absurd points so a forged frame can't inflate standings", () => {
     expect(
-      RunnerStateSchema.safeParse({ ...validRunner, points: MATCH_POINTS_MAX + 1 })
-        .success
+      RunnerStateSchema.safeParse({
+        ...validRunner,
+        points: MATCH_POINTS_MAX + 1,
+      }).success
     ).toBe(false);
   });
 });
@@ -188,7 +190,12 @@ describe("schemas/match PersistMatchSchema", () => {
   // out-of-range placements, or inconsistent standings.
   it("rejects points beyond the anti-abuse ceiling", () => {
     const standings = [
-      { pubkey: PK, position: 1, points: MATCH_POINTS_MAX + 1, finishTime: 100 },
+      {
+        pubkey: PK,
+        position: 1,
+        points: MATCH_POINTS_MAX + 1,
+        finishTime: 100,
+      },
       { pubkey: "c".repeat(64), position: 2, points: 0, finishTime: null },
     ];
     expect(PersistMatchSchema.safeParse({ ...base, standings }).success).toBe(

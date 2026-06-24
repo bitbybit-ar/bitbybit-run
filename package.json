@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
-    "test:integration": "vitest run tests/integration --passWithNoTests",
+    "test:integration": "node --env-file-if-exists=.env.test ./node_modules/vitest/vitest.mjs run tests/integration --passWithNoTests",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "test:db:migrate": "MIGRATE_ENV_FILE=.env.test tsx scripts/migrate.ts",

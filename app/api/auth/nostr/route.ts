@@ -27,7 +27,7 @@ import { claimNonce } from "@/lib/nostr/nonce-store";
  * from:
  *   - the `u` tag binding the event to this exact URL
  *   - the `method` tag binding it to POST
- *   - the ±30s `created_at` window (validateNip98AuthEvent)
+ *   - the ±10s `created_at` window (validateNip98AuthEvent)
  *
  * The signer method (extension / nsec / nip46) and the user's
  * locale travel in custom `["bbr_signer", ...]` and
@@ -104,8 +104,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const event = validation.event;
 
   // Single-use: a valid event is honored once. Replaying the captured header
-  // within the ±10s window (to mint a second session) is rejected here.
-  if (!claimNonce(event.id)) {
+  // within the ±10s window (to mint a second session) is rejected here. Backed
+  // by Postgres so the guard holds across serverless instances/cold starts.
+  if (!(await claimNonce(event.id))) {
     return NextResponse.json({ error: "auth_replayed" }, { status: 400 });
   }
 

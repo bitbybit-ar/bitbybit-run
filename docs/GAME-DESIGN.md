@@ -49,10 +49,10 @@ Touch (mobile) — an **on-screen gamepad**, shown only on coarse-pointer (touch
 devices and drawn inside the Phaser canvas so it works identically in every mode
 (demo, practice, multiplayer):
 
-| Button                          | Action                              |
-| ------------------------------- | ----------------------------------- |
-| ◀ ▶ (bottom-left, left thumb)   | Tap to change lane (one per tap)    |
-| ⚡ (bottom-right, right thumb)   | Hold to accelerate / sprint         |
+| Button                         | Action                           |
+| ------------------------------ | -------------------------------- |
+| ◀ ▶ (bottom-left, left thumb)  | Tap to change lane (one per tap) |
+| ⚡ (bottom-right, right thumb) | Hold to accelerate / sprint      |
 
 Design rules:
 
@@ -79,7 +79,9 @@ Design rules:
 ### 4.2 Energy bar (the "good" resource)
 
 - Filled by eating **good food** at **hydration stations** (fixed positions on
-  the track — like real race water stops).
+  the track — like real race water stops). There are **four good foods of rising
+  quality** — 💧 water < 🍌 banana < 🧃 isotonic < ⚡ gel — each refilling more
+  energy and worth more points (`lib/game/foods.ts`).
 - **Spent** while sprinting (drains fast — energy is a resource to ration, not a
   button to hold the whole race). When it hits **zero**, you can't sprint → you
   fall behind.
@@ -87,7 +89,11 @@ Design rules:
 
 ### 4.3 Poison bar (the "bad" resource)
 
-- Filled by eating **junk food** (obstacles you should dodge).
+- Filled by eating **junk food** (obstacles you should dodge). There are **four
+  junk foods of rising toxicity** — 🍩 donut < 🍟 fries < 🍔 burger < 🍺 beer —
+  each adding more poison and costing more points (`lib/game/foods.ts`).
+- **Beer (🍺) also makes you woozy:** eating it briefly **sways the runner**
+  (a drunk wobble) on top of the poison hit, so it's the riskiest junk of all.
 - When the poison bar is **full** → **"bathroom break"**: the runner is
   **knocked back a fixed distance** (`POISON.setback`, ~1500 units), not all the
   way to the start. This is the big punishment / catch-up mechanic. The setback
@@ -124,12 +130,13 @@ Design rules:
 
 Players earn **points** during the race (shown live and in the final ranking):
 
-| Event                       | Points                       |
-| --------------------------- | ---------------------------- |
-| Eat good food               | + small                      |
-| Sustained sprint / overtake | + small                      |
-| Eat junk food               | − small (and adds poison)    |
-| Finishing position          | big bonus (1st > 2nd > ... ) |
+| Event              | Points                                                    |
+| ------------------ | --------------------------------------------------------- |
+| Eat good food      | + small (+5 to +20, by quality)                           |
+| Grab a booster 🚀  | + big (+50)                                               |
+| Eat junk food      | − small (−5 to −16, and adds poison)                      |
+| Crossing the line  | flat finish bonus (+500)                                  |
+| Finishing position | placement bonus by order (1st +300, 2nd +150, 3rd +75, …) |
 
 - Points are tallied per match for the **end-of-race ranking**.
 - The **finishing-position bonus** (`POINTS.placement`) is added into each
@@ -245,16 +252,16 @@ cached.
 
 The catalog of cues, each tied to a moment in the loop:
 
-| Cue          | When it fires                       | Character                                  |
-| ------------ | ----------------------------------- | ------------------------------------------ |
-| `go()`       | Race start ("GO!")                  | Two rising blips                           |
-| `eatGood()`  | Eating good food (⚡)               | Bright rising chirp                        |
-| `eatJunk()`  | Eating junk food (🍔)               | Low sawtooth drop                          |
-| `boost()`    | Grabbing a rocket booster (🚀)      | **Music clip** (`public/sfx/boost.mp3`)    |
-| `bathroom()` | Poison bar full → sent to start     | Long dissonant alarm + wet splat + droop   |
-| `finish()`   | Crossing the finish line            | Ascending jingle with a reverb "stadium" tail |
-| `lane()`     | Changing lane                       | Short tick                                 |
-| `drunk()`    | After a beer (woozy effect)         | Sine wobble with vibrato + pitch droop     |
+| Cue          | When it fires                   | Character                                     |
+| ------------ | ------------------------------- | --------------------------------------------- |
+| `go()`       | Race start ("GO!")              | Two rising blips                              |
+| `eatGood()`  | Eating good food (⚡)           | Bright rising chirp                           |
+| `eatJunk()`  | Eating junk food (🍔)           | Low sawtooth drop                             |
+| `boost()`    | Grabbing a rocket booster (🚀)  | **Music clip** (`public/sfx/boost.mp3`)       |
+| `bathroom()` | Poison bar full → sent to start | Long dissonant alarm + wet splat + droop      |
+| `finish()`   | Crossing the finish line        | Ascending jingle with a reverb "stadium" tail |
+| `lane()`     | Changing lane                   | Short tick                                    |
+| `drunk()`    | After a beer (woozy effect)     | Sine wobble with vibrato + pitch droop        |
 
 Design rules: cues are **short, distinct, and never block input**; the booster
 clip is the only sample and is trimmed to roughly match the boost duration so it

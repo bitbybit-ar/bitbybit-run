@@ -5,12 +5,16 @@
 
 Four runners line up on an athletics track and sprint for the finish. Fuel up at
 the stations along the way, but choose wisely: good food keeps your pace, while
-**junk sends you straight back to the start**. First across the line wins — and
-rivals can **zap** the winner real sats over Lightning.
+**too much junk sends you to the bathroom and costs you hard-won ground**. First
+across the line wins — and rivals can **zap** the winner real sats over
+Lightning.
 
 The twist under the hood: **there's no game server**. Real-time multiplayer runs
 entirely over public **Nostr relays**, and you sign in with your **Nostr**
 identity — no email, no password.
+
+> 🎮 **Play it live:** **[run.bitbybit.com.ar](https://run.bitbybit.com.ar)** —
+> try the free demo with no sign-in.
 
 ## 🌱 Mission
 
@@ -30,9 +34,13 @@ a click. Learning through play, one bit at a time.
 - **i18n:** `next-intl` (Spanish default, English) with `[locale]` routing
 - **Theme:** `next-themes` light/dark via `data-theme`
 - **Realtime multiplayer:** Nostr ephemeral events as the transport (no server)
-- **Auth:** Nostr login (NIP-07)
+- **Auth:** Nostr login (NIP-07 browser extension, NIP-46 remote signer, or nsec)
 - **Database:** Neon (serverless Postgres) + Drizzle ORM
 - **Payments:** zap the winner via their Lightning address (WebLN)
+- **PWA:** installable app via `serwist` (web manifest, generated icons, mobile
+  install prompt) — single-player **practice keeps working offline**
+- **Security:** CSP + security headers, single-use NIP-98 login (anti-replay),
+  host-only race start, `__Host-` session cookie
 
 ## 🚀 Quick start
 
@@ -41,7 +49,7 @@ npm install
 npm run dev      # http://localhost:3000  (ES default; /en for English)
 ```
 
-Open **`/play`** to jump into the prototype.
+Open **`/play`** to jump straight into a race.
 
 > 🧭 **New here, or judging?** Follow the [Guided Tour](docs/TOUR.md) to try every
 > feature in ~10 minutes.
@@ -55,6 +63,7 @@ npm run typecheck        # tsc --noEmit
 npm test                 # full vitest suite
 npm run test:unit        # unit tests only
 npm run test:integration # integration tests (needs a test database)
+npm run format:check     # Prettier (CI-enforced); `npm run format` to fix
 npm run db:migrate       # apply Drizzle migrations
 ```
 
@@ -76,6 +85,7 @@ Everything runs on free tiers — Vercel (hosting), public Nostr relays
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how it works, free & serverless
 - [`docs/AUTH.md`](docs/AUTH.md) — the Nostr login flow
 - [`docs/CHARACTERS.md`](docs/CHARACTERS.md) — the character/sprite pipeline
+- [`docs/PWA.md`](docs/PWA.md) — install as an app: manifest, icons, install prompt
 - [`docs/TESTING.md`](docs/TESTING.md) — automated tests & CI
 - [`CHANGELOG.md`](CHANGELOG.md) — release notes (per version)
 
@@ -84,7 +94,7 @@ Everything runs on free tiers — Vercel (hosting), public Nostr relays
 - **[`bitbybit-cursats`](https://github.com/bitbybit-ar/bitbybit-cursats)** —
   sibling project in the same family.
 - **[`bitbybit-arena`](https://github.com/bitbybit-ar/bitbybit-arena)** —
-    public Nostr challenges with badges and zaps.
+  public Nostr challenges with badges and zaps.
 - **[`bitbybit-habits`](https://github.com/bitbybit-ar/bitbybit-habits)** —
   habit tracker with Lightning rewards.
 

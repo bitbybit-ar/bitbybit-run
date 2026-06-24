@@ -13,7 +13,15 @@ const EVENT = {
 };
 
 function signed() {
-  return { id: "id", pubkey: PUBKEY, created_at: 0, kind: 1, tags: [], content: "", sig: "sig" };
+  return {
+    id: "id",
+    pubkey: PUBKEY,
+    created_at: 0,
+    kind: 1,
+    tags: [],
+    content: "",
+    sig: "sig",
+  };
 }
 
 /** Minimal BunkerSigner stand-in — only the methods makeNip46Signer touches. */
