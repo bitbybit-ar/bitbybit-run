@@ -31,7 +31,7 @@ import type { RaceNet } from "../race-net";
 import type { RunnerStatus } from "@/lib/multiplayer/types";
 
 /**
- * RaceScene — Phase 1, single-player.
+ * RaceScene — the Phaser race (single-player, practice, and multiplayer).
  *
  * Fake-2.5D daytime athletics track. The player runs at the bottom edge
  * (distance d = 0) and the world scrolls toward them; everything "ahead" is
@@ -42,7 +42,6 @@ import type { RunnerStatus } from "@/lib/multiplayer/types";
 
 const NEAR = 230; // perspective strength (bigger = flatter)
 const VIEW_DISTANCE = 750; // how far ahead food/signs are rendered
-const HIT_LANE_TOLERANCE = 0.5; // how close to a lane center counts as "in it"
 const FOOD_POOL_SIZE = 20; // reusable emoji slots for visible food
 const SIGN_POOL_SIZE = 6; // reusable billboards for visible signs
 // Signs only render once their perspective scale passes SIGN_MIN_SCALE, i.e.
@@ -150,7 +149,7 @@ export class RaceScene extends Phaser.Scene {
 
   // Player state.
   private now = 0; // last frame timestamp (ms)
-  private playerDistance = 0; // 0..TRACK.length
+  private playerDistance = 0; // 0..this.track.length
   private playerLane = (LANES - 1) / 2; // fractional, tweened
   private targetLane = Math.round((LANES - 1) / 2);
   private startLane = Math.round((LANES - 1) / 2); // set from the chosen character
@@ -600,7 +599,7 @@ export class RaceScene extends Phaser.Scene {
       const raw = window.sessionStorage.getItem(key);
       if (raw === null) return null;
       const dist = Number(raw);
-      return Number.isFinite(dist) && dist > 0 && dist < TRACK.length
+      return Number.isFinite(dist) && dist > 0 && dist < this.track.length
         ? dist
         : null;
     } catch {
@@ -616,7 +615,10 @@ export class RaceScene extends Phaser.Scene {
     if (this.resumeSaveAcc < 1) return; // ~1 Hz is plenty
     this.resumeSaveAcc = 0;
     try {
-      window.sessionStorage.setItem(key, String(Math.round(this.playerDistance)));
+      window.sessionStorage.setItem(
+        key,
+        String(Math.round(this.playerDistance))
+      );
     } catch {
       // Storage unavailable (private mode / quota) — resume is best-effort.
     }
@@ -765,7 +767,7 @@ export class RaceScene extends Phaser.Scene {
   /** Broadcast the local runner over the match (no-op without a RaceNet). */
   private publishSelf() {
     this.net?.publishSelf({
-      progress: Math.min(1, this.playerDistance / TRACK.length),
+      progress: Math.min(1, this.playerDistance / this.track.length),
       lane: Phaser.Math.Clamp(Math.round(this.playerLane), 0, LANES - 1),
       speed: this.currentSpeed,
       energy: this.energy,
@@ -823,10 +825,12 @@ export class RaceScene extends Phaser.Scene {
   }
 
   private resolveFood() {
+    // The runner always occupies exactly one (nearest) lane — the fractional
+    // `playerLane` is only the visual tween. Resolving food strictly by the
+    // rounded lane means a mid-tween merge can't clip food in the lane you're
+    // leaving (so a booster gauntlet stays dodgeable as documented).
     const lane = Math.round(this.playerLane);
-    const inLane = (f: FoodItem) =>
-      Math.abs(f.lane - this.playerLane) <= HIT_LANE_TOLERANCE ||
-      f.lane === lane;
+    const inLane = (f: FoodItem) => f.lane === lane;
 
     for (const f of [
       ...this.track.goodFood,
@@ -902,7 +906,7 @@ export class RaceScene extends Phaser.Scene {
   }
 
   private checkFinish() {
-    if (this.playerDistance >= TRACK.length) {
+    if (this.playerDistance >= this.track.length) {
       this.finished = true;
       this.status = "finished";
       this.points += POINTS.finishBonus;
@@ -1193,7 +1197,7 @@ export class RaceScene extends Phaser.Scene {
     g.clear();
 
     // Finish line — a black/white checker band, if within view.
-    const finishD = TRACK.length - this.playerDistance;
+    const finishD = this.track.length - this.playerDistance;
     if (finishD >= 0 && finishD <= VIEW_DISTANCE) {
       const l = this.project(finishD, -0.5);
       const r = this.project(finishD, LANES - 0.5);
@@ -1361,7 +1365,10 @@ export class RaceScene extends Phaser.Scene {
     g.clear();
 
     const visible = this.remotes
-      .map((r) => ({ r, d: r.progress * TRACK.length - this.playerDistance }))
+      .map((r) => ({
+        r,
+        d: r.progress * this.track.length - this.playerDistance,
+      }))
       .filter(({ d }) => d >= 0 && d <= VIEW_DISTANCE)
       .sort((a, b) => b.d - a.d);
 
@@ -1486,7 +1493,12 @@ export class RaceScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 0.9);
     g.fillCircle(x, top, 3); // finish marker
 
-    const plot = (progress: number, lane: number, color: number, self: boolean) => {
+    const plot = (
+      progress: number,
+      lane: number,
+      color: number,
+      self: boolean
+    ) => {
       const py = bottom - Phaser.Math.Clamp(progress, 0, 1) * h;
       const px = x + (lane - (LANES - 1) / 2) * 7;
       g.fillStyle(color, 1);
@@ -1499,7 +1511,7 @@ export class RaceScene extends Phaser.Scene {
 
     for (const r of this.remotes) plot(r.progress, r.lane, r.color, false);
     plot(
-      Math.min(1, this.playerDistance / TRACK.length),
+      Math.min(1, this.playerDistance / this.track.length),
       this.playerLane,
       laneColor(this.startLane),
       true
@@ -1537,7 +1549,7 @@ export class RaceScene extends Phaser.Scene {
       6
     );
 
-    const pct = Math.min(100, (this.playerDistance / TRACK.length) * 100);
+    const pct = Math.min(100, (this.playerDistance / this.track.length) * 100);
     this.statusText.setText(
       `${pct.toFixed(0)}%   ·   ${this.points} pts   ·   ${this.elapsed.toFixed(1)}s`
     );
