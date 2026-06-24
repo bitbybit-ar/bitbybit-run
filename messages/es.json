@@ -133,6 +133,7 @@
       "finished": "🏁 ¡Llegaste!",
       "subtitle": "Quedate para ver el podio final — la carrera cierra cuando todos cruzan.",
       "racing": "Corriendo…",
+      "crossed": "Llegó",
       "resultsIn": "Resultados finales en {seconds}s",
       "left": "Se fue",
       "cheers": [
@@ -257,7 +258,8 @@
       "TU CARDIO,\nTUS LLAVES",
       "EL ESTADO NO\nTE VA A ALCANZAR",
       "AGUANTÁ,\nFALTA POCO PA'L MOON",
-      "CORRÉ DESCENTRALIZADO"
+      "CORRÉ DESCENTRALIZADO",
+      "BITCOIN O MUERTE"
     ]
   },
   "howToPlay": {

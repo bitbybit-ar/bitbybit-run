@@ -15,7 +15,14 @@ import {
   RUNNER_SPRITE,
   TRACK_DRAW_DISTANCE,
 } from "../config";
-import { TRACK, SIGNS, buildTrack, type FoodItem, type Track } from "../track";
+import {
+  TRACK,
+  SIGNS,
+  buildTrack,
+  type FoodItem,
+  type Track,
+  type Sign,
+} from "../track";
 import { FOODS } from "../foods";
 import { Sound, preloadSounds } from "../sound";
 import { laneColor, type RemoteRunnerView } from "../remote-runners";
@@ -45,9 +52,20 @@ const SIGN_POOL_SIZE = 6; // reusable billboards for visible signs
 const SIGN_MIN_SCALE = 0.46;
 const SIGN_FADE = 0.14; // scale range over which a sign fades from 0→1 alpha
 // Minimum side-margin (px) needed to fit a readable billboard. Below this — i.e.
-// narrow portrait phones, where the track fills the screen — signs are hidden so
-// they never crowd the track. They return on wider (landscape/desktop) layouts.
+// narrow portrait phones, where the track fills the screen — there's no room for
+// roadside signs, so they switch to overhead gantry arches spanning the track
+// (see updateOverheadSigns). They stay roadside on wider (landscape/desktop) layouts.
 const SIGN_MIN_MARGIN = 64;
+// Overhead gantry signs (portrait fallback): a banner hung from an arch over the
+// track that the runner drives under. Only ONE shows at a time, inside a narrow
+// "comfortable" perspective-scale band — too far it's tiny/cramped, too close it
+// drops over the track; outside the band it's hidden rather than squashed.
+const OVERHEAD_MIN_SCALE = 0.34; // fades in here (farther out it'd be tiny)
+const OVERHEAD_HIDE_SCALE = 0.58; // fades out / hidden past here (too close, no room)
+const OVERHEAD_FADE = 0.03; // scale range over which it fades at each band edge
+const OVERHEAD_HEIGHT = 240; // arch clearance over the track (logical px) × scale
+const OVERHEAD_SCALE_K = 1.8; // banner size multiplier off the perspective scale
+const OVERHEAD_MAX_SCALE = 1.0; // smaller letters than the roadside billboards
 const START_LINE_WORLD = 0; // start line at the very start of the race
 const NUMBERS_WORLD = 22; // lane numbers painted just past the start line
 const START_HOLD = 1.2; // seconds the runner waits at the start ("on your marks")
@@ -308,9 +326,11 @@ export class RaceScene extends Phaser.Scene {
         fontStyle: "bold",
         stroke: "#0b1020",
         strokeThickness: 5,
+        wordWrap: { width: 300 },
       })
       .setOrigin(0.5)
       .setDepth(10);
+    this.positionToast();
 
     // Static bar labels (energy / poison) so each bar is self-explanatory.
     this.add.text(24, 41, FOOD_ICONS.good, { fontSize: "16px" }).setDepth(10);
@@ -453,7 +473,21 @@ export class RaceScene extends Phaser.Scene {
     this.layout();
     this.layoutTouchButtons();
     this.drawBackground();
-    this.toastText.setPosition(this.scale.width / 2, this.scale.height * 0.4);
+    this.positionToast();
+  }
+
+  /** Place the food/status toast and wrap it to the viewport so long phrases
+   *  flow onto a second line instead of overflowing. In portrait (overhead-sign
+   *  mode) it drops below the gantry banners so both stay readable; on wider
+   *  layouts the signs are roadside, so it keeps the usual upper-center spot. */
+  private positionToast() {
+    const { width, height } = this.scale;
+    // Same side-margin test as updateSigns: no room beside the track → signs
+    // hang overhead, so nudge the toast down clear of them.
+    const overhead = (width - this.laneSpacing * LANES) / 2 < SIGN_MIN_MARGIN;
+    this.toastText
+      .setPosition(width / 2, height * (overhead ? 0.6 : 0.4))
+      .setWordWrapWidth(Math.min(width * 0.82, 560));
   }
 
   private readFonts() {
@@ -1002,9 +1036,10 @@ export class RaceScene extends Phaser.Scene {
     const marginPx = fullMarginLanes * this.laneSpacing; // one side, in px
 
     // Narrow portrait (mobile): no room for a readable billboard beside the
-    // track, so hide the signs entirely rather than cram huge ones over it.
+    // track, so hang them overhead — arches the runner drives under — instead of
+    // cramming huge ones over the road or dropping the signs entirely.
     if (marginPx < SIGN_MIN_MARGIN) {
-      for (const t of this.signPool) t.setVisible(false);
+      this.updateOverheadSigns();
       return;
     }
 
@@ -1047,6 +1082,69 @@ export class RaceScene extends Phaser.Scene {
     for (let i = slot; i < this.signPool.length; i++) {
       this.signPool[i].setVisible(false);
     }
+  }
+
+  /** Portrait fallback for updateSigns: with no side margin, hang ONE sign at a
+   *  time from a gantry arch spanning the track so the runner drives under it.
+   *  Only the nearest sign whose perspective scale sits in the comfortable band
+   *  is drawn; the rest (too far/small, or too close/cramped) stay hidden rather
+   *  than shrinking and stacking near the horizon. */
+  private updateOverheadSigns() {
+    // Single banner — keep the rest of the pool parked.
+    for (let i = 1; i < this.signPool.length; i++) {
+      this.signPool[i].setVisible(false);
+    }
+
+    // Nearest sign sitting inside the visible scale band. The band is narrower
+    // than the sign spacing, so at most one ever qualifies.
+    let pick: { sg: Sign; d: number; s: number } | null = null;
+    for (const sg of SIGNS) {
+      const d = sg.at - this.playerDistance;
+      if (d < 0 || d > VIEW_DISTANCE) continue;
+      const s = NEAR / (NEAR + d);
+      if (s < OVERHEAD_MIN_SCALE || s > OVERHEAD_HIDE_SCALE) continue;
+      if (!pick || d < pick.d) pick = { sg, d, s };
+    }
+    if (!pick) {
+      this.signPool[0].setVisible(false);
+      return;
+    }
+
+    const { sg, d, s } = pick;
+    // Fade in at the far edge of the band, out at the near edge.
+    const alpha = Math.min(
+      Math.min(1, (s - OVERHEAD_MIN_SCALE) / OVERHEAD_FADE),
+      Math.min(1, (OVERHEAD_HIDE_SCALE - s) / OVERHEAD_FADE)
+    );
+    if (alpha <= 0.02) {
+      this.signPool[0].setVisible(false);
+      return;
+    }
+
+    const g = this.world;
+    const center = (LANES - 1) / 2;
+    const p = this.project(d, center);
+    const scale = Math.min(
+      OVERHEAD_MAX_SCALE,
+      Math.max(0.4, s * OVERHEAD_SCALE_K)
+    );
+    const bannerY = p.y - OVERHEAD_HEIGHT * s;
+    // Arch: two posts at the track edges + a crossbar at the banner height.
+    const lp = this.project(d, -0.5);
+    const rp = this.project(d, LANES - 0.5);
+    g.lineStyle(Math.max(1.5, 4 * scale), 0x6b4f2a, alpha);
+    g.lineBetween(lp.x, lp.y, lp.x, bannerY);
+    g.lineBetween(rp.x, rp.y, rp.x, bannerY);
+    g.lineBetween(lp.x, bannerY, rp.x, bannerY);
+    // Banner — wrap to roughly the track width so it reads centered overhead.
+    const text = this.strings.signs[sg.text % this.strings.signs.length] ?? "";
+    this.signPool[0]
+      .setText(text)
+      .setWordWrapWidth(Math.max(120, this.laneSpacing * LANES))
+      .setPosition(p.x, bannerY)
+      .setScale(scale)
+      .setAlpha(alpha)
+      .setVisible(true);
   }
 
   /** Start line + lane numbers at the start of the track (only visible at the
