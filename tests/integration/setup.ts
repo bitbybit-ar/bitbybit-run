@@ -13,3 +13,12 @@ export async function cleanDb(): Promise<void> {
     sql`truncate table results, matches restart identity cascade`
   );
 }
+
+/**
+ * Wipe the `auth_nonces` table (the durable NIP-98 anti-replay store). Kept
+ * separate from `cleanDb` since it's independent of the match tables.
+ */
+export async function cleanNonces(): Promise<void> {
+  const db = getDb();
+  await db.execute(sql`truncate table auth_nonces`);
+}
