@@ -26,6 +26,12 @@ a click. Learning through play, one bit at a time.
 
 → Read the full [`docs/MISSION.md`](docs/MISSION.md).
 
+> 🚀 **Now live: [v1.0.0](https://github.com/bitbybit-ar/bitbybit-run/releases/tag/v1.0.0)**
+> — our first public release ships the full game, serverless multiplayer, the
+> global leaderboard, Nostr identity with Lightning zaps, the installable PWA,
+> and the fake-ads scam museum. See the [changelog](CHANGELOG.md) for everything
+> in the box.
+
 ## 🧱 Stack
 
 - **App:** Next.js 16 (App Router, Turbopack) — deployed free on Vercel
