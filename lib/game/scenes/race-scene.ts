@@ -872,14 +872,26 @@ export class RaceScene extends Phaser.Scene {
 
   private updatePoison(dt: number) {
     if (this.poison >= POISON.max) {
-      // Bathroom break — straight back to the start, with a short pause so the
-      // start line and lane numbers show again before the runner takes off.
+      // Bathroom break — knocked back a bounded distance (not all the way to the
+      // start), with a short pause before the runner takes off again. The
+      // setback is fixed regardless of track length so a long course can't turn
+      // a bathroom break into an unbounded loop.
       this.poison = 0;
       this.drunkTimer = 0;
       this.boostTimer = 0;
-      this.playerDistance = 0;
+      this.playerDistance = Math.max(0, this.playerDistance - POISON.setback);
       this.energy = ENERGY.start;
-      this.resolved.clear();
+      // Un-resolve the food in the stretch we were knocked back over so it
+      // re-appears on the track and can be dodged (or re-eaten) on the way back
+      // up — leaving it resolved drew an empty track. The setback window is
+      // bounded, so this can't chain across the whole course.
+      for (const f of [
+        ...this.track.goodFood,
+        ...this.track.junkFood,
+        ...this.track.boosters,
+      ]) {
+        if (f.at > this.playerDistance) this.resolved.delete(f.id);
+      }
       this.startHold = 1.7;
       this.status = "bathroom";
       this.showToast(this.pick(this.strings.bathrooms), 1.7);

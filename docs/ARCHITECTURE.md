@@ -208,8 +208,8 @@ each client validates before merging (`lib/multiplayer`):
   the future or **predates `startAt`** (the earliest finishTime wins, so a past
   stamp would be an instant illegitimate victory). Honest clock skew is tolerated
   via `STAMP_SKEW_TOLERANCE_MS`.
-- **Not** monotonic progress: a full poison bar legitimately sends a runner to the
-  bathroom (back to the start line), so progress is allowed to rewind.
+- **Not** monotonic progress: a full poison bar legitimately knocks a runner back
+  a bounded distance (the bathroom break), so progress is allowed to rewind.
 - **Session-key binding** — runner/finish frames are signed by the sender's
   ephemeral session key (§4.3), and their `content` claims a real `pubkey`. A
   frame is accepted only if that pubkey announced this exact session key in its

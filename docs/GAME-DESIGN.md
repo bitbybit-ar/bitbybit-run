@@ -88,9 +88,11 @@ Design rules:
 ### 4.3 Poison bar (the "bad" resource)
 
 - Filled by eating **junk food** (obstacles you should dodge).
-- When the poison bar is **full** → **"bathroom break"**: the runner is sent
-  **back to the start** of the track. This is the big punishment / catch-up
-  mechanic.
+- When the poison bar is **full** → **"bathroom break"**: the runner is
+  **knocked back a fixed distance** (`POISON.setback`, ~1500 units), not all the
+  way to the start. This is the big punishment / catch-up mechanic. The setback
+  is bounded and independent of track length so a longer course can't turn a
+  bathroom break into a runaway loop.
 - Strategy: a risky shortcut lane might be faster but littered with junk food.
 
 ### 4.4 Speed booster (🚀)

@@ -22,8 +22,8 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
 - **2.5D runner race** down a perspective athletics track, drawn entirely from
   shapes + emoji (no image assets) for a fast, lightweight load.
 - **Energy / poison food loop:** grab good food (⚡) to sprint, dodge junk (🍔)
-  or fill the poison bar and get sent back. **Rocket boosters** (🚀) give a
-  timed speed burst.
+  or fill the poison bar and get knocked back a chunk of track (bathroom break).
+  **Rocket boosters** (🚀) give a timed speed burst.
 - **Four animated characters** (Sprinter, Barbie, T-Rex, Bitcoin), each on its
   own lane with a full run-cycle sprite.
 - **Keyboard and touch controls** — arrows/WASD on desktop, and on mobile an

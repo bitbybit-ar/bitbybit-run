@@ -47,8 +47,8 @@ accelerate — you can steer and accelerate at once).
 
 **Notice:**
 
-- Grabbing **⚡** keeps your pace; eating **🍔** fills the poison bar and **sends
-  you back to the start** — the health lesson, made visceral.
+- Grabbing **⚡** keeps your pace; eating **🍔** fills the poison bar and **knocks
+  you back down the track** — the health lesson, made visceral.
 - Cross the finish line and you're invited to **sign in** to compete for zaps.
 - Tap **"keep playing"** to meet the parody **"Skip ad in 5…"** interstitial — a
   knowing jab at games that gate you behind ads. (It's fake; see stop 4.)
