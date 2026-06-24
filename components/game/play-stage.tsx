@@ -89,8 +89,7 @@ export function PlayStage({
  * single-player lobby so play still works.
  */
 function CompetitiveStage({ currentUser }: { currentUser: CurrentUser }) {
-  const { signer, session, sessionLoading, signerLoading } =
-    useSignerContext();
+  const { signer, session, sessionLoading, signerLoading } = useSignerContext();
   const t = useTranslations("play");
   // Flipped on by LocalStage while a solo practice run is mounted, so the
   // header swaps "Multiplayer race" → "Practice".
@@ -150,7 +149,10 @@ function ReconnectStage({ currentUser }: { currentUser: CurrentUser }) {
 
   if (practice) {
     return (
-      <LocalStage currentUser={currentUser} onLeave={() => setPractice(false)} />
+      <LocalStage
+        currentUser={currentUser}
+        onLeave={() => setPractice(false)}
+      />
     );
   }
 
@@ -348,10 +350,7 @@ function LobbyAndRace({
   // crucially this stops a returning player from re-creating/restarting it.
   if (!amInRoster) {
     return (
-      <LobbyAlreadyStarted
-        onBack={onLeave}
-        finished={status === "finished"}
-      />
+      <LobbyAlreadyStarted onBack={onLeave} finished={status === "finished"} />
     );
   }
 

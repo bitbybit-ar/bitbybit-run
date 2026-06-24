@@ -22,7 +22,10 @@ function post(body: unknown): NextRequest {
   // A fresh IP per request so the (real) rate limiter never interferes.
   return new NextRequest("https://x.test/api/matches", {
     method: "POST",
-    headers: { "content-type": "application/json", "x-forwarded-for": `10.0.0.${ip++}` },
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": `10.0.0.${ip++}`,
+    },
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 }

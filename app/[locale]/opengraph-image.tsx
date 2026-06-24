@@ -32,57 +32,55 @@ export default async function OpengraphImage({
   const sub = tagline(m.metadata.siteTitle, m.metadata.description);
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          gap: 72,
-          padding: "0 96px",
-          background: BG,
-        }}
-      >
-        {/* Brand blocks */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {BLOCKS.map((color) => (
-            <div
-              key={color}
-              style={{
-                width: 132,
-                height: 132,
-                background: color,
-                border: `6px solid ${EDGE}`,
-                borderRadius: 10,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Wordmark + tagline */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 22 }}>
-            <span style={{ fontSize: 104, fontWeight: 800, color: "#ffffff" }}>
-              BitByBit
-            </span>
-            <span style={{ fontSize: 104, fontWeight: 800, color: "#ff5d8f" }}>
-              RUN
-            </span>
-          </div>
-          <span
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: 72,
+        padding: "0 96px",
+        background: BG,
+      }}
+    >
+      {/* Brand blocks */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {BLOCKS.map((color) => (
+          <div
+            key={color}
             style={{
-              fontSize: 40,
-              fontWeight: 600,
-              color: "#cfc7ea",
-              marginTop: 28,
+              width: 132,
+              height: 132,
+              background: color,
+              border: `6px solid ${EDGE}`,
+              borderRadius: 10,
             }}
-          >
-            {sub}
+          />
+        ))}
+      </div>
+
+      {/* Wordmark + tagline */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 22 }}>
+          <span style={{ fontSize: 104, fontWeight: 800, color: "#ffffff" }}>
+            BitByBit
+          </span>
+          <span style={{ fontSize: 104, fontWeight: 800, color: "#ff5d8f" }}>
+            RUN
           </span>
         </div>
+        <span
+          style={{
+            fontSize: 40,
+            fontWeight: 600,
+            color: "#cfc7ea",
+            marginTop: 28,
+          }}
+        >
+          {sub}
+        </span>
       </div>
-    ),
+    </div>,
     { ...size }
   );
 }

@@ -34,11 +34,18 @@ export async function LeaderboardTable({
 
   // Each numeric column is a sort toggle: clicking re-ranks the board by it and
   // resets to page 1. The active column shows a ▼ and is highlighted.
-  const sortColumn = (key: LeaderboardSort, label: string, collapsible = false) => ({
+  const sortColumn = (
+    key: LeaderboardSort,
+    label: string,
+    collapsible = false
+  ) => ({
     label,
     collapsible,
     active: sort === key,
-    sortHref: { pathname: "/leaderboard" as const, query: { sort: key, page: 1 } },
+    sortHref: {
+      pathname: "/leaderboard" as const,
+      query: { sort: key, page: 1 },
+    },
     sortLabel: t("sortBy", { column: label }),
   });
 

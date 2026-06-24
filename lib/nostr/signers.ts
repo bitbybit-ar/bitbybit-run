@@ -9,7 +9,11 @@
  * policy.
  */
 
-import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure";
+import {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+} from "nostr-tools/pure";
 import type { BunkerSigner } from "nostr-tools/nip46";
 import type { NostrEvent, UnsignedNostrEvent } from "./types";
 import type { SignerType } from "@/lib/schemas/auth";

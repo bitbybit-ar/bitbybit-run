@@ -199,7 +199,12 @@ function WiredLobby({
   );
 }
 
-function LocalLobby({ currentUser, onClaim, onStart, onLeave }: RunnerLobbyProps) {
+function LocalLobby({
+  currentUser,
+  onClaim,
+  onStart,
+  onLeave,
+}: RunnerLobbyProps) {
   const [claimedId, setClaimedId] = useState<CharacterId | null>(null);
 
   const occupants = useMemo<Partial<Record<CharacterId, LobbyOccupant>>>(

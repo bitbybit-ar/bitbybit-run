@@ -70,13 +70,20 @@ export function RankingTable({
                 )}
                 scope="col"
                 aria-sort={
-                  col.sortHref ? (col.active ? "descending" : "none") : undefined
+                  col.sortHref
+                    ? col.active
+                      ? "descending"
+                      : "none"
+                    : undefined
                 }
               >
                 {col.sortHref ? (
                   <Link
                     href={col.sortHref}
-                    className={cn(styles.sortLink, col.active && styles.sortActive)}
+                    className={cn(
+                      styles.sortLink,
+                      col.active && styles.sortActive
+                    )}
                     aria-label={col.sortLabel}
                   >
                     {col.label}

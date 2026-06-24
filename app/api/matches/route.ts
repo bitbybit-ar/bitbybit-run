@@ -40,7 +40,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const match = parsed.data;
 
   // The submitter must be one of the match's players (host or any participant).
-  const isParticipant = match.standings.some((s) => s.pubkey === session.pubkey);
+  const isParticipant = match.standings.some(
+    (s) => s.pubkey === session.pubkey
+  );
   if (!isParticipant) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }

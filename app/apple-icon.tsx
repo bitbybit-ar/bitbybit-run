@@ -12,33 +12,31 @@ const BLOCKS = ["#ff4d85", "#16a06b", "#f5b500"]; // primary / secondary / highl
 
 export default function AppleIcon() {
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-          background: EDGE,
-        }}
-      >
-        {BLOCKS.map((color) => (
-          <div
-            key={color}
-            style={{
-              width: 47,
-              height: 47,
-              background: color,
-              border: `3px solid ${EDGE}`,
-              borderRadius: 4,
-            }}
-          />
-        ))}
-      </div>
-    ),
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        background: EDGE,
+      }}
+    >
+      {BLOCKS.map((color) => (
+        <div
+          key={color}
+          style={{
+            width: 47,
+            height: 47,
+            background: color,
+            border: `3px solid ${EDGE}`,
+            borderRadius: 4,
+          }}
+        />
+      ))}
+    </div>,
     { ...size }
   );
 }

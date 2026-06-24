@@ -54,7 +54,9 @@
   font-weight: $font-weight-bold;
   font-family: $font-display;
   line-height: 1;
-  transition: color 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 
   &:hover {
     color: $color-primary;

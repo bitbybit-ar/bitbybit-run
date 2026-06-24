@@ -40,7 +40,11 @@ import {
 } from "@/lib/nostr/nip46-login";
 
 const PUBKEY = "a".repeat(64);
-const POINTER = { relays: ["wss://relay.example"], pubkey: PUBKEY, secret: null };
+const POINTER = {
+  relays: ["wss://relay.example"],
+  pubkey: PUBKEY,
+  secret: null,
+};
 
 // Minimal in-memory localStorage — the suite runs in the node environment,
 // where there's no DOM, but nip46-login only needs get/set/remove.

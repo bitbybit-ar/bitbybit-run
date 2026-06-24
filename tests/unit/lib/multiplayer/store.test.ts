@@ -28,7 +28,14 @@ vi.mock("@/lib/db", () => {
   // awaiting it resolves to the canned rows (Drizzle query builders are
   // thenable the same way).
   const qb: Record<string, unknown> = {};
-  for (const m of ["select", "from", "leftJoin", "groupBy", "limit", "offset"]) {
+  for (const m of [
+    "select",
+    "from",
+    "leftJoin",
+    "groupBy",
+    "limit",
+    "offset",
+  ]) {
     qb[m] = () => qb;
   }
   qb.orderBy = (...args: unknown[]) => {
@@ -40,10 +47,7 @@ vi.mock("@/lib/db", () => {
   return { getDb: () => qb };
 });
 
-import {
-  getLeaderboard,
-  LEADERBOARD_SORTS,
-} from "@/lib/multiplayer/store";
+import { getLeaderboard, LEADERBOARD_SORTS } from "@/lib/multiplayer/store";
 
 describe("getLeaderboard", () => {
   it("coerces the driver's string counts to numbers", async () => {
