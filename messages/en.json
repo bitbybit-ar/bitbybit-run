@@ -133,6 +133,7 @@
       "finished": "🏁 You finished!",
       "subtitle": "Stay to see the final podium — the race ends when everyone crosses.",
       "racing": "Racing…",
+      "crossed": "Finished",
       "resultsIn": "Final results in {seconds}s",
       "left": "Left",
       "cheers": [
