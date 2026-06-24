@@ -39,16 +39,24 @@ export function MatchWaiting({
 
   const rows = standings.map((s) => {
     const seat = seats.get(s.pubkey);
-    const finished = s.finishTime != null && startAt != null;
+    const runner = snapshot.runners[s.pubkey];
+    // A runner's `finish` event (carrying `finishTime`) can land a beat after
+    // the runner frame that already reports them across the line — so trust the
+    // frame's "finished" status too, otherwise a player who clearly crossed
+    // flickers as "Racing…" until the finish event catches up (and stays that
+    // way if it's dropped entirely, until the grace timeout).
+    const crossed = runner?.status === "finished";
+    const timed = s.finishTime != null && startAt != null;
+    const finished = timed || crossed;
     const left = !!seat?.left && !finished;
-    const progress = finished
-      ? 1
-      : (snapshot.runners[s.pubkey]?.progress ?? 0);
-    const status = finished
+    const progress = finished ? 1 : (runner?.progress ?? 0);
+    const status = timed
       ? `${((s.finishTime! - startAt!) / 1000).toFixed(1)}s`
-      : left
-        ? tw("left")
-        : tw("racing");
+      : finished
+        ? tw("crossed")
+        : left
+          ? tw("left")
+          : tw("racing");
     return {
       pubkey: s.pubkey,
       name: seat?.name?.trim() || shortPubkey(s.pubkey),
