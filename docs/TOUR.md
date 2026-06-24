@@ -132,15 +132,15 @@ Standings are saved to a serverless Postgres database the moment a match ends.
 
 ## 🗺️ Quick route reference
 
-| Route            | What it is                                            | Login? |
-| ---------------- | ----------------------------------------------------- | ------ |
-| `/`              | Landing page                                          | no     |
-| `/how-to-play`   | Rules, mechanics, and a link to the demo              | no     |
-| `/demo`          | Free single-player demo (Sprinter)                    | no     |
-| `/sign-in`       | Nostr login (extension / `nsec` / bunker)             | —      |
-| `/play`          | Races browser — create, join, or practice             | yes    |
-| `/leaderboard`   | Global ranking (sortable, paginated)                  | no     |
-| `/gotcha/<slug>` | A fake-ad "Gotcha" gag page                            | no     |
+| Route            | What it is                                | Login? |
+| ---------------- | ----------------------------------------- | ------ |
+| `/`              | Landing page                              | no     |
+| `/how-to-play`   | Rules, mechanics, and a link to the demo  | no     |
+| `/demo`          | Free single-player demo (Sprinter)        | no     |
+| `/sign-in`       | Nostr login (extension / `nsec` / bunker) | —      |
+| `/play`          | Races browser — create, join, or practice | yes    |
+| `/leaderboard`   | Global ranking (sortable, paginated)      | no     |
+| `/gotcha/<slug>` | A fake-ad "Gotcha" gag page               | no     |
 
 Add **`/en`** before any path (e.g. `/en/play`) for English.
 

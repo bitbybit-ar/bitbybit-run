@@ -35,15 +35,18 @@ they return to the lobby (not the generic races browser).
 
 ### Joining, starting, and reconnecting
 
-- **A match starts once.** When the host starts (or it auto-starts at 4/4), the
-  lifecycle moves `waiting → countdown → playing → finished` and never goes
-  backward. `start()` is a no-op once we've left `waiting`.
+- **A match starts once, and only the host starts it.** When the host starts (or
+  it auto-starts at 4/4), the lifecycle moves
+  `waiting → countdown → playing → finished` and never goes backward. `start()`
+  is a no-op once we've left `waiting`. The start (`control`) event is signed by
+  the host's identity, and every client only honors one whose signer is the
+  match host — so a rogue peer can't force-start the race for everyone.
 - **No late joins.** Each peer's presence (kind `30078`, replaceable, retained by
   relays) carries the current `status`. A client that opens the link **after** the
   race started — and was never on the roster — sees **"this race already
   started"** and cannot join. This also stops a player who left from re-opening
   the link and **restarting** the match.
-- **Reconnection.** A player who *was* on the roster can re-open the link and
+- **Reconnection.** A player who _was_ on the roster can re-open the link and
   rejoin the race in progress (or see the results if it already finished) — it
   never restarts the match for anyone. Their own runner resumes from progress
   saved in `sessionStorage` (keyed by matchId, ~1 Hz); a reconnect from a fresh
@@ -58,7 +61,7 @@ bars** of the rivals still on the track, a **countdown** to the auto-resolve,
 confetti for whoever's leading, and rotating cheers — so the leader has a reason
 to stay (if they leave, the others would be forced to DNF). The match ends when
 **every** roster player has crossed **or left**, or — as a backstop against a
-straggler/disconnect — when the `FINISH_GRACE_MS` window (20s) after the *first*
+straggler/disconnect — when the `FINISH_GRACE_MS` window (20s) after the _first_
 finish elapses; whoever hasn't crossed by then is ranked **DNF** ("No terminó").
 The grace deadline is anchored to the earliest `finishTime` (`finishGraceUntil`
 on the snapshot), so every client counts down to — and ends at — the same

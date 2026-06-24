@@ -115,13 +115,6 @@ and 404s, and the favicon never loads. The PWA icons (`*.png`) and
 `manifest.webmanifest` already contain a dot, so the existing `.*\..*` rule
 covers them.
 
-## Future work
-
-- **Cache App Router RSC navigations** so client-side (soft) navigations to the
-  practice game also work offline, not just full page loads / hard navigations.
-- **iOS splash screens** (`apple-touch-startup-image`) to avoid the white flash
-  when launching the installed app.
-
 ## Testing locally
 
 ### Install flow

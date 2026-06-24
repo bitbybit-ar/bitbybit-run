@@ -45,46 +45,55 @@ tests/
 
 ## What the unit suite covers
 
-| Area               | Files (`tests/unit/…`)                                                         | What's verified                                                                |
-| ------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| **Nostr & auth**   | `lib/nostr/{signers,http-auth,nonce-store,verify,create-account,nip46-login}`, `lib/auth` | NIP-98 signed-HTTP validation, header parsing, single-use nonce replay protection, event verification, NIP-46 reload auto-restore, JWT session |
-| **Schemas**        | `lib/schemas/{match,primitives}`                                               | Zod validation / bounds for wire payloads at the trust boundary               |
-| **Multiplayer**    | `lib/multiplayer/{store,match-client,match-state,discovery,persist-result,create-join}` | Create/join a race end to end (lobby browser ↔ match), roster/state machine, match discovery, result persistence with retry |
-| **Game logic**     | `lib/game/{track,race-net,remote-runners}`                                     | Seeded track generation, frame encode/decode, rival interpolation             |
-| **Lightning**      | `lib/lightning/zap`                                                            | Zap amount/invoice handling                                                    |
-| **API & infra**    | `app/api/matches`, `lib/rate-limit`, `lib/env`, `lib/creator/users`, `db/schema` | Route handlers, rate limiting, env parsing, user helpers, schema shape         |
+| Area             | Files (`tests/unit/…`)                                                                    | What's verified                                                                                                                                        |
+| ---------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Nostr & auth** | `lib/nostr/{signers,http-auth,nonce-store,verify,create-account,nip46-login}`, `lib/auth` | NIP-98 signed-HTTP validation, header parsing, durable single-use nonce replay protection, event verification, NIP-46 reload auto-restore, JWT session |
+| **Schemas**      | `lib/schemas/{match,primitives}`                                                          | Zod validation / bounds for wire payloads at the trust boundary                                                                                        |
+| **Multiplayer**  | `lib/multiplayer/{store,match-client,match-state,discovery,persist-result,create-join}`   | Create/join a race end to end (lobby browser ↔ match), roster/state machine, match discovery, result persistence with retry                            |
+| **Game logic**   | `lib/game/{track,race-net,remote-runners}`                                                | Seeded track generation, frame encode/decode, rival interpolation                                                                                      |
+| **Lightning**    | `lib/lightning/zap`                                                                       | Zap amount/invoice handling                                                                                                                            |
+| **API & infra**  | `app/api/matches`, `lib/rate-limit`, `lib/env`, `lib/creator/users`, `db/schema`          | Route handlers, rate limiting, env parsing, user helpers, schema shape                                                                                 |
 
 Unit tests set and clear their own `process.env`, so **no database or secrets
 are needed** — they run anywhere, including CI without secrets.
 
 ## Integration tests
 
-`tests/integration/store.test.ts` exercises the **real persistence path**
-(`persistMatchResult` → `getLeaderboard` / `getMatchResults`) against a Neon
-**test branch** — never production.
+Two suites run against a Neon **test branch** — never production:
 
-- Requires `DATABASE_URL` (and `AUTH_SECRET`). With `.env.test` loaded, migrate
-  the test DB first, then run:
-  ```bash
-  npm run test:db:migrate    # MIGRATE_ENV_FILE=.env.test tsx scripts/migrate.ts
-  npm run test:integration
-  ```
-- Each test calls `cleanDb()` (`setup.ts`), which `TRUNCATE … RESTART IDENTITY
-  CASCADE`s `results` + `matches` (leaving `users`) for a deterministic slate.
-- The suite is wrapped in `describe.skipIf(!HAS_DB)`, and the script passes
-  `--passWithNoTests`, so with no `DATABASE_URL` it **skips silently** instead of
-  failing — the unit suite still runs everywhere.
+- `tests/integration/store.test.ts` — the **real persistence path**
+  (`persistMatchResult` → `getLeaderboard` / `getMatchResults`).
+- `tests/integration/nonce-store.test.ts` — the **durable NIP-98 anti-replay**
+  guard (`claimNonce` against the real `auth_nonces` table: single-use,
+  per-id isolation, and the expired-row sweep).
+
+Running them:
+
+```bash
+npm run test:db:migrate    # migrate the test DB (loads .env.test)
+npm run test:integration   # auto-loads .env.test via --env-file-if-exists
+```
+
+- `test:integration` loads `.env.test` when present, so it runs locally with no
+  extra setup; in CI the file is absent (gitignored) and the job injects
+  `DATABASE_URL` / `AUTH_SECRET` from `TEST_`-prefixed secrets instead.
+- `cleanDb()` (`setup.ts`) `TRUNCATE … RESTART IDENTITY CASCADE`s `results` +
+  `matches` (leaving `users`); `cleanNonces()` wipes `auth_nonces` — each gives
+  a deterministic slate per test.
+- Both suites are wrapped in `describe.skipIf(!HAS_DB)`, and the script passes
+  `--passWithNoTests`, so with no `DATABASE_URL` they **skip silently** instead
+  of failing — the unit suite still runs everywhere.
 
 ## CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml))
 
 On every push to `main` and every pull request, four jobs run in parallel:
 
-| Job               | Command              | Needs secrets?                         |
-| ----------------- | -------------------- | -------------------------------------- |
-| Lint              | `npm run lint`       | no                                     |
-| Typecheck         | `npm run typecheck`  | no                                     |
-| Unit tests        | `npm run test:unit`  | no                                     |
-| Integration tests | `npm run test:integration` | only if `TEST_DATABASE_URL` is set |
+| Job               | Command                                 | Needs secrets?                     |
+| ----------------- | --------------------------------------- | ---------------------------------- |
+| Lint & format     | `npm run lint` + `npm run format:check` | no                                 |
+| Typecheck         | `npm run typecheck`                     | no                                 |
+| Unit tests        | `npm run test:unit`                     | no                                 |
+| Integration tests | `npm run test:integration`              | only if `TEST_DATABASE_URL` is set |
 
 The integration job maps `TEST_`-prefixed secrets onto the names the app reads,
 so it only ever touches the **test** DB. When `TEST_DATABASE_URL` is unset it
@@ -96,8 +105,8 @@ are cancelled when a new commit lands.
 The suite exercises the backend and the game's core logic, end to end where it
 matters:
 
-- **Nostr auth** — NIP-98 signed-HTTP requests, NIP-46 reload restore, single-use
-  nonce replay protection, event verification, and JWT sessions.
+- **Nostr auth** — NIP-98 signed-HTTP requests, NIP-46 reload restore, durable
+  single-use nonce replay protection, event verification, and JWT sessions.
 - **Wire-payload validation** — every inbound match payload is checked against its
   Zod schema and bounds at the trust boundary.
 - **Create / join a race** — a host creates a race, it surfaces in the lobby

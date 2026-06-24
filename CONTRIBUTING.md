@@ -143,7 +143,7 @@ Out of scope:
   Lightning wallets, hosting).
 - Theoretical issues with no demonstrated impact.
 
-### Hardening already in place
+### Security hardening
 
 - HTTPS-only via Vercel.
 - Auth is Nostr-based (NIP-07 / NIP-46) — no passwords are ever stored.
@@ -151,20 +151,22 @@ Out of scope:
   production.
 - The session cookie uses the `__Host-` prefix in production (Secure,
   `Path=/`, no `Domain`), blocking subdomain cookie injection from any
-  `*.bitbybit.com.ar` service. Sessions use a sliding 60-minute
-  inactivity timeout.
+  `*.bitbybit.com.ar` service. Sessions use a rolling 7-day window,
+  refreshed on activity (see [`docs/AUTH.md`](docs/AUTH.md)).
 - Secrets (`AUTH_SECRET`, the `DATABASE_URL` Postgres connection
   string) live in environment variables and never reach the client;
   server-only modules are kept out of client bundles.
 - All external links open in a new tab with `rel="noopener noreferrer"`.
-
-### Hardening still in progress
-
-- A Content-Security-Policy and the related security headers (HSTS,
-  X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
-  Permissions-Policy) are not yet configured. A CSP must allow `wss:`
-  and `https:` in `connect-src` so the NIP-46 relay handshake keeps
-  working (see the TODO in `next.config.ts`).
+- **Security response headers** on every response (`next.config.ts`): a
+  Content-Security-Policy (`frame-ancestors 'none'`, `object-src 'none'`,
+  `base-uri 'self'`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  a `Referrer-Policy`, and a `Permissions-Policy`. The CSP is kept to
+  framing/plugin/base directives only (no `connect-src`) so the many origins the
+  app talks to — Nostr relays over `wss:`, arbitrary avatar/LNURL hosts over
+  `https:` — keep working.
+- **NIP-98 login is single-use** (durable `auth_nonces` table) and the realtime
+  layer rejects spoofed frames + non-host race starts (see
+  [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §4.5).
 
 ## Open source license
 
