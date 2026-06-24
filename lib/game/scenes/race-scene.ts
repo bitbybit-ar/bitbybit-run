@@ -24,7 +24,7 @@ import {
   type Sign,
 } from "../track";
 import { FOODS } from "../foods";
-import { Sound } from "../sound";
+import { Sound, preloadSounds } from "../sound";
 import { laneColor, type RemoteRunnerView } from "../remote-runners";
 import { CHARACTERS, type Character } from "../characters";
 import type { RaceNet } from "../race-net";
@@ -667,6 +667,8 @@ export class RaceScene extends Phaser.Scene {
       if (this.startHold <= 0) {
         this.showToast(this.strings.go, 0.7);
         Sound.go();
+        // Warm the boost clip cache so the first 🚀 pickup plays instantly.
+        preloadSounds();
       }
     } else {
       this.handleInput();

@@ -221,7 +221,44 @@ Create match ──► Lobby fills (1..4 players join via Nostr)
   recolored to an orange/green identity to distinguish this project.
 - Everything is drawn (shapes + emoji) — no image assets — to stay lightweight.
 
-## 10. Fake ads (yes, they're fake — that's the whole joke) 🎣
+## 10. Audio & sound
+
+Sound is **synthesized at runtime via the Web Audio API** — same philosophy as
+the art: **almost zero assets**. Every effect is shaped from oscillators,
+filtered noise and gain envelopes in `lib/game/sound.ts`, so there are no audio
+files to download for the core feedback. The one exception is the **booster
+jingle**, a short (~2.5s) music clip (`public/sfx/boost.mp3`) decoded once and
+cached.
+
+- **Lazy, gesture-safe context:** the `AudioContext` is created on the first
+  play — which always happens after a user gesture (the "Start"/"GO!" flow), so
+  browsers never block it. It auto-resumes if suspended.
+- **Mute, persisted:** a single global flag (stored in `localStorage` under
+  `bbr-muted`) is checked inside every effect, so muting is instant and survives
+  reloads. The 🔊/🔇 toggle in the game header (`components/game/sound-toggle.tsx`)
+  is the only control; mute even short-circuits a clip that's still loading.
+- **Sample loader:** `preloadSounds()` is called at race start to warm the
+  booster clip cache (fetch + `decodeAudioData`), so the first 🚀 pickup plays
+  with no latency; it's cached and de-duped for the rest of the session.
+
+The catalog of cues, each tied to a moment in the loop:
+
+| Cue          | When it fires                       | Character                                  |
+| ------------ | ----------------------------------- | ------------------------------------------ |
+| `go()`       | Race start ("GO!")                  | Two rising blips                           |
+| `eatGood()`  | Eating good food (⚡)               | Bright rising chirp                        |
+| `eatJunk()`  | Eating junk food (🍔)               | Low sawtooth drop                          |
+| `boost()`    | Grabbing a rocket booster (🚀)      | **Music clip** (`public/sfx/boost.mp3`)    |
+| `bathroom()` | Poison bar full → sent to start     | Long dissonant alarm + wet splat + droop   |
+| `finish()`   | Crossing the finish line            | Ascending jingle with a reverb "stadium" tail |
+| `lane()`     | Changing lane                       | Short tick                                 |
+| `drunk()`    | After a beer (woozy effect)         | Sine wobble with vibrato + pitch droop     |
+
+Design rules: cues are **short, distinct, and never block input**; the booster
+clip is the only sample and is trimmed to roughly match the boost duration so it
+doesn't trail past the burst. Everything respects mute.
+
+## 11. Fake ads (yes, they're fake — that's the whole joke) 🎣
 
 Those spammy banners stuck to the desktop margins, the sticky mobile bottom
 banner, and the "watch an ad to keep playing" full-screen interstitial? **None
