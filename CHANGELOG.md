@@ -161,6 +161,11 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   resolves strictly against the runner's nearest lane, so sliding toward a
   booster can't accidentally eat the junk in the lane you're leaving — booster
   gauntlets stay dodgeable as designed.
+- **Touch restart hint no longer mentions a missing key:** the solo finish
+  overlay said "press R to race again" even on mobile, where there's no R key.
+  It now reads "tap to race again" on touch devices (restart is a screen tap);
+  desktop keeps the R hint. The how-to-play touch column and `GAME-DESIGN`
+  document the tap-to-restart gesture.
 
 #### Internals
 

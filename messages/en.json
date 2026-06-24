@@ -182,6 +182,7 @@
     "go": "GO!",
     "finish": "🏁 FINISH!",
     "again": "press R to race again",
+    "againTouch": "tap to race again",
     "practiceNote": "Practice run — doesn't count for the ranking",
     "goodPhrases": [
       "yum! 😋",
@@ -282,6 +283,7 @@
     "controlsTouch": "📱 Touch (mobile)",
     "controlsTouchLanes": "tap to change lane",
     "controlsTouchSprint": "hold to accelerate (spends energy)",
+    "controlsTouchRestart": "tap to restart",
     "zapTitle": "⚡️ Zap the winner",
     "zapText": "When the race ends, you can send sat zaps to the winner. Running fast pays out in Bitcoin.",
     "rankingTitle": "🏆 Ranking",
