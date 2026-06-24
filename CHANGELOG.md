@@ -34,6 +34,11 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   trigger page scroll or zoom.
 - **Per-match seeded tracks:** obstacle/food layout is derived from the match id,
   so every player in a race shares the exact same course.
+- **Crowd signs:** funny, localized slogans line the track like roadside
+  billboards. The track is a fixed-width anchor and the side margins flex, so on
+  wide screens the signs sit beside it; on narrow **portrait** phones (no
+  roadside room) each sign instead hangs from an **overhead gantry arch** the
+  runner drives under — one at a time, kept in a readable size band.
 - **Free demo** (no login) and a **solo practice** mode for warming up.
 - Sound effects, light/dark theme, and a responsive layout from phone to desktop.
 
@@ -141,6 +146,10 @@ compare links at the bottom are pointed at the `v1.0.0` tag.
   CTA, so the text is no longer cut off.
 - **Square brand blocks:** the favicon and generated app icons now draw three
   squares instead of three half-height rectangles.
+- **Food messages no longer overflow or hide behind signs on phones:** in
+  portrait the in-canvas food toast drops below the overhead crowd signs and
+  wraps long lines onto a second line, so both stay fully readable (desktop is
+  unchanged).
 
 <!--
   At release time, replace the line below with:

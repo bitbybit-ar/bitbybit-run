@@ -169,6 +169,11 @@ Players earn **points** during the race (shown live and in the final ranking):
 4. **Game room** — the race itself. On screen:
    - **Main view (2.5D):** your runner from behind, upcoming food & obstacles, and
      **rivals drawn as their own animated character** (with a name tag).
+   - **Crowd signs:** funny localized slogans lining the track (see §9).
+   - **Food messages:** a quick toast reacts to each pickup — a cheeky localized
+     line ("+1 sat of energy", "rekt by a snack 💀"). On narrow portrait it sits
+     **below the overhead signs** and **wraps onto a second line** so long lines
+     never overflow the canvas; on wider layouts it keeps its upper-centre spot.
    - **Minimap:** where every runner is along the track (the shared multiplayer
      surface — updates a few times per second).
    - **Live HUD:** energy bar, poison bar, current position, live points/ranking.
@@ -201,6 +206,15 @@ Create match ──► Lobby fills (1..4 players join via Nostr)
 - **Food = icons, not just colors:** good food is **⚡** (energy, on a green
   halo), junk is **🍔** (on a purple halo), the speed booster is **🚀** (on a
   yellow halo, drawn bigger) — readable at a glance, zero assets.
+- **Crowd signs:** funny, localized slogans line the track like roadside
+  billboards ("BITCOIN O MUERTE", "TAXATION IS THEFT, CARDIO IS FREEDOM",
+  "HODL YOUR LEGS"). The
+  track is a **fixed-width anchor** centred on screen and the **side margins
+  flex** with the viewport, so on wide screens the signs sit beside the track.
+  On a narrow **portrait** phone — where the track fills the width and there's no
+  roadside room — each sign instead hangs from an **overhead gantry arch**
+  spanning the track that the runner drives under (one at a time, held in a
+  readable size band rather than shrunk). All copy is i18n (`game.signs`, EN + ES).
 - **Typography:** Nunito / Nunito Sans (same family as `bitbybit-cursats`),
   used in the React UI and inside the Phaser canvas.
 - **UI chrome:** the `Button` component and palette mirror `bitbybit-cursats`,
