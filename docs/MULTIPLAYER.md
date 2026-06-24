@@ -143,9 +143,9 @@ no live signer is present, which is also useful for solo iteration — but it is
 ## Note on the "shared restart" (poison → bathroom)
 
 Eating too much junk fills the poison bar; at max the runner takes a **bathroom
-break** — back to the start line. This reset is **per-player and entirely
-local**: it changes only that client's own runner and **emits no event**, so one
-player's bathroom break cannot reset another's race.
+break** — knocked back a bounded distance. This setback is **per-player and
+entirely local**: it changes only that client's own runner and **emits no
+event**, so one player's bathroom break cannot set another's race back.
 
 Because the track is **deterministic per match** (its obstacle/food layout is
 seeded from the `matchId`, so every player in that match sees the exact same

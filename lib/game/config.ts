@@ -72,6 +72,7 @@ export const POISON = {
   max: 1,
   gainPerFood: 0.34, // per junk food eaten
   decayPerSecond: 0.02, // slowly recovers over time
+  setback: 1500, // units lost on a bathroom break — bounded, independent of track length
 };
 
 /** Points awarded during a race. Per-food point values live in `foods.ts`

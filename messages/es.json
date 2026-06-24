@@ -270,7 +270,7 @@
     "energyTitle": "🔋 Energía",
     "energyText": "Agarrá comida buena para llenar tu barra de energía y gastala para acelerar. Cuanto mejor la comida, más energía y más puntos:",
     "poisonTitle": "🍔 Chatarra",
-    "poisonText": "Esquivá la chatarra: llena tu barra de veneno y, si se llena, vas al baño 🚽 y arrancás de nuevo. Cuanto peor, más puntos en contra:",
+    "poisonText": "Esquivá la chatarra: llena tu barra de veneno y, si se llena, vas al baño 🚽 y retrocedés un tramo. Cuanto peor, más rápido se llena y más puntos en contra:",
     "boostTitle": "🚀 Booster de velocidad",
     "boostText": "Agarrá el booster 🚀 para un envión de velocidad máxima que no gasta energía. Se esconde en un carril rodeado de chatarra: metete justo para agarrarlo, o tomá el carril libre para saltearlo sin riesgo:",
     "controlsTitle": "🎮 Controles",

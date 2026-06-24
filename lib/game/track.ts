@@ -33,10 +33,10 @@ export type Track = {
   boosters: FoodItem[]; // 🚀 speed bursts, tucked inside junk-food gauntlets
 };
 
-const LENGTH = 11000;
+const LENGTH = 14300; // ~30% longer than the original 11000 → ~90s target race
 
 /** Number of hand-tuned booster gauntlets along the track. */
-const BOOST_ZONE_COUNT = 3;
+const BOOST_ZONE_COUNT = 4;
 
 type Rng = () => number;
 
