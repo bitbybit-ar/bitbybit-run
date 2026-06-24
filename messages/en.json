@@ -270,7 +270,7 @@
     "energyTitle": "🔋 Energy",
     "energyText": "Grab good food to fill your energy bar, then spend it to sprint. The better the food, the more energy and points:",
     "poisonTitle": "🍔 Junk food",
-    "poisonText": "Dodge junk food: it fills your poison bar and, if it fills up, you run to the bathroom 🚽 and lose ground — knocked back down the track (not all the way to the start). The worse it is, the more it costs you:",
+    "poisonText": "Dodge junk food: it fills your poison bar and, when it's full, you run to the bathroom 🚽 and lose ground. The worse it is, the faster it fills and the more it costs you:",
     "boostTitle": "🚀 Speed booster",
     "boostText": "Grab the 🚀 booster for a burst of top speed that costs no energy. It hides in a lane fenced by junk food — weave in to grab it, or take the open lane to skip it safely:",
     "controlsTitle": "🎮 Controls",
