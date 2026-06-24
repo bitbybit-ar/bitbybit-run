@@ -12,6 +12,13 @@ let ctx: AudioContext | null = null;
 let muted = false;
 let reverb: ConvolverNode | null = null;
 
+/** Path (under /public) to the boost jingle clip. */
+const BOOST_CLIP = "/sfx/boost.mp3";
+
+/** Decoded one-shot clips, cached after the first fetch + decode. */
+const sampleCache = new Map<string, AudioBuffer>();
+const sampleLoading = new Map<string, Promise<AudioBuffer | null>>();
+
 type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
 
 function getCtx(): AudioContext | null {
@@ -40,6 +47,54 @@ export function setMuted(value: boolean): void {
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
   }
+}
+
+/** Fetch + decode an audio clip into an AudioBuffer, cached and de-duped. */
+function loadSample(url: string): Promise<AudioBuffer | null> {
+  const cached = sampleCache.get(url);
+  if (cached) return Promise.resolve(cached);
+  const inFlight = sampleLoading.get(url);
+  if (inFlight) return inFlight;
+
+  const c = getCtx();
+  if (!c) return Promise.resolve(null);
+
+  const p = fetch(url)
+    .then((r) => r.arrayBuffer())
+    .then((buf) => c.decodeAudioData(buf))
+    .then((decoded) => {
+      sampleCache.set(url, decoded);
+      sampleLoading.delete(url);
+      return decoded;
+    })
+    .catch(() => {
+      sampleLoading.delete(url);
+      return null;
+    });
+  sampleLoading.set(url, p);
+  return p;
+}
+
+/** Warm the clip cache ahead of time (e.g. on race start) so the first play is
+ *  instant. Safe to call repeatedly. */
+export function preloadSounds(): void {
+  void loadSample(BOOST_CLIP);
+}
+
+/** Play a decoded clip once. Loads it on demand if not cached yet. */
+function playSample(url: string, gain = 0.6): void {
+  const c = getCtx();
+  if (!c || muted) return;
+  void loadSample(url).then((buffer) => {
+    // Re-check mute: the user may have toggled it while the clip was loading.
+    if (!buffer || muted) return;
+    const src = c.createBufferSource();
+    src.buffer = buffer;
+    const g = c.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(c.destination);
+    src.start();
+  });
 }
 
 type BlipOptions = {
@@ -136,22 +191,8 @@ export const Sound = {
     blip(200, { type: "sawtooth", dur: 0.18, gain: 0.12, slideTo: 110 });
   },
   boost() {
-    // Fast ascending whoosh — a 🚀 lift-off.
-    blip(523, { type: "square", dur: 0.1, gain: 0.12, slideTo: 784 });
-    blip(784, {
-      type: "square",
-      dur: 0.1,
-      gain: 0.12,
-      slideTo: 1047,
-      delay: 0.08,
-    });
-    blip(1047, {
-      type: "triangle",
-      dur: 0.14,
-      gain: 0.12,
-      slideTo: 1568,
-      delay: 0.16,
-    });
+    // 🚀 lift-off: a short music clip instead of the synthesized whoosh.
+    playSample(BOOST_CLIP);
   },
   bathroom() {
     // Long & deliberately annoying: a dissonant alarm with a pulsing tremolo
