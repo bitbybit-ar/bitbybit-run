@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Design and gameplay details live in [`docs/`](docs/README.md). This file is the
 > release-facing log — each tagged release maps to a version section below.
 
+## [Unreleased]
+
+### Added
+
+- **Studio credit in the footer:** "Un proyecto de BitByBit" / "A BitByBit
+  project", linking to the BitByBit studio site in the visitor's language.
+
 ## [1.0.0] — 2026-06-24
 
 The first public release of **BitByBit RUN** — the full game, serverless
