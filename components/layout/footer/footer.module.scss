@@ -27,6 +27,29 @@
   }
 }
 
+.identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $spacing-8;
+
+  @include mobile {
+    align-items: center;
+  }
+}
+
+.credit {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+
+  .link {
+    display: inline;
+    font-size: inherit;
+    text-decoration: underline;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
