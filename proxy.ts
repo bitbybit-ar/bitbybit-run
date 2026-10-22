@@ -51,6 +51,11 @@ export const config = {
   // file extension, so the `.*\..*` rule below doesn't catch them — without an
   // explicit exclusion the intl middleware rewrites `/icon` to `/es/icon`
   // (which 404s) and the favicon never loads. The PWA manifest and `*.png`
-  // icons already contain a dot, so they're covered by `.*\..*`.
-  matcher: ["/((?!api|_next|_vercel|icon$|apple-icon$|.*\\..*).*)"],
+  // icons already contain a dot, so they're covered by `.*\..*`. The per-locale
+  // OG/Twitter images are linked as /es/opengraph-image; letting the intl
+  // middleware see them 307s the es one to the unprefixed path, so social
+  // crawlers would hit a redirect instead of the image.
+  matcher: [
+    "/((?!api|_next|_vercel|icon$|apple-icon$|[^/]+/(?:opengraph|twitter)-image$|.*\\..*).*)",
+  ],
 };

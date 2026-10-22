@@ -21,6 +21,8 @@ import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/creator/users";
 import type { SessionUser } from "@/lib/contexts/signer-context";
 import { cn } from "@/lib/utils";
+import { getSiteUrl } from "@/lib/env";
+import { isLocale } from "@/lib/seo";
 import "@/styles/globals.scss";
 
 /**
@@ -95,11 +97,13 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  // Dotted paths (e.g. /foo.php) skip the proxy and land here as a "locale".
+  if (!isLocale(locale)) notFound();
   const t = await getTranslations({ locale, namespace: "metadata" });
   const title = t("siteTitle");
   const description = t("description");
   return {
-    metadataBase: new URL(siteUrl()),
+    metadataBase: new URL(getSiteUrl()),
     title: {
       default: title,
       template: `%s · ${t("siteName")}`,
@@ -130,14 +134,6 @@ export async function generateMetadata({
   };
 }
 
-/** Absolute site origin for resolving OG image URLs (prod domain, Vercel
- *  preview, or local dev). */
-function siteUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
-}
-
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -150,7 +146,7 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  if (!routing.locales.includes(locale as "es" | "en")) notFound();
+  if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
 
   const messages = await getMessages();

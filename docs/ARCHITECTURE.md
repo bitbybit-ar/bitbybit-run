@@ -78,6 +78,7 @@ lib/multiplayer/  Nostr transport, match state machine, discovery, persistence
 lib/nostr/      Signers (NIP-07/46/nsec), NIP-98 verify, profile, nonce store
 lib/lightning/  Zap (WebLN + LNURL-pay)
 lib/db/         Drizzle schema + Neon client
+lib/seo.ts      Indexable pages, canonical/hreflang metadata (app/robots.ts, app/sitemap.ts)
 lib/contexts/, lib/hooks/, lib/schemas/, lib/fake-ads/, lib/pwa/
 i18n/, messages/   next-intl routing + en.json/es.json
 styles/         SCSS token system (_theme, _colors, _typography, _spacing)

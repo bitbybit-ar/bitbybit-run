@@ -23,6 +23,7 @@ import {
   createNostrConnectURI,
 } from "nostr-tools/nip46";
 import { type SignerHandle, makeNip46Signer } from "@/lib/nostr/signers";
+import { getSiteUrl } from "@/lib/env";
 
 // Mobile signers (Amber over nostrconnect://) round-trip through
 // public relays that can take a while to connect on cellular links;
@@ -219,7 +220,7 @@ export function createConnectSession(): NostrConnectSession {
     url:
       typeof window !== "undefined"
         ? window.location.origin
-        : process.env.NEXT_PUBLIC_BASE_URL || "https://run.bitbybit.com.ar",
+        : process.env.NEXT_PUBLIC_BASE_URL || getSiteUrl(),
   });
 
   return { uri, clientSecretKey };

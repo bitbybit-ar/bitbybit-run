@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button/button";
+import { NOINDEX } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "offline" });
-  return { title: t("pageTitle") };
+  return { title: t("pageTitle"), robots: NOINDEX };
 }
 
 /**

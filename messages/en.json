@@ -35,7 +35,8 @@
     "empty": "No races yet — be the first to top the board.",
     "prev": "Previous",
     "next": "Next",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "metaDescription": "The BitByBit RUN global leaderboard: the runners with the most wins and their best multiplayer race."
   },
   "play": {
     "phase": "Multiplayer race",
@@ -164,7 +165,9 @@
     "finishTitle": "🏁 You crossed the finish!",
     "finishText": "Sign in to compete with others and earn zaps ⚡",
     "login": "Log in",
-    "keepPlaying": "Keep playing"
+    "keepPlaying": "Keep playing",
+    "metaTitle": "Free demo",
+    "metaDescription": "Try BitByBit RUN for free with no sign-in: a single-player race in your browser to learn to eat well, dodge the junk food and sprint."
   },
   "theme": {
     "toLight": "Switch to light mode",
@@ -290,7 +293,8 @@
     "rankingTitle": "🏆 Ranking",
     "rankingText": "Your finish position in a multiplayer race sets your place in the ranking — solo practice runs don't count. Climb it race after race.",
     "demo": "Demo",
-    "cta": "Play now ▶"
+    "cta": "Play now ▶",
+    "metaDescription": "Learn how to play BitByBit RUN: eat well to sprint, dodge the junk food, grab the booster and be first across the finish line to win sats."
   },
   "login": {
     "metadataTitle": "Sign in",

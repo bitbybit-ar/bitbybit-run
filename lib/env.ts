@@ -4,6 +4,15 @@
 // rather than reading `process.env` directly so the failure mode is
 // predictable.
 
+// Canonical public origin for SEO (canonical, hreflang, sitemap, OG images).
+// Deliberately NOT derived from VERCEL_URL: that is the per-deployment
+// *.vercel.app host, which leaked into og:image on production.
+export const PRODUCTION_SITE_URL = "https://run.bitbybit.com.ar";
+
+export function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || PRODUCTION_SITE_URL;
+}
+
 export function getBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_BASE_URL;
   if (!url) {

@@ -7,6 +7,9 @@ export default defineConfig({
     // the environment is plain Node. Server modules (db, Wapu/Lightning
     // clients) run on their native code path with no DOM shim.
     environment: "node",
+    // next-intl's ESM imports `next/navigation` without an extension, which
+    // only resolves when Vite processes it (lib/seo.ts uses its getPathname).
+    server: { deps: { inline: ["next-intl"] } },
     globals: true,
     include: ["tests/**/*.test.ts"],
     pool: "threads",

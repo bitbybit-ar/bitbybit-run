@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Studio credit in the footer:** "Un proyecto de BitByBit" / "A BitByBit
   project", linking to the BitByBit studio site in the visitor's language.
+- **SEO:** `robots.txt` and `sitemap.xml` (every public page in es and en, with
+  hreflang alternates). Home, how-to-play, leaderboard and demo get a
+  self-referencing canonical, es/en/x-default hreflang and their own title and
+  description in both locales.
+
+### Fixed
+
+- `og:image`/`twitter:image` pointed at the per-deployment `*.vercel.app` host
+  (`metadataBase` came from `VERCEL_URL`); they now use
+  `https://run.bitbybit.com.ar` (overridable with `NEXT_PUBLIC_SITE_URL`).
+- `/robots.txt` and `/sitemap.xml` returned the 404 page.
+- The Spanish OG/Twitter image URL (`/es/opengraph-image`) answered with a 307.
+- `/play` and `/offline` are now `noindex`, like `/sign-in`.
 
 ## [1.0.0] — 2026-06-24
 
