@@ -1,14 +1,22 @@
+import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button/button";
 import { Container } from "@/components/ui/container";
 import { HeroTitle } from "@/components/landing/hero-title";
 import { Polaroid } from "@/components/landing/polaroid";
 import { CHARACTERS } from "@/lib/game/characters";
+import { pageMetadata } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
   params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  return pageMetadata({ locale, path: "/", description: t("description") });
+}
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;

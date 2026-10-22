@@ -35,7 +35,8 @@
     "empty": "Todavía no hay carreras — sé el primero en liderar la tabla.",
     "prev": "Anterior",
     "next": "Siguiente",
-    "pageOf": "Página {page} de {total}"
+    "pageOf": "Página {page} de {total}",
+    "metaDescription": "El ranking global de BitByBit RUN: los corredores con más victorias y su mejor carrera multijugador."
   },
   "play": {
     "phase": "Carrera multijugador",
@@ -164,7 +165,9 @@
     "finishTitle": "🏁 ¡Cruzaste la meta!",
     "finishText": "Iniciá sesión para competir con otros y ganar zaps ⚡",
     "login": "Entrar",
-    "keepPlaying": "Seguir jugando"
+    "keepPlaying": "Seguir jugando",
+    "metaTitle": "Demo gratis",
+    "metaDescription": "Probá BitByBit RUN gratis y sin iniciar sesión: una carrera de un jugador en el navegador para aprender a comer bien, esquivar la chatarra y acelerar."
   },
   "theme": {
     "toLight": "Cambiar a modo claro",
@@ -290,7 +293,8 @@
     "rankingTitle": "🏆 Ranking",
     "rankingText": "Tu posición al cruzar la meta en una carrera multijugador define tu lugar en el ranking — las carreras de práctica solo no cuentan. Mejorá tu puesto carrera a carrera.",
     "demo": "Demo",
-    "cta": "Jugar ahora ▶"
+    "cta": "Jugar ahora ▶",
+    "metaDescription": "Aprendé a jugar BitByBit RUN: comé bien para acelerar, esquivá la chatarra, agarrá el booster y llegá primero a la meta para ganar sats."
   },
   "login": {
     "metadataTitle": "Iniciar sesión",

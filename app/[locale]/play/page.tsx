@@ -1,14 +1,18 @@
+import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/routing";
 import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/creator/users";
 import { PlayStage } from "@/components/game/play-stage";
+import { NOINDEX } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ m?: string; h?: string }>;
 };
+
+export const metadata: Metadata = { robots: NOINDEX };
 
 // The competitive game requires an identity — send anonymous visitors to sign in
 // (they can still try the free /demo). Returns to /play after login — preserving

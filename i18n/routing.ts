@@ -12,5 +12,5 @@ export const routing = defineRouting({
   localeDetection: false,
 });
 
-export const { Link, redirect, usePathname, useRouter } =
+export const { Link, redirect, usePathname, useRouter, getPathname } =
   createNavigation(routing);

@@ -9,6 +9,7 @@ import {
   type LeaderboardRow,
   type LeaderboardSort,
 } from "@/lib/multiplayer/store";
+import { pageMetadata } from "@/lib/seo";
 
 // DB-backed and live: never statically prerender at build (no DATABASE_URL /
 // no rows yet during the build).
@@ -32,7 +33,13 @@ function parseSort(value: string | undefined): LeaderboardSort {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "leaderboard" });
-  return { title: t("title") };
+  // Canonical drops ?page/?sort: they re-slice the same board.
+  return pageMetadata({
+    locale,
+    path: "/leaderboard",
+    title: t("title"),
+    description: t("metaDescription"),
+  });
 }
 
 export default async function LeaderboardPage({ params, searchParams }: Props) {

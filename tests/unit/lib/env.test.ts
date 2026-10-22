@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getBaseUrl, getDatabaseUrl, getAuthSecret } from "@/lib/env";
+import {
+  getBaseUrl,
+  getDatabaseUrl,
+  getAuthSecret,
+  getSiteUrl,
+} from "@/lib/env";
 
 const originalEnv = { ...process.env };
 
@@ -20,6 +25,19 @@ describe("env/getBaseUrl", () => {
   it("returns the configured value", () => {
     process.env.NEXT_PUBLIC_BASE_URL = "https://example.test";
     expect(getBaseUrl()).toBe("https://example.test");
+  });
+});
+
+describe("env/getSiteUrl", () => {
+  it("defaults to the production domain, never a Vercel deployment host", () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.VERCEL_URL = "bitbybit-abc123.vercel.app";
+    expect(getSiteUrl()).toBe("https://run.bitbybit.com.ar");
+  });
+
+  it("honors NEXT_PUBLIC_SITE_URL", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.test";
+    expect(getSiteUrl()).toBe("https://example.test");
   });
 });
 

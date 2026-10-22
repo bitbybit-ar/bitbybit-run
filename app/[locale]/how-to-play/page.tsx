@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { HowToPlayContent } from "@/components/how-to-play/how-to-play-content";
+import { pageMetadata } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -10,7 +11,12 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "howToPlay" });
-  return { title: t("title") };
+  return pageMetadata({
+    locale,
+    path: "/how-to-play",
+    title: t("title"),
+    description: t("metaDescription"),
+  });
 }
 
 export default async function HowToPlayPage({ params }: Props) {
