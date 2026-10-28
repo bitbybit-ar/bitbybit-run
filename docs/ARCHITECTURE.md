@@ -323,3 +323,7 @@ native Vercel integration.
 | WebLN / user wallets | Zaps                            | $0 (P2P) |
 
 **Total infrastructure cost: $0.**
+
+Every Vercel deployment's function counts toward the team's Hobby storage, so
+`vercel.json` deploys `main` only (`git.deploymentEnabled`): a pushed branch gets
+no preview. The project keeps a deployment 1 day (Settings → Deployment Retention).
